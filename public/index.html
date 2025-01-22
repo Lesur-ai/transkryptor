@@ -6,97 +6,17 @@
     <title>Transkryptor 1.1.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        h1 { text-align: center; margin-bottom: 30px; }
-        .main-container {
-            display: flex;
-            flex: 1;
-        }
-        .column {
-            flex: 1;
-            padding: 0 20px;
-            overflow-y: auto;
-        }
-        .block {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        .progress-container { 
-            width: 100%;
-            height: 20px;
-            background-color: #f0f0f0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 15px;
-            position: relative;
-        }
-        .progress-bar { 
-            height: 100%;
-            background-color: #4CAF50;
-            width: 0;
-            transition: width 0.5s ease-in-out;
-        }
-        .progress-text {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            color: #000;
-            font-weight: bold;
-        }
-        .batch-progress { margin-bottom: 10px; }
-        .chunk-status { 
-            display: inline-block; 
-            width: 20px; 
-            height: 20px; 
-            margin-right: 5px;
-            border-radius: 50%;
-        }
-        .chunk-status.pending { background-color: #f0f0f0; }
-        .chunk-status.processing { background-color: orange; }
-        .chunk-status.completed { background-color: #4CAF50; }
-        .chunk-status.error { background-color: red; }
-        #debug, #rawTranscription, #analyzeResult, #synthesisResult { 
-            font-family: monospace; 
-            white-space: pre-wrap; 
-            height: 300px;
-            overflow-y: auto; 
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        button { 
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
-        button:hover { background-color: #45a049; }
-        input, label { margin-bottom: 10px; }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <h1>Transkryptor 1.1.0</h1>
-    
+
     <div class="main-container">
         <div class="column">
             <div class="block">
                 <h2>Configuration</h2>
-                <div>
+                <form id="apiKeysForm">
+                    <div>
                     <label for="openaiKey">Clé API OpenAI:</label>
                     <input type="password" id="openaiKey" required>
                 </div>
@@ -104,15 +24,15 @@
                     <label for="anthropicKey">Clé API Anthropic:</label>
                     <input type="password" id="anthropicKey" required>
                 </div>
-                <button onclick="testAPIKeys()">Tester les clés API</button>
+                    <button type="button" onclick="testAPIKeys()">Tester les clés API</button>
+                </form>
             </div>
-            
             <div class="block">
                 <h2>Fichier source</h2>
                 <div>
                     <label for="audioFile">Fichier audio (M4A):</label>
                     <input type="file" id="audioFile" accept=".m4a" required>
-                </div>
+            </div>
                 <button onclick="processAudio()">Transcrire</button>
                 <button onclick="loadTranscription()">Charger une transcription</button>
                 <button onclick="loadAnalysis()">Charger une analyse</button>
@@ -125,33 +45,33 @@
                 <div class="progress-container">
                     <div id="globalProgress" class="progress-bar"></div>
                     <div class="progress-text" id="globalProgressText"></div>
-                </div>
             </div>
+        </div>
 
             <div class="block">
                 <h2>Progression par lot</h2>
                 <div id="batchProgress"></div>
             </div>
-            
+
             <div class="block">
                 <h2>Journaux</h2>
                 <div id="debug"></div>
             </div>
-        </div>
+            </div>
 
         <div class="column">
             <div class="block">
                 <h2>Transcription brute</h2>
                 <div id="rawTranscription"></div>
                 <button onclick="downloadTranscription()">Télécharger la transcription</button>
-            </div>
+        </div>
 
             <div class="block">
                 <h2>Analyse</h2>
                 <button onclick="analyzeTranscription()">Analyser la transcription</button>
                 <div id="analyzeResult"></div>
                 <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger l'analyse</button>
-            </div>
+    </div>
 
             <div class="block">
                 <h2>Synthèse</h2>
@@ -162,465 +82,12 @@
         </div>
     </div>
 
-    <script>
-        const chunkDuration = 60; // 60 secondes par morceau
-        const chunkOverlap = 0.03; // 30 ms de chevauchement
-        const batchSize = 10; // 10 morceaux par lot
-        let totalBatches = 0;
-        let completedBatches = 0;
-        let rawTranscription = "";
-        let analyzedTranscription = "";
-
-        function getTimestamp() {
-            return new Date().toISOString().replace('T', ' ').substr(0, 19);
-        }
-
-        function log(message) {
-            const debugElement = document.getElementById("debug");
-            const timestampedMessage = `[${getTimestamp()}] ${message}`;
-            debugElement.textContent += timestampedMessage + "\n";
-            debugElement.scrollTop = debugElement.scrollHeight;
-            console.log(timestampedMessage);
-        }
-
-        async function testAPIKeys() {
-            const openaiKey = document.getElementById("openaiKey").value;
-            const anthropicKey = document.getElementById("anthropicKey").value;
-
-            if (!openaiKey || !anthropicKey) {
-                alert("Veuillez entrer les deux clés API avant de les tester.");
-                return;
-            }
-
-            try {
-                const response = await axios.post(`${API_URL}/test-keys`, {
-                    openaiKey,
-                    anthropicKey
-                });
-                
-                if (response.data.status === 'OK') {
-                    log("Clés API valides");
-                    alert("Les clés API sont valides.");
-                } else {
-                    throw new Error(response.data.message);
-                }
-            } catch (error) {
-                log("Erreur lors du test des clés API : " + error.message);
-                alert("Erreur lors du test des clés API : " + error.message);
-            }
-        }
-
-        async function processAudio() {
-            try {
-                const openaiKey = document.getElementById("openaiKey").value;
-                const anthropicKey = document.getElementById("anthropicKey").value;
-                const file = document.getElementById("audioFile").files[0];
-
-                if (!file || !openaiKey || !anthropicKey) {
-                    throw new Error("Veuillez remplir tous les champs et sélectionner un fichier audio.");
-                }
-
-                // Test silencieux des clés API
-                const response = await axios.post(`${API_URL}/test-keys`, {
-                    openaiKey,
-                    anthropicKey
-                });
-                
-                if (response.data.status === 'OK') {
-                    log("Clés API valides");
-                } else {
-                    throw new Error("Les clés API ne sont pas valides. Veuillez vérifier vos clés.");
-                }
-
-                document.getElementById("debug").textContent = "";
-                document.getElementById("batchProgress").innerHTML = "";
-                log("Début du processus...");
-
-                updateGlobalProgress(10);
-                log("Début de la transcription...");
-                rawTranscription = await transcribeAudioParallel(file, openaiKey);
-                log("Transcription terminée");
-                updateGlobalProgress(100);
-                document.getElementById("rawTranscription").textContent = rawTranscription;
-            } catch (error) {
-                log("Erreur détaillée: " + JSON.stringify(error, null, 2));
-                log("Message d'erreur: " + error.message);
-                log("Stack trace: " + error.stack);
-                alert("Une erreur est survenue. Veuillez vérifier les logs de débogage pour plus de détails.");
-            }
-        }
-
-        async function transcribeAudioParallel(file, apiKey) {
-            try {
-                log("Démarrage de transcribeAudioParallel");
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                log("Contexte audio créé");
-                const arrayBuffer = await file.arrayBuffer();
-                log("ArrayBuffer créé");
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                log("AudioBuffer décodé");
-                const totalDuration = audioBuffer.duration;
-                log("Durée totale: " + totalDuration);
-                const chunks = Math.ceil(totalDuration / (chunkDuration - chunkOverlap));
-                log("Nombre de morceaux: " + chunks);
-                totalBatches = Math.ceil(chunks / batchSize);
-                log("Nombre total de lots: " + totalBatches);
-                completedBatches = 0;
-
-                const transcriptionPromises = [];
-
-                for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-                    const batch = [];
-                    initializeBatchProgress(batchIndex, Math.min(batchSize, chunks - batchIndex * batchSize));
-                    for (let j = batchIndex * batchSize; j < Math.min((batchIndex + 1) * batchSize, chunks); j++) {
-                        const start = j * (chunkDuration - chunkOverlap);
-                        const end = Math.min((j + 1) * chunkDuration, totalDuration);
-                        const chunkBuffer = extractChunk(audioBuffer, start, end);
-                        const chunkBlob = await audioBufferToWav(chunkBuffer);
-                        batch.push(transcribeChunkWithRetry(chunkBlob, apiKey, j, batchIndex));
-                    }
-                    const results = await Promise.all(batch);
-                    transcriptionPromises.push(...results);
-                    completedBatches++;
-                    updateGlobalProgress(10 + (completedBatches / totalBatches) * 90);
-                }
-
-                return transcriptionPromises.filter(t => t).join(' ');
-            } catch (error) {
-                log("Erreur dans transcribeAudioParallel: " + error.message);
-                throw error;
-            }
-        }
-
-        function extractChunk(buffer, start, end) {
-            try {
-                const sampleRate = buffer.sampleRate;
-                const channels = buffer.numberOfChannels;
-                const startOffset = Math.floor(start * sampleRate);
-                const endOffset = Math.floor(end * sampleRate);
-                const frameCount = endOffset - startOffset;
-
-                const newBuffer = new AudioBuffer({
-                    length: frameCount,
-                    numberOfChannels: channels,
-                    sampleRate: sampleRate
-                });
-
-                for (let channel = 0; channel < channels; channel++) {
-                    const channelData = buffer.getChannelData(channel);
-                    newBuffer.copyToChannel(channelData.slice(startOffset, endOffset), channel);
-                }
-
-                return newBuffer;
-            } catch (error) {
-                log("Erreur dans extractChunk: " + error.message);
-                throw error;
-            }
-        }
-
-        async function audioBufferToWav(buffer) {
-            try {
-                const wavFile = await encodeWAV(buffer);
-                return new Blob([wavFile], { type: 'audio/wav' });
-            } catch (error) {
-                log("Erreur dans audioBufferToWav: " + error.message);
-                throw error;
-            }
-        }
-
-        function encodeWAV(samples) {
-            try {
-                const buffer = new ArrayBuffer(44 + samples.length * 2);
-                const view = new DataView(buffer);
-
-                writeString(view, 0, 'RIFF');
-                view.setUint32(4, 36 + samples.length * 2, true);
-                writeString(view, 8, 'WAVE');
-                writeString(view, 12, 'fmt ');
-                view.setUint32(16, 16, true);
-                view.setUint16(20, 1, true);
-                view.setUint16(22, 1, true);
-                view.setUint32(24, samples.sampleRate, true);
-                view.setUint32(28, samples.sampleRate * 2, true);
-                view.setUint16(32, 2, true);
-                view.setUint16(34, 16, true);
-                writeString(view, 36, 'data');
-                view.setUint32(40, samples.length * 2, true);
-
-                const floatTo16BitPCM = (output, offset, input) => {
-                    for (let i = 0; i < input.length; i++, offset += 2) {
-                        const s = Math.max(-1, Math.min(1, input[i]));
-                        output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-                    }
-                };
-
-                floatTo16BitPCM(view, 44, samples.getChannelData(0));
-
-                return buffer;
-            } catch (error) {
-                log("Erreur dans encodeWAV: " + error.message);
-                throw error;
-            }
-        }
-
-        function writeString(view, offset, string) {
-            for (let i = 0; i < string.length; i++) {
-                view.setUint8(offset + i, string.charCodeAt(i));
-            }
-        }
-
-        async function transcribeChunkWithRetry(chunkBlob, apiKey, chunkIndex, batchIndex, retries = 10) {
-            updateChunkStatus(batchIndex, chunkIndex % batchSize, 'processing');
-            for (let attempt = 0; attempt < retries; attempt++) {
-                try {
-                    const result = await transcribeChunk(chunkBlob, apiKey, chunkIndex, batchIndex, 20000 + attempt * 20000);
-                    updateChunkStatus(batchIndex, chunkIndex % batchSize, 'completed');
-                    return result;
-                } catch (error) {
-                    if (attempt === retries - 1) {
-                        log(`Échec de la transcription du morceau ${chunkIndex + 1} après ${retries} tentatives: ${error.message}`);
-                        updateChunkStatus(batchIndex, chunkIndex % batchSize, 'error');
-                        return "";
-                    }
-                    log(`Tentative ${attempt + 1} échouée pour le morceau ${chunkIndex + 1}. Nouvelle tentative...`);
-                    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-                }
-            }
-        }
-
-        async function transcribeChunk(chunkBlob, apiKey, chunkIndex, batchIndex, timeout) {
-            const formData = new FormData();
-            formData.append("file", chunkBlob, `chunk_${chunkIndex}.wav`);
-            formData.append("model", "whisper-1");
-
-            try {
-                log(`Traitement du morceau ${chunkIndex + 1} commencé`);
-                const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                        "Content-Type": "multipart/form-data"
-                    },
-                    timeout: timeout,
-                });
-                log(`Traitement du morceau ${chunkIndex + 1} terminé`);
-                return response.data.text;
-            } catch (error) {
-                log(`Erreur lors de la transcription du morceau ${chunkIndex + 1}: ${error.message}`);
-                throw error;
-            }
-        }
-
-        async function analyzeTranscription() {
-            try {
-                const anthropicKey = document.getElementById("anthropicKey").value;
-                if (!rawTranscription || !anthropicKey) {
-                    throw new Error("Veuillez d'abord transcrire un fichier audio ou charger une transcription.");
-                }
-
-                log("Début de l'analyse...");
-                updateGlobalProgress(0);
-                
-                const sentences = rawTranscription.match(/[^.!?]+[.!?]+/g) || [];
-                const batchSize = 1000;
-                let currentBatch = "";
-                let batches = [];
-                let tokenCount = 0;
-
-                for (let sentence of sentences) {
-                    const sentenceTokens = sentence.split(/\s+/).length;
-                    if (tokenCount + sentenceTokens > batchSize && currentBatch) {
-                        batches.push(currentBatch.trim());
-                        currentBatch = "";
-                        tokenCount = 0;
-                    }
-                    currentBatch += sentence + " ";
-                    tokenCount += sentenceTokens;
-                }
-                if (currentBatch) {
-                    batches.push(currentBatch.trim());
-                }
-
-                const totalBatches = batches.length;
-                let completedBatches = 0;
-                analyzedTranscription = '';
-
-                function updateAnalysisProgress(completed, total) {
-                    const percent = (completed / total) * 100;
-                    updateGlobalProgress(percent);
-                }
-
-                for (let i = 0; i < totalBatches; i++) {
-                    log(`Traitement du lot ${i+1}/${totalBatches}`);
-
-                    const prompt = `
-                    Ceci est le lot ${i+1}/${totalBatches} d'une longue transcription. Votre tâche est de fournir un verbatim propre. Pour etre en succès, vous devez : 
-
-                    1. Corrigez les erreurs de français et de grammaire sans changer le contenu ou le style du discours.
-                    2. Assurez-vous que la ponctuation est correcte et que le texte est facilement lisible.
-                    3. Ne faites pas d'analyse, ne résumez pas, et ne changez pas le contenu. Concentrez-vous uniquement sur la correction et la clarté du texte.
-                    4. Vérifiez que vous n'avez rien oublié de la transcription dans votre travail.
-
-                    Transcription (lot ${i+1}/${totalBatches}) :
-                    ${batches[i]}
-                    `;
-
-                    const response = await axios.post(`${API_URL}/analyze`, {
-                        prompt,
-                        apiKey: anthropicKey
-                    });
-
-                    analyzedTranscription += response.data.content[0].text + '\n\n';
-                    document.getElementById("analyzeResult").textContent = analyzedTranscription;
-                    
-                    completedBatches++;
-                    updateAnalysisProgress(completedBatches, totalBatches);
-                    log(`Lot ${i+1}/${totalBatches} traité. Tokens utilisés : ${response.data.tokenCount}, Tokens de réponse : ${response.data.responseTokenCount}`);
-                    log(`Contenu du lot transcrit : "${batches[i]}"`);
-                }
-
-                log("Analyse terminée.");
-                document.getElementById("downloadAnalysisButton").style.display = "block";
-                document.getElementById("synthesizeButton").style.display = "block";
-            } catch (error) {
-                log("Erreur lors de l'analyse : " + error.message);
-                alert("Une erreur est survenue lors de l'analyse. Veuillez vérifier les logs de débogage pour plus de détails.");
-            }
-        }
-
-        async function synthesizeAnalysis() {
-            try {
-                const anthropicKey = document.getElementById("anthropicKey").value;
-                if (!analyzedTranscription || !anthropicKey) {
-                    throw new Error("Veuillez d'abord analyser la transcription ou charger une analyse.");
-                }
-
-                log("Début de la synthèse...");
-                updateGlobalProgress(0);
-
-                const prompt = `
-                Voici la transcription complète et corrigée d'un long document. Crée une fiche de synthèse complète sans rien oublier ni rien inventer, en utilisant le format Markdown.
-                Cette fiche doit inclure avec un chapitrage: un titre, le Résumé des points clés principaux de l'ensemble de la transcription, 
-                Pour chaque paragraphe de la transcription détailles chacune des idées principales du paragraphe en 3 phrases completes et didactiques maximum que tu rangeras dans une liste à points en mettant en gras le titre de l'idée principale. Saute une ligne entre le titre et le 1er point de la liste à points, puis entre chacun des points de la liste. 
-
-                Enfin, ajoute une section "Question de cours" et Propose 20 questions pertinentes avec leurs réponses, en expliquant pourquoi c'est la bonne réponse vis a vis du verbatim, couvrant les aspects les plus significatifs de l'ensemble du verbatim.
-
-                Transcription complète :
-                ${analyzedTranscription}
-                `;
-
-                log("Envoi de la demande de synthèse...");
-                const response = await axios.post(`${API_URL}/analyze`, {
-                    prompt,
-                    apiKey: anthropicKey
-                });
-
-                document.getElementById("synthesisResult").innerHTML = marked.parse(response.data.content[0].text);
-                updateGlobalProgress(100);
-                document.getElementById("downloadSynthesisButton").style.display = "block";
-                log("Synthèse terminée. Tokens utilisés : " + response.data.tokenCount + ", Tokens de réponse : " + response.data.responseTokenCount);
-            } catch (error) {
-                log("Erreur lors de la synthèse : " + error.message);
-                alert("Une erreur est survenue lors de la synthèse. Veuillez vérifier les logs de débogage pour plus de détails.");
-            }
-        }
-
-        function updateGlobalProgress(percent) {
-            document.getElementById("globalProgress").style.width = `${percent}%`;
-            document.getElementById("globalProgressText").textContent = `${Math.round(percent)}%`;
-        }
-
-        function initializeBatchProgress(batchIndex, size) {
-            const batchProgressContainer = document.getElementById("batchProgress");
-            const batchElement = document.createElement("div");
-            batchElement.className = "batch-progress";
-            batchElement.innerHTML = `Lot ${batchIndex + 1}: `;
-            for (let i = 0; i < size; i++) {
-                const chunkStatus = document.createElement("span");
-                chunkStatus.className = "chunk-status pending";
-                chunkStatus.id = `chunk-${batchIndex}-${i}`;
-                batchElement.appendChild(chunkStatus);
-            }
-            batchProgressContainer.appendChild(batchElement);
-        }
-
-        function updateChunkStatus(batchIndex, chunkIndex, status) {
-            const chunkElement = document.getElementById(`chunk-${batchIndex}-${chunkIndex}`);
-            if (chunkElement) {
-                chunkElement.className = `chunk-status ${status}`;
-            }
-        }
-
-        function downloadTranscription() {
-            const blob = new Blob([rawTranscription], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            a.download = "transcription.txt";
-            document.body.appendChild(a);
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function loadTranscription() {
-            const input = document.getElementById('transcriptionFile');
-            input.click();
-            input.onchange = function(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        rawTranscription = e.target.result;
-                        document.getElementById("rawTranscription").textContent = rawTranscription;
-                        log("Transcription chargée avec succès");
-                    };
-                    reader.readAsText(file);
-                }
-            };
-        }
-
-        function loadAnalysis() {
-            const input = document.getElementById('analysisFile');
-            input.click();
-            input.onchange = function(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        analyzedTranscription = e.target.result;
-                        document.getElementById("analyzeResult").textContent = analyzedTranscription;
-                        log("Analyse chargée avec succès");
-                        document.getElementById("synthesizeButton").style.display = "block";
-                    };
-                    reader.readAsText(file);
-                }
-            };
-        }
-
-        function downloadAnalysis() {
-            const blob = new Blob([analyzedTranscription], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            a.download = "analyzed_transcription.txt";
-            document.body.appendChild(a);
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function downloadSynthesis() {
-            const synthesisContent = document.getElementById("synthesisResult").innerHTML;
-            const blob = new Blob([synthesisContent], { type: "text/html;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            a.download = "synthesis.html";
-            document.body.appendChild(a);
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    </script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/transcription.js"></script>
+    <script src="js/analysis.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>

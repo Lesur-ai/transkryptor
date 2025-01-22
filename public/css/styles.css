@@ -1,0 +1,103 @@
+body { 
+    font-family: Arial, sans-serif; 
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+h1 { 
+    text-align: center; 
+    margin-bottom: 30px; 
+}
+
+.main-container {
+    display: flex;
+    flex: 1;
+}
+
+.column {
+    flex: 1;
+    padding: 0 20px;
+    overflow-y: auto;
+}
+
+.block {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.progress-container { 
+    width: 100%;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.progress-bar { 
+    height: 100%;
+    background-color: #4CAF50;
+    width: 0;
+    transition: width 0.5s ease-in-out;
+}
+
+.progress-text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-weight: bold;
+}
+
+.batch-progress { 
+    margin-bottom: 10px; 
+}
+
+.chunk-status { 
+    display: inline-block; 
+    width: 20px; 
+    height: 20px; 
+    margin-right: 5px;
+    border-radius: 50%;
+}
+
+.chunk-status.pending { background-color: #f0f0f0; }
+.chunk-status.processing { background-color: orange; }
+.chunk-status.completed { background-color: #4CAF50; }
+.chunk-status.error { background-color: red; }
+
+#debug, #rawTranscription, #analyzeResult, #synthesisResult { 
+    font-family: monospace; 
+    white-space: pre-wrap; 
+    height: 300px;
+    overflow-y: auto; 
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+button { 
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+button:hover { 
+    background-color: #45a049; 
+}
+
+input, label { 
+    margin-bottom: 10px; 
+}

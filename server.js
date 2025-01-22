@@ -6,8 +6,12 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/css', express.static(path.join(__dirname, 'public/css')));
+app.use('/js', express.static(path.join(__dirname, 'public/js')));
 
 function getTimestamp() {
     return new Date().toISOString().replace('T', ' ').substr(0, 19);
@@ -16,6 +20,11 @@ function getTimestamp() {
 function log(message) {
     console.log(`[${getTimestamp()}] ${message}`);
 }
+
+
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end(); // Répond avec un statut "No Content"
+});
 
 app.post('/test-keys', async (req, res) => {
     const { openaiKey, anthropicKey } = req.body;
@@ -40,7 +49,7 @@ app.post('/test-keys', async (req, res) => {
             max_tokens: 1,
             messages: [{ role: "user", content: "Test" }]
         }, {
-            headers: { 
+            headers: {
                 "x-api-key": anthropicKey,
                 "anthropic-version": "2023-06-01",
                 "Content-Type": "application/json"
@@ -57,8 +66,8 @@ app.post('/test-keys', async (req, res) => {
             errorMessage += ` (${error.response.status}: ${error.response.statusText})`;
             log('Détails de l\'erreur: ' + JSON.stringify(error.response.data));
         }
-        res.status(400).json({ 
-            status: 'Error', 
+        res.status(400).json({
+            status: 'Error',
             message: errorMessage,
             error: error.message
         });
@@ -68,7 +77,7 @@ app.post('/test-keys', async (req, res) => {
 app.post('/analyze', async (req, res) => {
     try {
         const { prompt, apiKey } = req.body;
-        
+
         if (!prompt || !apiKey) {
             log('Erreur: Prompt ou clé API manquant');
             return res.status(400).json({ error: 'Prompt et clé API sont requis' });
@@ -97,9 +106,9 @@ app.post('/analyze', async (req, res) => {
         if (error.response) {
             log('Détails de l\'erreur: ' + JSON.stringify(error.response.data));
         }
-        res.status(500).json({ 
-            error: error.message, 
-            details: error.response ? error.response.data : null 
+        res.status(500).json({
+            error: error.message,
+            details: error.response ? error.response.data : null
         });
     }
 });
@@ -107,7 +116,7 @@ app.post('/analyze', async (req, res) => {
 // Route pour servir index.html avec le port et l'hôte injectés
 app.get('/', (req, res) => {
     const indexPath = path.join(__dirname, 'public', 'index.html');
-    
+
     if (!fs.existsSync(indexPath)) {
         log(`Erreur: Le fichier ${indexPath} n'existe pas.`);
         return res.status(404).send('Fichier index.html non trouvé');
@@ -118,22 +127,22 @@ app.get('/', (req, res) => {
             log(`Erreur lors de la lecture de index.html: ${err}`);
             return res.status(500).send('Erreur serveur lors de la lecture du fichier');
         }
-        
+
         const host = req.get('host').split(':')[0]; // Récupère le nom d'hôte sans le port
         const scriptToInject = `<script>
             const SERVER_HOST = "${host}";
             const SERVER_PORT = ${PORT};
             const API_URL = "http://${host}:${PORT}";
         </script>`;
-        
+
         const modifiedHtml = data.replace('</head>', `${scriptToInject}</head>`);
-        
+
         if (modifiedHtml.includes(scriptToInject)) {
             log('Injection des informations serveur réussie');
         } else {
             log('Attention: L\'injection des informations serveur a échoué');
         }
-        
+
         res.send(modifiedHtml);
     });
 });
