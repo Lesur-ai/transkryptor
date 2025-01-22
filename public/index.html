@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
-    <h1>Transkryptor 1.1.0</h1>
+    <h1>Transkryptor 1.2.0</h1>
 
     <div class="main-container">
         <div class="column">
@@ -17,14 +19,17 @@
                 <h2>Configuration</h2>
                 <form id="apiKeysForm">
                     <div>
-                    <label for="openaiKey">Clé API OpenAI:</label>
-                    <input type="password" id="openaiKey" required>
-                </div>
-                <div>
-                    <label for="anthropicKey">Clé API Anthropic:</label>
-                    <input type="password" id="anthropicKey" required>
-                </div>
-                    <button type="button" onclick="testAPIKeys()">Tester les clés API</button>
+                        <label for="openaiKey">Clé API OpenAI:</label>
+                        <input type="password" id="openaiKey" required>
+                    </div>
+                    <div>
+                        <label for="anthropicKey">Clé API Anthropic:</label>
+                        <input type="password" id="anthropicKey" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" onclick="testAPIKeys()">Tester les clés API</button>
+                        <button type="button" onclick="clearAPIKeys()">Effacer les clés</button>
+                    </div>
                 </form>
             </div>
             <div class="block">
@@ -32,7 +37,7 @@
                 <div>
                     <label for="audioFile">Fichier audio (M4A):</label>
                     <input type="file" id="audioFile" accept=".m4a" required>
-            </div>
+                </div>
                 <button onclick="processAudio()">Transcrire</button>
                 <button onclick="loadTranscription()">Charger une transcription</button>
                 <button onclick="loadAnalysis()">Charger une analyse</button>
@@ -45,8 +50,8 @@
                 <div class="progress-container">
                     <div id="globalProgress" class="progress-bar"></div>
                     <div class="progress-text" id="globalProgressText"></div>
+                </div>
             </div>
-        </div>
 
             <div class="block">
                 <h2>Progression par lot</h2>
@@ -57,27 +62,30 @@
                 <h2>Journaux</h2>
                 <div id="debug"></div>
             </div>
-            </div>
+        </div>
 
         <div class="column">
             <div class="block">
                 <h2>Transcription brute</h2>
                 <div id="rawTranscription"></div>
                 <button onclick="downloadTranscription()">Télécharger la transcription</button>
-        </div>
+            </div>
 
             <div class="block">
                 <h2>Analyse</h2>
                 <button onclick="analyzeTranscription()">Analyser la transcription</button>
                 <div id="analyzeResult"></div>
-                <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger l'analyse</button>
-    </div>
+                <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger
+                    l'analyse</button>
+            </div>
 
             <div class="block">
                 <h2>Synthèse</h2>
-                <button id="synthesizeButton" onclick="synthesizeAnalysis()" style="display: none;">Synthétiser l'analyse</button>
+                <button id="synthesizeButton" onclick="synthesizeAnalysis()" style="display: none;">Synthétiser
+                    l'analyse</button>
                 <div id="synthesisResult"></div>
-                <button id="downloadSynthesisButton" onclick="downloadSynthesis()" style="display: none;">Télécharger la synthèse</button>
+                <button id="downloadSynthesisButton" onclick="downloadSynthesis()" style="display: none;">Télécharger la
+                    synthèse</button>
             </div>
         </div>
     </div>
@@ -90,4 +98,5 @@
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
 </body>
+
 </html>

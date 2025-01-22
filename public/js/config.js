@@ -9,7 +9,11 @@ const CONFIG = {
         test: `${API_URL}/test-keys`,
         analyze: `${API_URL}/analyze`
     },
-    anthropicVersion: '2023-06-01'
+    anthropicVersion: '2023-06-01',
+    storage: {
+        openaiKey: 'transkryptor_openai_key',
+        anthropicKey: 'transkryptor_anthropic_key'
+    }
 };
 
 // Variables globales

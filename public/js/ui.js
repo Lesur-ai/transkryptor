@@ -59,3 +59,37 @@ function loadAnalysis() {
         }
     };
 }
+
+function saveAPIKeys() {
+    const openaiKey = document.getElementById("openaiKey").value;
+    const anthropicKey = document.getElementById("anthropicKey").value;
+
+    if (openaiKey) {
+        localStorage.setItem(CONFIG.storage.openaiKey, openaiKey);
+    }
+    if (anthropicKey) {
+        localStorage.setItem(CONFIG.storage.anthropicKey, anthropicKey);
+    }
+}
+
+function loadAPIKeys() {
+    const openaiKey = localStorage.getItem(CONFIG.storage.openaiKey);
+    const anthropicKey = localStorage.getItem(CONFIG.storage.anthropicKey);
+
+    if (openaiKey) {
+        document.getElementById("openaiKey").value = openaiKey;
+    }
+    if (anthropicKey) {
+        document.getElementById("anthropicKey").value = anthropicKey;
+    }
+}
+
+function clearAPIKeys() {
+    if (confirm("Voulez-vous vraiment effacer les clés API sauvegardées ?")) {
+        localStorage.removeItem(CONFIG.storage.openaiKey);
+        localStorage.removeItem(CONFIG.storage.anthropicKey);
+        document.getElementById("openaiKey").value = '';
+        document.getElementById("anthropicKey").value = '';
+        log("Clés API effacées");
+    }
+}

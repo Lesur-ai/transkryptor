@@ -12,10 +12,11 @@ async function testAPIKeys() {
             openaiKey,
             anthropicKey
         });
-        
+
         if (response.data.status === 'OK') {
             log("Clés API valides");
             alert("Les clés API sont valides.");
+            saveAPIKeys();
         } else {
             throw new Error(response.data.message);
         }
@@ -40,7 +41,7 @@ async function processAudio() {
             openaiKey,
             anthropicKey
         });
-        
+
         if (response.data.status === 'OK') {
             log("Clés API valides");
         } else {
@@ -68,4 +69,5 @@ async function processAudio() {
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
     log("Application initialisée");
+    loadAPIKeys();
 });

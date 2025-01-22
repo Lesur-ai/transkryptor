@@ -1,5 +1,5 @@
-body { 
-    font-family: Arial, sans-serif; 
+body {
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
     display: flex;
@@ -7,9 +7,9 @@ body {
     min-height: 100vh;
 }
 
-h1 { 
-    text-align: center; 
-    margin-bottom: 30px; 
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
 .main-container {
@@ -30,7 +30,7 @@ h1 {
     margin-bottom: 30px;
 }
 
-.progress-container { 
+.progress-container {
     width: 100%;
     height: 20px;
     background-color: #f0f0f0;
@@ -40,7 +40,7 @@ h1 {
     position: relative;
 }
 
-.progress-bar { 
+.progress-bar {
     height: 100%;
     background-color: #4CAF50;
     width: 0;
@@ -56,14 +56,14 @@ h1 {
     font-weight: bold;
 }
 
-.batch-progress { 
-    margin-bottom: 10px; 
+.batch-progress {
+    margin-bottom: 10px;
 }
 
-.chunk-status { 
-    display: inline-block; 
-    width: 20px; 
-    height: 20px; 
+.chunk-status {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
     margin-right: 5px;
     border-radius: 50%;
 }
@@ -73,17 +73,17 @@ h1 {
 .chunk-status.completed { background-color: #4CAF50; }
 .chunk-status.error { background-color: red; }
 
-#debug, #rawTranscription, #analyzeResult, #synthesisResult { 
-    font-family: monospace; 
-    white-space: pre-wrap; 
+#debug, #rawTranscription, #analyzeResult, #synthesisResult {
+    font-family: monospace;
+    white-space: pre-wrap;
     height: 300px;
-    overflow-y: auto; 
+    overflow-y: auto;
     border: 1px solid #ddd;
     padding: 10px;
     margin-top: 10px;
 }
 
-button { 
+button {
     padding: 10px 20px;
     background-color: #4CAF50;
     color: white;
@@ -94,10 +94,20 @@ button {
     margin-bottom: 15px;
 }
 
-button:hover { 
-    background-color: #45a049; 
+button:hover {
+    background-color: #45a049;
 }
 
-input, label { 
-    margin-bottom: 10px; 
+input, label {
+    margin-bottom: 10px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.button-group button {
+    flex: 1;
 }
