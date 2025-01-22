@@ -1,7 +1,10 @@
+/* Reset et base */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Google Sans', Arial, sans-serif;
     margin: 0;
     padding: 20px;
+    background-color: #F8F9FA;
+    color: #202124;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -9,105 +12,143 @@ body {
 
 h1 {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
+    font-weight: 500;
+    font-size: 24px;
+    color: #202124;
 }
 
+h2 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: #202124;
+}
+
+/* Layout principal */
 .main-container {
     display: flex;
+    gap: 16px;
     flex: 1;
 }
 
 .column {
     flex: 1;
-    padding: 0 20px;
-    overflow-y: auto;
+    max-width: 50%;
 }
 
+/* Blocs et conteneurs */
 .block {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 20px;
-    margin-bottom: 30px;
+    background: #FFFFFF;
+    border: 1px solid #E1E3E6;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
+/* Formulaires et inputs */
+input, label {
+    display: block;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+input[type="password"],
+input[type="text"],
+input[type="file"] {
+    padding: 8px 12px;
+    border: 1px solid #E1E3E6;
+    border-radius: 4px;
+    background: #FFFFFF;
+}
+
+input[type="password"],
+input[type="text"] {
+    width: calc(100% - 24px);
+    box-sizing: border-box;
+}
+
+input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Boutons */
+button {
+    padding: 6px 16px;
+    border-radius: 4px;
+    border: none;
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.button-group button:nth-child(2) {
+    background-color: #8AB4F8;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* Barres de progression */
 .progress-container {
     width: 100%;
-    height: 20px;
-    background-color: #f0f0f0;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 15px;
-    position: relative;
-}
-
-.progress-bar {
-    height: 100%;
     background-color: #4CAF50;
     width: 0;
-    transition: width 0.5s ease-in-out;
+    transition: width 0.3s ease-in-out;
 }
 
 .progress-text {
     position: absolute;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    color: #000;
-    font-weight: bold;
+    transform: translateX(-50%);
+    top: -20px;
+    font-size: 12px;
+    color: #5F6368;
 }
 
-.batch-progress {
-    margin-bottom: 10px;
-}
-
+/* Indicateurs de statut */
 .chunk-status {
     display: inline-block;
-    width: 20px;
-    height: 20px;
-    margin-right: 5px;
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
     border-radius: 50%;
 }
 
-.chunk-status.pending { background-color: #f0f0f0; }
-.chunk-status.processing { background-color: orange; }
+.chunk-status.pending { background-color: #E1E3E6; }
+.chunk-status.processing { background-color: #FFA726; }
 .chunk-status.completed { background-color: #4CAF50; }
-.chunk-status.error { background-color: red; }
+.chunk-status.error { background-color: #EF5350; }
 
+/* Zones de résultats */
 #debug, #rawTranscription, #analyzeResult, #synthesisResult {
-    font-family: monospace;
+    font-family: 'Roboto Mono', monospace;
     white-space: pre-wrap;
-    height: 300px;
+    height: 250px;
     overflow-y: auto;
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-top: 10px;
+    background: #F8F9FA;
+    border: 1px solid #E1E3E6;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
-button {
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-input, label {
-    margin-bottom: 10px;
-}
-
-.button-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.button-group button {
-    flex: 1;
+#debug {
+    height: 200px;
+    min-height: 200px;
 }
