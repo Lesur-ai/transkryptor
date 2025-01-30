@@ -120,101 +120,110 @@ async function synthesizeAnalysis() {
         log("Début de la synthèse...");
         updateGlobalProgress(0);
 
-        const prompt = `En tant qu'expert en analyse de contenu pédagogique, crée une fiche de révision structurée et complète au format Markdown. 
-
-STRUCTURE REQUISE :
-
-# [Titre synthétique et précis]
-
-## Concepts fondamentaux
-- 5-7 concepts clés avec définitions concises
-- Mots-clés et termes techniques essentiels
-- Contextualisation historique brève
-
-## Résumé structuré
-### Points majeurs (3-4)
-- Idées fondamentales
-- Concepts structurants
-- Contexte historique essentiel
-
-### Points complémentaires (4-5)
-- Exemples significatifs
-- Applications concrètes
-- Évolutions importantes
-
-## Analyse thématique détaillée (3-5 sections)
-Pour chaque thème principal :
-### [Titre du thème]
-- Concept central en une phrase
-- 2-3 sous-points avec exemples précis
-- Citations essentielles du texte
-- Contextualisation historique
-- Liens avec les autres thèmes
-- Évolution ou transformation dans le temps
-
-## Aide à la mémorisation et synthèse
-- Chronologie des événements clés
-- Relations entre les concepts
-- Points de vigilance
-- Schéma conceptuel suggéré
-- Transitions importantes
-
-## Questions de révision (20 questions total)
-### Connaissances fondamentales (7 questions)
-- Définitions précises
-- Concepts clés
-- Chronologie et contexte
-
-### Analyse et compréhension (7 questions)
-- Comparaisons
-- Cas pratiques
-- Évolutions historiques
-
-### Synthèse et réflexion (6 questions)
-- Questions transversales
-- Mises en perspective
-- Analyse critique
-
-Format pour chaque question :
-1. Q: [Question précise]
-   N: [Niveau : Fondamental/Analyse/Synthèse]
-   R: [Réponse structurée]
-   J: [Justification avec citation exacte]
-   C: [Contexte historique pertinent]
-   A: [Aide à la mémorisation]
-   L: [Liens avec d'autres concepts]
-
-RÈGLES DE RÉDACTION :
-- Style académique clair et précis
-- Phrases concises mais complètes
-- Citations exactes avec référence et contexte
-- Objectivité rigoureuse
-- Progression logique
-- Liens explicites entre sections
-- Équilibre entre concision et exhaustivité
-- Contextualisation systématique
-
-FORMAT DE SORTIE :
-- Markdown strict
-- Hiérarchie claire des titres
-- Listes à puces uniformes
-- Espacement optimisé
-- Cohérence typographique
-- Citations formatées uniformément
-
-Texte à analyser :
-${analyzedTranscription}`;
+        const prompt = `Tu es un expert en analyse pédagogique. Génère une synthèse COMPLÈTE sans jamais t'interrompre.
+        RÈGLE ABSOLUE : Produis une réponse intégrale en une fois, sans AUCUNE mention de suite ou de continuation. Utilise le style de réponse normal.
+        
+        Crée une fiche de révision Markdown structurée :
+        
+        # [Titre synthétique du sujet]
+        
+        ## Concepts essentiels 
+        - 6-8 concepts clés avec définitions didactiques
+        - Relations entre les concepts
+        
+        ## Points principaux 
+        - 4-5 points majeurs et pourquoi
+        - 4-5 points complémentaires
+        
+        ## Analyse thématique 
+        
+        - Concepts centraux
+        - Points clés
+        - Citations pertinentes
+        - Applications
+        
+        ## Questions de révision
+        Fait une dizaine de questions de révision.
+        Q: [Question concise]
+        R: [Réponse claire]
+        A: [Application pratique]
+        
+        RÈGLES DE RÉDACTION :
+        - rédige de facon didactique
+        - Limites de mots strictes par section
+        - Format Q/R/A uniquement pour clarté
+        - Pas de métacommentaires
+        - Pas de mentions de suite
+        - Une seule réponse complète
+        
+        
+        Texte à analyser :
+        ${analyzedTranscription}`;
 
         log("Envoi de la demande de synthèse...");
         const response = await axios.post(CONFIG.apiEndpoints.analyze, {
             prompt,
-            apiKey: anthropicKey
+            apiKey: anthropicKey,
         });
 
-        document.getElementById("synthesisResult").innerHTML = marked.parse(response.data.content[0].text);
+        const outputTokens = response.data.responseTokenCount;
+        const inputTokens = response.data.tokenCount;
+        const stopReason = response.data.stop_reason;
+        const contentText = response.data.content[0].text;
+
+        // Vérifications de la qualité
+        const warnings = [];
+        
+        if (outputTokens < 900) {
+            warnings.push("⚠️ Réponse anormalement courte (moins de 900 tokens)");
+        }
+        
+        const incompletenessMarkers = [
+            "[Suite", "continuer", "poursuivre", "[...]",
+            "section suivante", "limite de caractères",
+            "Note :", "dépasserait", "pour illustrer"
+        ];
+        
+        if (incompletenessMarkers.some(marker => contentText.toLowerCase().includes(marker.toLowerCase()))) {
+            warnings.push("⚠️ Détection de marqueurs d'incomplétude dans la réponse");
+        }
+        
+        if (stopReason !== "end_turn") {
+            warnings.push(`⚠️ Arrêt anormal de la génération (${stopReason})`);
+        }
+
+        // Vérification de la structure
+        const requiredSections = [
+            "# ", 
+            "## Concepts essentiels",
+            "## Points principaux",
+            "## Analyse thématique",
+            "## Questions de révision"
+        ];
+        
+        const missingSections = requiredSections.filter(section => 
+            !contentText.includes(section)
+        );
+        
+        if (missingSections.length > 0) {
+            warnings.push(`⚠️ Sections manquantes : ${missingSections.join(", ")}`);
+        }
+
+        // Logging
+        log(`Statistiques de tokens :
+            - Stop reason : ${stopReason}
+            - Tokens en entrée : ${inputTokens}
+            - Tokens en sortie : ${outputTokens}
+            - Ratio d'utilisation : ${((outputTokens / 8192) * 100).toFixed(2)}%`);
+        
+        if (warnings.length > 0) {
+            log("AVERTISSEMENTS :");
+            warnings.forEach(warning => log(warning));
+        }
+
+        document.getElementById("synthesisResult").innerHTML = marked.parse(contentText);
         updateGlobalProgress(100);
         document.getElementById("downloadSynthesisButton").style.display = "block";
-        log("Synthèse terminée. Tokens utilisés : " + response.data.tokenCount + ", Tokens de réponse : " + response.data.responseTokenCount);
     } catch (error) {
         log("Erreur lors de la synthèse : " + error.message);
         alert("Une erreur est survenue lors de la synthèse. Veuillez vérifier les logs de débogage pour plus de détails.");

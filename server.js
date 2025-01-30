@@ -88,6 +88,7 @@ app.post('/analyze', async (req, res) => {
 
         const response = await axios.post('https://api.anthropic.com/v1/messages', {
             model: "claude-3-5-sonnet-20241022",
+            system: "You must ALWAYS provide COMPLETE and NORMAL responses. NEVER give concise or summarized answers. Your role is to develop each point thoroughly and extensively. You must NEVER stop mid-response or suggest continuing later. Complete answers are mandatory, partial or concise responses are forbidden.",
             max_tokens: 8000,
             messages: [{ role: "user", content: prompt }]
         }, {
