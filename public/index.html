@@ -81,17 +81,14 @@
             </div>
 
             <div class="block">
-                <h2>Analyse</h2>
-                <button onclick="analyzeTranscription()">Analyser la transcription</button>
+                <h2>Analyse<button onclick="window.analyzeTranscription()">Analyser la transcription</button></h2>
                 <div id="analyzeResult"></div>
                 <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger
                     l'analyse</button>
             </div>
 
             <div class="block">
-                <h2>Synthèse</h2>
-                <button id="synthesizeButton" onclick="synthesizeAnalysis()" style="display: none;">Synthétiser
-                    l'analyse</button>
+                <h2>Synthèse<button id="synthesizeButton" onclick="window.synthesizeAnalysis()" style="display: none;">Synthétiser l'analyse</button></h2>
                 <div id="synthesisResult"></div>
                 <button id="downloadSynthesisButton" onclick="downloadSynthesis()" style="display: none;">Télécharger la
                     synthèse</button>

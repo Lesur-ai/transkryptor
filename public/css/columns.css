@@ -44,7 +44,9 @@
 /* Bloc de logs */
 .column:first-child .block:nth-child(5) {
     flex: 1;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* Fenêtre de logs */
@@ -58,8 +60,8 @@
     padding: 8px 12px;
     border: 1px solid #e8eaed;
     margin-top: 4px;
-    height: calc(100% - 8px);
-    overflow-y: auto;
+    height: calc(100% - 40px); /* Hauteur totale moins la hauteur du titre et des marges */
+    overflow-y: scroll;
 }
 
 /* Scrollbar personnalisée */
@@ -89,6 +91,9 @@
 .column:last-child {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .column:last-child .block {
@@ -100,21 +105,37 @@
     border-radius: 12px;
     box-shadow: none;
     border: 1px solid #e8eaed;
-    overflow: hidden;
 }
 
+/* En-tête de bloc avec titre et bouton */
 .column:last-child .block h2 {
     font-size: 15px;
     margin: 0 0 12px 0;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.column:last-child .block > div:not(#debug) {
-    flex: 1;
+.column:last-child .block h2 button {
+    margin: 0;
+    height: 32px;
+    padding: 0 16px;
+    font-size: 13px;
+    border-radius: 16px;
+}
+
+/* Zone de contenu avec défilement */
+#rawTranscription,
+#analyzeResult,
+#synthesisResult {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 12px;
+    border: 1px solid #e8eaed;
+    height: 300px;
     overflow-y: auto;
     margin-top: 6px;
-    padding-right: 8px;
-    min-height: 0;
 }
 
 .column:last-child .block button {
