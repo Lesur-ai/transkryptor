@@ -43,14 +43,17 @@
 
 /* Bloc de logs */
 .column:first-child .block:nth-child(5) {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+    position: relative;
+    height: 100%;
 }
 
 /* Fenêtre de logs */
 #debug {
+    position: absolute;
+    top: 40px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
     font-family: 'Roboto Mono', monospace;
     font-size: 12px;
     line-height: 1.5;
@@ -59,8 +62,6 @@
     border-radius: 4px;
     padding: 8px 12px;
     border: 1px solid #e8eaed;
-    margin-top: 4px;
-    height: calc(100% - 40px); /* Hauteur totale moins la hauteur du titre et des marges */
     overflow-y: scroll;
 }
 
@@ -87,7 +88,7 @@
     background: #c6c9cc;
 }
 
-/* Colonne de droite */
+/* Colonne droite */
 .column:last-child {
     flex: 1;
     min-width: 0;
@@ -96,8 +97,9 @@
     gap: 12px;
 }
 
+/* Blocs de la colonne droite */
 .column:last-child .block {
-    flex: 1;
+    flex-shrink: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -107,10 +109,26 @@
     border: 1px solid #e8eaed;
 }
 
+/* Bloc de transcription */
+.column:last-child .block:first-child {
+    height: 225px;
+}
+
+/* Bloc d'analyse */
+.column:last-child .block:nth-child(2) {
+    height: 345px;
+}
+
+/* Bloc de synthèse */
+.column:last-child .block:last-child {
+    flex: 1;
+    position: relative;
+}
+
 /* En-tête de bloc avec titre et bouton */
 .column:last-child .block h2 {
     font-size: 15px;
-    margin: 0 0 12px 0;
+    margin: 0;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -125,17 +143,35 @@
     border-radius: 16px;
 }
 
-/* Zone de contenu avec défilement */
+/* Zones de contenu avec défilement */
 #rawTranscription,
-#analyzeResult,
-#synthesisResult {
+#analyzeResult {
     background: #f8f9fa;
     border-radius: 4px;
     padding: 12px;
     border: 1px solid #e8eaed;
-    height: 300px;
+    height: calc(100% - 80px);
     overflow-y: auto;
     margin-top: 6px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#synthesisResult {
+    position: absolute;
+    top: 52px; /* 20px padding + 32px pour le titre */
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 12px;
+    border: 1px solid #e8eaed;
+    overflow-y: scroll;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .column:last-child .block button {
