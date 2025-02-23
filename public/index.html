@@ -44,10 +44,12 @@
                 <div>
                     <label for="audioFile">Fichier audio (M4A):</label>
                     <input type="file" id="audioFile" accept=".m4a" required>
+                    <div class="button-group">
+                        <button onclick="processAudio()">Transcrire</button>
+                        <button onclick="loadTranscription()">Charger une transcription</button>
+                        <button onclick="loadAnalysis()">Charger une analyse</button>
+                    </div>
                 </div>
-                <button onclick="processAudio()">Transcrire</button>
-                <button onclick="loadTranscription()">Charger une transcription</button>
-                <button onclick="loadAnalysis()">Charger une analyse</button>
                 <input type="file" id="transcriptionFile" accept=".txt" style="display:none;">
                 <input type="file" id="analysisFile" accept=".txt" style="display:none;">
             </div>

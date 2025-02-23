@@ -9,23 +9,16 @@
 }
 
 .column:first-child .block {
-    padding: 12px;
+    padding: 12px 16px;
     margin: 0;
+    display: flex;
+    flex-direction: column;
 }
 
-.column:first-child input {
-    margin: 6px 0;
-}
-
-.column:first-child .button-group {
-    margin-top: 8px;
-}
-
-.column:first-child label {
-    font-size: 14px;
-    font-weight: 500;
-    display: block;
-    margin-bottom: 2px;
+.column:first-child .block:nth-child(4),
+.column:first-child .block:nth-child(5) {
+    flex: 1;
+    padding: 12px 16px;
 }
 
 /* Colonne de droite */
@@ -43,7 +36,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    padding: 12px;
+    padding: 20px;
     border-radius: 12px;
     box-shadow: none;
     border: 1px solid #e8eaed;
@@ -65,13 +58,20 @@
     color: #202124;
     box-shadow: none;
     border: 1px solid #dadce0;
+    margin-top: 12px;
+}
+
+.column:last-child .block button:first-of-type {
+    margin-top: 16px;
 }
 
 .column:last-child .block button:hover {
     background: #e8eaed;
     box-shadow: none;
+    border-color: #c6c9cc;
 }
 
 .column:last-child .block button:active {
     background: #dadce0;
+    border-color: #c6c9cc;
 }
