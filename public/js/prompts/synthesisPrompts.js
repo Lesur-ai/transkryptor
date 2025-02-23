@@ -24,50 +24,62 @@ Crée une fiche de révision structurée qui aidera les étudiants à :
 4. Se préparer aux examens
 
 FORMAT DE LA FICHE :
-1. Introduction au sujet
-- Présentation du contexte
-- Objectifs pédagogiques
+Utilise le format HTML suivant :
 
-2. Concepts fondamentaux
-- Définitions claires
-- Principes théoriques
-- Relations entre les concepts
+<div class="synthesis">
+    <h1>[Titre du sujet]</h1>
+    
+    <section class="introduction">
+        <h2>1. Introduction</h2>
+        [Présentation du contexte et objectifs]
+    </section>
 
-3. Mécanismes et applications
-- Explications détaillées
-- Étapes et processus
-- Cas d'utilisation
+    <section class="concepts">
+        <h2>2. Concepts fondamentaux</h2>
+        [Définitions et principes théoriques]
+    </section>
 
-4. Analyse et implications
-- Conséquences pratiques
-- Enjeux importants
-- Perspectives futures
+    <section class="mechanisms">
+        <h2>3. Mécanismes et applications</h2>
+        [Explications détaillées et cas d'utilisation]
+    </section>
 
-5. Questions de révision
-- 15 questions essentielles
-- Réponses détaillées
-- Points clés à retenir
+    <section class="implications">
+        <h2>4. Analyse et implications</h2>
+        [Conséquences et perspectives]
+    </section>
+
+    <section class="questions">
+        <h2>5. Questions de révision</h2>
+        <div class="qa-pair">
+            <div class="question">1. [Question]</div>
+            <div class="answer">Réponse : [Réponse détaillée]</div>
+        </div>
+        [Répéter pour les 15 questions]
+    </section>
+</div>
 
 RÈGLES DE RÉDACTION :
-- Style clair et pédagogique
-- Paragraphes bien structurés
-- Liens logiques entre les sections
-- Utilisation pertinente des exemples
-- Pas de listes à puces dans le corps du texte
-- Éviter les répétitions inutiles`;
+- Utiliser les balises HTML fournies pour structurer le contenu
+- Inclure une réponse détaillée après chaque question
+- Garder un style clair et pédagogique
+- Créer des liens logiques entre les sections
+- Utiliser les exemples de manière pertinente
+- Écrire en prose continue dans chaque section`;
 
 export const synthesisSystem = `Tu es un professeur qui crée une fiche de révision à partir d'une liste de concepts, mécanismes et exemples. Tu dois :
 
-1. ÉCRIRE EN PROSE CONTINUE :
-   - Pas de listes à puces
-   - Pas de plan visible
-   - Des paragraphes complets et détaillés
+1. UTILISER LA STRUCTURE HTML :
+   - Respecter le format HTML fourni
+   - Inclure tous les éléments demandés
+   - Maintenir une hiérarchie claire
 
 2. DÉVELOPPER CHAQUE SECTION :
-   - Analyse des concepts
-   - Démonstration détaillée
-   - Implications et perspectives
-   - 15 questions de révision
+   - Introduction claire
+   - Concepts bien définis
+   - Mécanismes expliqués
+   - Implications analysées
+   - 15 questions avec réponses
 
 3. RÈGLES ABSOLUES :
    - Expliquer chaque concept clairement
@@ -75,4 +87,4 @@ export const synthesisSystem = `Tu es un professeur qui crée une fiche de révi
    - Utiliser les exemples pour illustrer
    - Être complet et détaillé
    - Ne jamais utiliser [...] ou "suite"
-   - Ne jamais faire de plan ou d'introduction`;
+   - Toujours inclure les réponses aux questions`;
