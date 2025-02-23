@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transkryptor v2.0.1</title>
+    <title>Transkryptor v3.0.0</title>
     <!-- Ajout des polices Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
 </head>
 
 <body>
-    <h1>Transkryptor v2.1.0</h1>
+    <h1>Transkryptor v3.0.0</h1>
 
     <div class="main-container">
         <div class="column">
@@ -94,13 +94,17 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/transcription.js"></script>
-    <script src="js/analysis.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/state.js" type="module"></script>
+    <script src="js/config.js" type="module"></script>
+    <script src="js/utils/utils.js" type="module"></script>
+    <script src="js/utils/downloadHandlers.js" type="module"></script>
+    <script src="js/audio.js" type="module"></script>
+    <script src="js/utils/factExtractor.js" type="module"></script>
+    <script src="js/synthesizer.js" type="module"></script>
+    <script src="js/analysis.js" type="module"></script>
+    <script src="js/fileHandlers.js" type="module"></script>
+    <script src="js/ui.js" type="module"></script>
+    <script src="js/main.js" type="module"></script>
 </body>
 
 </html>

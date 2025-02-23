@@ -1,7 +1,7 @@
-# Transkryptor 2.0.0
+# Transkryptor 3.0.0
 
 ## Table des matières
-- [Transkryptor 2.0.0](#transkryptor-200)
+- [Transkryptor 3.0.0](#transkryptor-300)
   - [Table des matières](#table-des-matières)
   - [Introduction](#introduction)
   - [Fonctionnalités](#fonctionnalités)
@@ -20,6 +20,7 @@
     - [GET /](#get-)
     - [POST /test-keys](#post-test-keys)
     - [POST /analyze](#post-analyze)
+  - [Mises à jour importantes V3.0.0](#mises-à-jour-importantes-v300)
   - [Mises à jour importantes V2.0.0](#mises-à-jour-importantes-v200)
   - [Architecture technique](#architecture-technique)
     - [Frontend](#frontend)
@@ -205,6 +206,37 @@ Lance l'analyse d'une transcription.
 }
 ```
 
+## Mises à jour importantes V3.0.0
+
+- Refonte majeure de l'architecture en modules :
+  - Séparation des responsabilités
+  - Code plus maintenable
+  - Meilleure réutilisabilité
+
+- Amélioration de l'analyse :
+  - Contexte des 20 derniers faits pour une meilleure continuité
+  - Extraction plus précise des concepts
+  - Synthèse mieux structurée
+
+- Nouvelle architecture modulaire :
+  ```
+  public/js/
+  ├── styles/
+  │   └── debugStyle.js         # Styles pour les logs
+  ├── utils/
+  │   ├── qualityChecker.js     # Vérification de la qualité
+  │   └── factExtractor.js      # Extraction des faits
+  ├── prompts/
+  │   └── synthesisPrompts.js   # Prompts pour Claude
+  └── synthesizer.js            # Module principal
+  ```
+
+- Améliorations de la qualité :
+  - Vérification automatique de la structure
+  - Détection des questions/réponses manquantes
+  - Contrôle de la longueur minimale
+  - Détection des marqueurs d'incomplétude
+
 ## Mises à jour importantes V2.0.0
 
 - Interface utilisateur modernisée avec style Google
@@ -217,8 +249,9 @@ Lance l'analyse d'une transcription.
 ## Architecture technique
 
 ### Frontend
-- HTML5, CSS3, JavaScript vanilla
+- HTML5, CSS3, JavaScript modulaire
 - Style Google Material Design
+- Architecture en composants
 
 ### Backend
 - Node.js
@@ -236,9 +269,18 @@ transkryptor/
 │   ├── css/
 │   │   └── styles.css
 │   ├── js/
+│   │   ├── styles/
+│   │   │   └── debugStyle.js
+│   │   ├── utils/
+│   │   │   ├── qualityChecker.js
+│   │   │   └── factExtractor.js
+│   │   ├── prompts/
+│   │   │   └── synthesisPrompts.js
 │   │   ├── main.js
 │   │   ├── audio.js
 │   │   ├── analysis.js
+│   │   ├── synthesizer.js
+│   │   ├── transcriptionAnalyzer.js
 │   │   └── ui.js
 │   └── index.html
 ├── server.js
