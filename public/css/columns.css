@@ -123,16 +123,24 @@
 .column:last-child .block:last-child {
     flex: 1;
     position: relative;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* En-tête de bloc avec titre et bouton */
 .column:last-child .block h2 {
     font-size: 15px;
-    margin: 0;
+    margin: 0 0 12px 0;
+    padding: 0;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.column:last-child .block h2 span {
+    flex-shrink: 0;
 }
 
 .column:last-child .block h2 button {
@@ -160,7 +168,7 @@
 
 #synthesisResult {
     position: absolute;
-    top: 52px; /* 20px padding + 32px pour le titre */
+    top: 64px; /* 20px padding + titre + marge */
     left: 20px;
     right: 20px;
     bottom: 20px;

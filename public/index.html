@@ -75,23 +75,33 @@
 
         <div class="column">
             <div class="block">
-                <h2>Transcription brute</h2>
+                <h2>
+                    <span>Transcription brute</span>
+                    <button onclick="downloadTranscription()">Télécharger la transcription</button>
+                </h2>
                 <div id="rawTranscription"></div>
-                <button onclick="downloadTranscription()">Télécharger la transcription</button>
             </div>
 
             <div class="block">
-                <h2>Analyse<button onclick="window.analyzeTranscription()">Analyser la transcription</button></h2>
+                <h2>
+                    <span>Analyse</span>
+                    <div>
+                        <button onclick="window.analyzeTranscription()">Analyser la transcription</button>
+                        <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger l'analyse</button>
+                    </div>
+                </h2>
                 <div id="analyzeResult"></div>
-                <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger
-                    l'analyse</button>
             </div>
 
             <div class="block">
-                <h2>Synthèse<button id="synthesizeButton" onclick="window.synthesizeAnalysis()" style="display: none;">Synthétiser l'analyse</button></h2>
+                <h2>
+                    <span>Synthèse</span>
+                    <div>
+                        <button id="synthesizeButton" onclick="window.synthesizeAnalysis()" style="display: none;">Synthétiser l'analyse</button>
+                        <button id="downloadSynthesisButton" onclick="downloadSynthesis()" style="display: none;">Télécharger la synthèse</button>
+                    </div>
+                </h2>
                 <div id="synthesisResult"></div>
-                <button id="downloadSynthesisButton" onclick="downloadSynthesis()" style="display: none;">Télécharger la
-                    synthèse</button>
             </div>
         </div>
     </div>
