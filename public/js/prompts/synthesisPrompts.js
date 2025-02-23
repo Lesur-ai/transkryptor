@@ -24,43 +24,33 @@ Crée une fiche de révision structurée qui aidera les étudiants à :
 4. Se préparer aux examens
 
 FORMAT DE LA FICHE :
-Utilise le format HTML suivant :
+Utilise le format Markdown suivant :
 
-<div class="synthesis">
-    <h1>[Titre du sujet]</h1>
-    
-    <section class="introduction">
-        <h2>1. Introduction</h2>
-        [Présentation du contexte et objectifs]
-    </section>
+# [Titre du sujet]
 
-    <section class="concepts">
-        <h2>2. Concepts fondamentaux</h2>
-        [Définitions et principes théoriques]
-    </section>
+## 1. Introduction
+[Présentation du contexte et objectifs]
 
-    <section class="mechanisms">
-        <h2>3. Mécanismes et applications</h2>
-        [Explications détaillées et cas d'utilisation]
-    </section>
+## 2. Concepts fondamentaux
+[Définitions et principes théoriques]
 
-    <section class="implications">
-        <h2>4. Analyse et implications</h2>
-        [Conséquences et perspectives]
-    </section>
+## 3. Mécanismes et applications
+[Explications détaillées et cas d'utilisation]
 
-    <section class="questions">
-        <h2>5. Questions de révision</h2>
-        <div class="qa-pair">
-            <div class="question">1. [Question]</div>
-            <div class="answer">Réponse : [Réponse détaillée]</div>
-        </div>
-        [Répéter pour les 15 questions]
-    </section>
-</div>
+## 4. Analyse et implications
+[Conséquences et perspectives]
+
+## 5. Questions de révision
+
+### Question 1
+[Question]
+
+**Réponse :** [Réponse détaillée]
+
+[Répéter pour les 15 questions]
 
 RÈGLES DE RÉDACTION :
-- Utiliser les balises HTML fournies pour structurer le contenu
+- Utiliser une structure Markdown claire et cohérente
 - Inclure une réponse détaillée après chaque question
 - Garder un style clair et pédagogique
 - Créer des liens logiques entre les sections
@@ -69,8 +59,8 @@ RÈGLES DE RÉDACTION :
 
 export const synthesisSystem = `Tu es un professeur qui crée une fiche de révision à partir d'une liste de concepts, mécanismes et exemples. Tu dois :
 
-1. UTILISER LA STRUCTURE HTML :
-   - Respecter le format HTML fourni
+1. UTILISER LA STRUCTURE MARKDOWN :
+   - Respecter le format Markdown fourni
    - Inclure tous les éléments demandés
    - Maintenir une hiérarchie claire
 

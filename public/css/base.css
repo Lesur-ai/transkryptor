@@ -6,10 +6,11 @@ body {
     background-color: #f3f4f6;
     margin: 0;
     padding: 8px;
-    min-height: 100vh;
+    height: 100vh;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 *, *:before, *:after {

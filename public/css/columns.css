@@ -1,10 +1,15 @@
+/* Colonnes */
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
 /* Colonne de gauche */
 .column:first-child {
     width: 45%;
     flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
     min-width: 600px;
 }
 
@@ -15,16 +20,35 @@
     flex-direction: column;
 }
 
-.column:first-child .block:nth-child(4),
+/* Blocs de configuration et fichier source */
+.column:first-child .block:nth-child(1),
+.column:first-child .block:nth-child(2) {
+    flex-shrink: 0;
+}
+
+/* Bloc de progression */
+.column:first-child .block:nth-child(3) {
+    flex-shrink: 0;
+}
+
+/* Bloc de progression par lot */
+.column:first-child .block:nth-child(4) {
+    flex-shrink: 0;
+}
+
+#batchProgress {
+    height: 200px;
+    overflow-y: auto;
+}
+
+/* Bloc de logs */
 .column:first-child .block:nth-child(5) {
     flex: 1;
-    padding: 12px 16px;
+    overflow: hidden;
 }
 
 /* Fenêtre de logs */
 #debug {
-    height: 160px;
-    overflow-y: auto;
     font-family: 'Roboto Mono', monospace;
     font-size: 12px;
     line-height: 1.5;
@@ -34,24 +58,30 @@
     padding: 8px 12px;
     border: 1px solid #e8eaed;
     margin-top: 4px;
+    height: calc(100% - 8px);
+    overflow-y: auto;
 }
 
-/* Scrollbar personnalisée pour les logs */
-#debug::-webkit-scrollbar {
+/* Scrollbar personnalisée */
+#debug::-webkit-scrollbar,
+.column:last-child .block > div:not(#debug)::-webkit-scrollbar {
     width: 8px;
 }
 
-#debug::-webkit-scrollbar-track {
+#debug::-webkit-scrollbar-track,
+.column:last-child .block > div:not(#debug)::-webkit-scrollbar-track {
     background: #f1f3f4;
     border-radius: 4px;
 }
 
-#debug::-webkit-scrollbar-thumb {
+#debug::-webkit-scrollbar-thumb,
+.column:last-child .block > div:not(#debug)::-webkit-scrollbar-thumb {
     background: #dadce0;
     border-radius: 4px;
 }
 
-#debug::-webkit-scrollbar-thumb:hover {
+#debug::-webkit-scrollbar-thumb:hover,
+.column:last-child .block > div:not(#debug)::-webkit-scrollbar-thumb:hover {
     background: #c6c9cc;
 }
 
@@ -59,14 +89,10 @@
 .column:last-child {
     flex: 1;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
 }
 
 .column:last-child .block {
     flex: 1;
-    min-height: 80px;
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -74,38 +100,28 @@
     border-radius: 12px;
     box-shadow: none;
     border: 1px solid #e8eaed;
+    overflow: hidden;
+}
+
+.column:last-child .block h2 {
+    font-size: 15px;
+    margin: 0 0 12px 0;
+    flex-shrink: 0;
 }
 
 .column:last-child .block > div:not(#debug) {
     flex: 1;
     overflow-y: auto;
     margin-top: 6px;
-}
-
-.column:last-child .block h2 {
-    font-size: 15px;
-    margin: 0 0 12px 0;
+    padding-right: 8px;
+    min-height: 0;
 }
 
 .column:last-child .block button {
-    background: #f1f3f4;
-    color: #202124;
-    box-shadow: none;
-    border: 1px solid #dadce0;
     margin-top: 12px;
+    flex-shrink: 0;
 }
 
 .column:last-child .block button:first-of-type {
     margin-top: 16px;
-}
-
-.column:last-child .block button:hover {
-    background: #e8eaed;
-    box-shadow: none;
-    border-color: #c6c9cc;
-}
-
-.column:last-child .block button:active {
-    background: #dadce0;
-    border-color: #c6c9cc;
 }
