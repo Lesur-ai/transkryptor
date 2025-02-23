@@ -128,7 +128,7 @@
     flex-direction: column;
 }
 
-/* En-tête de bloc avec titre et bouton */
+/* En-tête de bloc avec titre et boutons */
 .column:last-child .block h2 {
     font-size: 15px;
     margin: 0 0 12px 0;
@@ -136,11 +136,12 @@
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .column:last-child .block h2 span {
-    flex-shrink: 0;
+    margin-right: auto;
 }
 
 .column:last-child .block h2 button {
@@ -149,6 +150,10 @@
     padding: 0 16px;
     font-size: 13px;
     border-radius: 16px;
+}
+
+.column:last-child .block h2 button[style*="display: none"] {
+    display: none !important;
 }
 
 /* Zones de contenu avec défilement */

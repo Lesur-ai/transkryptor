@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transkryptor v3.0.0</title>
+    <title>Transkryptor v3.0.7</title>
     <!-- Ajout des polices Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
 </head>
 
 <body>
-    <h1>Transkryptor v3.0.0</h1>
+    <h1>Transkryptor v3.0.7</h1>
 
     <div class="main-container">
         <div class="column">
@@ -85,10 +85,8 @@
             <div class="block">
                 <h2>
                     <span>Analyse</span>
-                    <div>
-                        <button onclick="window.analyzeTranscription()">Analyser la transcription</button>
-                        <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger l'analyse</button>
-                    </div>
+                    <button onclick="window.analyzeTranscription()">Analyser la transcription</button>
+                    <button id="downloadAnalysisButton" onclick="downloadAnalysis()" style="display: none;">Télécharger l'analyse</button>
                 </h2>
                 <div id="analyzeResult"></div>
             </div>
@@ -96,10 +94,8 @@
             <div class="block">
                 <h2>
                     <span>Synthèse</span>
-                    <div>
-                        <button id="synthesizeButton" onclick="window.synthesizeAnalysis()" style="display: none;">Synthétiser l'analyse</button>
-                        <button id="downloadSynthesisButton" onclick="downloadSynthesis()" style="display: none;">Télécharger la synthèse</button>
-                    </div>
+                    <button id="synthesizeButton" onclick="window.synthesizeAnalysis()" style="display: none;">Synthétiser l'analyse</button>
+                    <button id="downloadSynthesisButton" onclick="downloadSynthesis()" style="display: none;">Télécharger la synthèse</button>
                 </h2>
                 <div id="synthesisResult"></div>
             </div>
