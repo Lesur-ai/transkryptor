@@ -22,36 +22,6 @@ export function checkSynthesisQuality(contentText, outputTokens, stopReason) {
         warnings.push(`⚠️ Arrêt anormal de la génération (${stopReason})`);
     }
 
-    // Vérification de la structure
-    const requiredSections = [
-        "1. Introduction au sujet",
-        "2. Concepts fondamentaux",
-        "3. Mécanismes et applications",
-        "4. Analyse et implications",
-        "5. Questions de révision"
-    ];
-    
-    const missingSections = requiredSections.filter(section => 
-        !contentText.includes(section)
-    );
-    
-    if (missingSections.length > 0) {
-        warnings.push(`⚠️ Sections manquantes : ${missingSections.join(", ")}`);
-    }
-
-    // Vérification des questions et réponses
-    const questionPattern = /\d+\.\s+Question\s*:/i;
-    const questionMatches = contentText.match(new RegExp(questionPattern, 'g')) || [];
-    if (questionMatches.length < 15) {
-        warnings.push(`⚠️ Nombre insuffisant de questions : ${questionMatches.length}/15`);
-    }
-
-    const answerPattern = /\s*Réponse\s*:/i;
-    const answerMatches = contentText.match(new RegExp(answerPattern, 'g')) || [];
-    if (answerMatches.length < questionMatches.length) {
-        warnings.push("⚠️ Certaines questions n'ont pas de réponses");
-    }
-
 
     return warnings;
 }

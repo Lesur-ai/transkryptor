@@ -137,7 +137,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    min-height: 32px;
 }
 
 .column:last-child .block h2 span {
@@ -145,8 +145,6 @@
 }
 
 .column:last-child .block h2 button {
-    margin: 0;
-    height: 32px;
     padding: 0 16px;
     font-size: 13px;
     border-radius: 16px;
@@ -173,7 +171,7 @@
 
 #synthesisResult {
     position: absolute;
-    top: 64px; /* 20px padding + titre + marge */
+    top: 80px;
     left: 20px;
     right: 20px;
     bottom: 20px;
@@ -185,13 +183,4 @@
     font-family: 'Roboto Mono', monospace;
     font-size: 12px;
     line-height: 1.5;
-}
-
-.column:last-child .block button {
-    margin-top: 12px;
-    flex-shrink: 0;
-}
-
-.column:last-child .block button:first-of-type {
-    margin-top: 16px;
 }
