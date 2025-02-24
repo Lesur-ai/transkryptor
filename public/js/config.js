@@ -1,5 +1,5 @@
 const CONFIG = {
-    version: '3.0.18',
+    version: '3.1.0',
     chunkDuration: 60, // 60 secondes par morceau
     chunkOverlap: 0.03, // 30 ms de chevauchement
     batchSize: 10, // 10 morceaux par lot
@@ -13,8 +13,8 @@ const CONFIG = {
 // Mise à jour de la version dans l'interface
 function updateVersion() {
     const config = getConfig();
-    document.title = `Transkryptor v${config.version}`;
-    document.querySelector('h1').textContent = `Transkryptor v${config.version}`;
+    document.title = `TransKryptor v${config.version}`;
+    document.querySelector('h1').textContent = `Transkryptor v${config.version} - (c) Christophe Lesur - Cloud Temple - 2025`;
 }
 
 // Exécuter au chargement

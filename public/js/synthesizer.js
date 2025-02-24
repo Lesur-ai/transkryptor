@@ -5,7 +5,7 @@ import { extractFactsInBatches } from './utils/factBatchExtractor.js';
 import { getAnalyzedTranscription } from './state.js';
 import { getConfig } from './config.js';
 import { log, updateGlobalProgress } from './utils/utils.js';
-import { resetBatchProgress } from './utils/progressUtils.js';
+import { resetBatchProgress, initializeBatchProgress, updateChunkStatus } from './utils/progressUtils.js';
 import { generateQuestionBatches } from './utils/questionGenerator.js';
 import { formatMarkdownQuestions } from './utils/markdownFormatter.js';
 
@@ -105,14 +105,12 @@ export async function synthesizeAnalysis() {
         // Phase 2C : Construction du tableau (90% -> 100%)
         log("=== Phase 2C : Construction du tableau des faits ===");
         updateGlobalProgress(90);
+        resetBatchProgress();
 
-        // Calculer le nombre total de faits
-        const totalFacts = allFacts.reduce((count, batch) => 
-            count + batch.split('\n')
-                .filter(line => line.match(/^(CONCEPT|MÉCANISME|EXEMPLE):/))
-                .length, 0);
+        // Initialiser la progression pour le nombre de lots
+        initializeBatchProgress(0, allFacts.length);
         
-        log(`Début de la construction du tableau (${totalFacts} faits à traiter)`);
+        log(`Début de la construction du tableau (${allFacts.length} lots à traiter)`);
 
         // Créer le tableau des faits
         let factsTable = '<h2>Tableau chronologique des faits</h2>\n';
@@ -192,16 +190,17 @@ export async function synthesizeAnalysis() {
         
         for (let i = 0; i < allFacts.length; i++) {
             log(`Traitement du lot ${i + 1}/${allFacts.length}...`);
-            const factsInBatch = await addFactBatch(allFacts[i], factNumber, 300);
+            updateChunkStatus(0, i, 'processing');
             
-            processedFacts += factsInBatch;
+            const factsInBatch = await addFactBatch(allFacts[i], factNumber, 300);
             factNumber += factsInBatch;
             
             // Mise à jour de la progression
-            const progress = 90 + (processedFacts/totalFacts * 10);
+            const progress = 90 + ((i + 1)/allFacts.length * 10);
             updateGlobalProgress(progress);
+            updateChunkStatus(0, i, 'completed');
             
-            log(`Progression : ${processedFacts}/${totalFacts} faits traités (${Math.round(processedFacts/totalFacts*100)}%)`);
+            log(`Lot ${i + 1}/${allFacts.length} traité (${factsInBatch} faits)`);
         }
         // Phase 2 terminée : 100%
         log("Synthèse terminée");
