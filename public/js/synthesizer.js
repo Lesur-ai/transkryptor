@@ -113,7 +113,22 @@ export async function synthesizeAnalysis() {
                     trimmed.startsWith('EXEMPLE:')) {
                     const [type, ...content] = line.split(':');
                     const factText = content.join(':').trim();
-                    factsTable += `| ${factNumber} | ${type} | ${factText} |\n`;
+                    
+                    // Couleurs accessibles avec fort contraste
+                    let typeColor;
+                    switch(type) {
+                        case 'CONCEPT':
+                            typeColor = '#0066cc'; // Bleu foncé
+                            break;
+                        case 'MÉCANISME':
+                            typeColor = '#008060'; // Vert foncé
+                            break;
+                        case 'EXEMPLE':
+                            typeColor = '#9933cc'; // Violet
+                            break;
+                    }
+                    
+                    factsTable += `| ${factNumber} | <span style="color: ${typeColor}"><strong>${type}</strong></span> | ${factText} |\n`;
                     factNumber++;
                 }
             });
