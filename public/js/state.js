@@ -2,12 +2,8 @@
 const state = {
     rawTranscription: '',
     analyzedTranscription: '',
-    config: {
-        apiEndpoints: {
-            analyze: '/analyze',
-            testKeys: '/test-keys'
-        }
-    }
+    totalBatches: 0,
+    completedBatches: 0
 };
 
 // Getters
@@ -19,8 +15,12 @@ export function getAnalyzedTranscription() {
     return state.analyzedTranscription;
 }
 
-export function getConfig() {
-    return state.config;
+export function getTotalBatches() {
+    return state.totalBatches;
+}
+
+export function getCompletedBatches() {
+    return state.completedBatches;
 }
 
 // Setters
@@ -34,7 +34,18 @@ export function setAnalyzedTranscription(text) {
     window.analyzedTranscription = text; // Pour la compatibilité
 }
 
+export function setTotalBatches(count) {
+    state.totalBatches = count;
+}
+
+export function setCompletedBatches(count) {
+    state.completedBatches = count;
+}
+
+export function incrementCompletedBatches() {
+    state.completedBatches++;
+}
+
 // Export de l'état pour la compatibilité avec le code existant
 window.rawTranscription = state.rawTranscription;
 window.analyzedTranscription = state.analyzedTranscription;
-window.CONFIG = state.config;

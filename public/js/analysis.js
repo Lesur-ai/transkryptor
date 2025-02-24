@@ -1,6 +1,7 @@
 // Import des fonctions
 import { synthesizeAnalysis } from './synthesizer.js';
-import { getRawTranscription, setAnalyzedTranscription, getConfig } from './state.js';
+import { getRawTranscription, setAnalyzedTranscription } from './state.js';
+import { getConfig } from './config.js';
 import { log } from './utils/utils.js';
 
 // Export des fonctions pour l'interface globale

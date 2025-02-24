@@ -19,8 +19,9 @@ const CONFIG = {
 
 // Mise à jour de la version dans l'interface
 function updateVersion() {
-    document.title = `Transkryptor v${CONFIG.version}`;
-    document.querySelector('h1').textContent = `Transkryptor v${CONFIG.version}`;
+    const config = getConfig();
+    document.title = `Transkryptor v${config.version}`;
+    document.querySelector('h1').textContent = `Transkryptor v${config.version}`;
 }
 
 // Exécuter au chargement
@@ -32,4 +33,9 @@ let completedBatches = 0;
 let rawTranscription = "";
 let analyzedTranscription = "";
 
-export { CONFIG, updateVersion };
+// Fonction pour obtenir la configuration
+export function getConfig() {
+    return CONFIG;
+}
+
+export { updateVersion };

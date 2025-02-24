@@ -2,7 +2,8 @@ import { debugStyle } from './styles/debugStyle.js';
 import { checkSynthesisQuality } from './utils/qualityChecker.js';
 import { synthesisOnlyPrompt, questionsPrompt, synthesisSystem, questionsSystem } from './prompts/synthesisPrompts.js';
 import { extractFactsFromParagraph } from './utils/factExtractor.js';
-import { getAnalyzedTranscription, getConfig } from './state.js';
+import { getAnalyzedTranscription } from './state.js';
+import { getConfig } from './config.js';
 import { log, updateGlobalProgress } from './utils/utils.js';
 
 export async function synthesizeAnalysis() {

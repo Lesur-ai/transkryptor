@@ -1,5 +1,5 @@
 import { log } from './utils/utils.js';
-import { getConfig } from './state.js';
+import { getConfig } from './config.js';
 
 // Gestion des clés API
 window.testAPIKeys = async function() {

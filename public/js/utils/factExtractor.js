@@ -1,5 +1,5 @@
 import { log } from './utils.js';
-import { getConfig } from '../state.js';
+import { getConfig } from '../config.js';
 
 // Extraction des faits d'un paragraphe
 export async function extractFactsFromParagraph(paragraph, anthropicKey, previousFacts = []) {
