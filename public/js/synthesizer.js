@@ -98,7 +98,31 @@ export async function synthesizeAnalysis() {
             warnings.forEach(warning => log(warning));
         }
 
-        document.getElementById("synthesisResult").innerHTML = marked.parse(contentText);
+        // Créer le tableau des faits
+        let factsTable = "\n\n## Tableau chronologique des faits\n\n";
+        factsTable += "| N° | Type | Fait |\n";
+        factsTable += "|-----|------|------|\n";
+        
+        // Parcourir les faits collectés pendant la phase 1
+        let factNumber = 1;
+        allFacts.forEach(factGroup => {
+            factGroup.split('\n').forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('CONCEPT:') || 
+                    trimmed.startsWith('MÉCANISME:') || 
+                    trimmed.startsWith('EXEMPLE:')) {
+                    const [type, ...content] = line.split(':');
+                    const factText = content.join(':').trim();
+                    factsTable += `| ${factNumber} | ${type} | ${factText} |\n`;
+                    factNumber++;
+                }
+            });
+        });
+
+        // Ajouter le tableau à la synthèse
+        const finalContent = contentText + factsTable;
+        
+        document.getElementById("synthesisResult").innerHTML = marked.parse(finalContent);
         // Phase 2 terminée : 100%
         log("Synthèse terminée");
         updateGlobalProgress(100);
