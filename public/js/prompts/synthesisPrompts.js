@@ -1,5 +1,5 @@
 // Prompts pour la synthèse
-export const synthesisPrompt = (allFacts) => `Tu es un professeur qui prépare une fiche de révision complète. Pour t'aider, nous avons déjà :
+export const synthesisOnlyPrompt = (allFacts) => `Tu es un professeur qui prépare une fiche de révision complète. Pour t'aider, nous avons déjà :
 1. Analysé le cours en détail
 2. Extrait tous les concepts importants
 3. Identifié les mécanismes clés
@@ -40,22 +40,37 @@ Utilise le format Markdown suivant :
 ## 4. Analyse et implications
 [Conséquences et perspectives]
 
-## 5. Questions de révision
-
-### Question 1
-[Question]
-
-**Réponse :** [Réponse détaillée]
-
-[Répéter pour les 15 questions]
-
 RÈGLES DE RÉDACTION :
 - Utiliser une structure Markdown claire et cohérente
-- Inclure une réponse détaillée après chaque question
 - Garder un style clair et pédagogique
 - Créer des liens logiques entre les sections
 - Utiliser les exemples de manière pertinente
 - Écrire en prose continue dans chaque section`;
+
+export const questionsPrompt = (allFacts, synthesis) => `En te basant sur cette synthèse et ces faits, génère 15 questions de révision pertinentes.
+
+SYNTHÈSE PRÉCÉDENTE :
+${synthesis}
+
+FAITS DISPONIBLES :
+${allFacts.join('\n\n')}
+
+FORMAT SOUHAITÉ :
+## 5. Questions de révision
+
+### Question 1
+[Question qui teste la compréhension d'un concept clé]
+
+**Réponse :** [Réponse détaillée basée sur les faits et la synthèse]
+
+[Répéter pour les 15 questions]
+
+RÈGLES POUR LES QUESTIONS :
+- Couvrir tous les aspects importants de la synthèse
+- Varier les types de questions (compréhension, analyse, application)
+- Assurer une progression logique
+- Inclure des questions qui font des liens entre différents concepts
+- Fournir des réponses complètes et détaillées`;
 
 export const synthesisSystem = `Tu es un professeur qui crée une fiche de révision à partir d'une liste de concepts, mécanismes et exemples. Tu dois :
 
@@ -69,7 +84,6 @@ export const synthesisSystem = `Tu es un professeur qui crée une fiche de révi
    - Concepts bien définis
    - Mécanismes expliqués
    - Implications analysées
-   - 15 questions avec réponses
 
 3. RÈGLES ABSOLUES :
    - Expliquer chaque concept clairement
@@ -77,4 +91,24 @@ export const synthesisSystem = `Tu es un professeur qui crée une fiche de révi
    - Utiliser les exemples pour illustrer
    - Être complet et détaillé
    - Ne jamais utiliser [...] ou "suite"
-   - Toujours inclure les réponses aux questions`;
+   - Écrire de manière concise et précise`;
+
+export const questionsSystem = `Tu es un professeur expert qui crée des questions de révision pertinentes. Tu dois :
+
+1. CRÉER DES QUESTIONS VARIÉES :
+   - Questions de compréhension
+   - Questions d'analyse
+   - Questions d'application
+   - Questions de synthèse
+
+2. FOURNIR DES RÉPONSES COMPLÈTES :
+   - Explications détaillées
+   - Références aux concepts clés
+   - Liens avec les exemples
+   - Justifications claires
+
+3. RÈGLES ABSOLUES :
+   - Couvrir tous les aspects importants
+   - Progresser du simple au complexe
+   - Favoriser la réflexion critique
+   - Être précis et pédagogique`;

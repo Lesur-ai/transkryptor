@@ -94,10 +94,9 @@ button.with-margin {
 }
 
 .progress-text {
-    position: absolute;
-    width: 100%;
-    text-align: center;
     color: #5f6368;
-    font-size: 11px;
-    margin-top: 4px;
+    font-size: 13px;
+    font-family: 'Google Sans', sans-serif;
+    margin-top: 8px;
+    text-align: right;
 }

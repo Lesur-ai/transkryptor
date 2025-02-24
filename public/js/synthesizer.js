@@ -1,6 +1,6 @@
 import { debugStyle } from './styles/debugStyle.js';
 import { checkSynthesisQuality } from './utils/qualityChecker.js';
-import { synthesisPrompt, synthesisSystem } from './prompts/synthesisPrompts.js';
+import { synthesisOnlyPrompt, questionsPrompt, synthesisSystem, questionsSystem } from './prompts/synthesisPrompts.js';
 import { extractFactsFromParagraph } from './utils/factExtractor.js';
 import { getAnalyzedTranscription, getConfig } from './state.js';
 import { log, updateGlobalProgress } from './utils/utils.js';
@@ -61,16 +61,15 @@ export async function synthesizeAnalysis() {
             }
         }
 
-        log("=== Création de la synthèse ===");
-        // Phase 2 commence à 90%
-        updateGlobalProgress(90);
+        // Phase 2A : Création de la synthèse (90%)
+        log("=== Phase 2A : Création de la synthèse ===");
+        updateGlobalProgress(85);
         
-        // Synthèse finale avec tous les faits
-        const response = await axios.post(config.apiEndpoints.analyze, {
+        const synthResponse = await axios.post(config.apiEndpoints.analyze, {
             apiKey: anthropicKey,
             messages: [{
                 role: "user",
-                content: synthesisPrompt(allFacts)
+                content: synthesisOnlyPrompt(allFacts)
             }],
             model: "claude-3-5-sonnet-20241022",
             max_tokens: 8192,
@@ -78,25 +77,53 @@ export async function synthesizeAnalysis() {
             system: synthesisSystem
         });
 
-        const outputTokens = response.data.responseTokenCount;
-        const inputTokens = response.data.tokenCount;
-        const stopReason = response.data.stop_reason;
-        const contentText = response.data.content[0].text;
+        const synthContent = synthResponse.data.content[0].text;
+
+        // Logging de la phase 2A
+        log(`Statistiques de tokens (Phase 2A) :
+    - Stop reason : ${synthResponse.data.stop_reason}
+    - Tokens en entrée : ${synthResponse.data.tokenCount}
+    - Tokens en sortie : ${synthResponse.data.responseTokenCount}
+    - Ratio d'utilisation : ${((synthResponse.data.responseTokenCount / 8192) * 100).toFixed(2)}%`);
+        updateGlobalProgress(90);
+
+        // Phase 2B : Génération des questions (95%)
+        log("=== Phase 2B : Génération des questions ===");
+        
+        const questionsResponse = await axios.post(config.apiEndpoints.analyze, {
+            apiKey: anthropicKey,
+            messages: [{
+                role: "user",
+                content: questionsPrompt(allFacts, synthContent)
+            }],
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: 8192,
+            temperature: 0.7,
+            system: questionsSystem
+        });
+
+        const questionsContent = questionsResponse.data.content[0].text;
+        updateGlobalProgress(95);
 
         // Vérifications de la qualité
-        const warnings = checkSynthesisQuality(contentText, outputTokens, stopReason);
+        const warnings = checkSynthesisQuality(synthContent + questionsContent, 
+            questionsResponse.data.responseTokenCount, 
+            questionsResponse.data.stop_reason);
 
-        // Logging
-        log(`Statistiques de tokens :
-    - Stop reason : ${stopReason}
-    - Tokens en entrée : ${inputTokens}
-    - Tokens en sortie : ${outputTokens}
-    - Ratio d'utilisation : ${((outputTokens / 8192) * 100).toFixed(2)}%`);
+        // Logging de la phase 2B
+        log(`Statistiques de tokens (Phase 2B) :
+    - Stop reason : ${questionsResponse.data.stop_reason}
+    - Tokens en entrée : ${questionsResponse.data.tokenCount}
+    - Tokens en sortie : ${questionsResponse.data.responseTokenCount}
+    - Ratio d'utilisation : ${((questionsResponse.data.responseTokenCount / 8192) * 100).toFixed(2)}%`);
         
         if (warnings.length > 0) {
             log("AVERTISSEMENTS :");
             warnings.forEach(warning => log(warning));
         }
+
+        // Combiner les résultats
+        const contentText = synthContent + '\n\n' + questionsContent;
 
         // Créer le tableau des faits
         let factsTable = "\n\n## Tableau chronologique des faits\n\n";

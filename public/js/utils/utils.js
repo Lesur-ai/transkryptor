@@ -10,7 +10,7 @@ export function updateGlobalProgress(percent) {
     const progress = document.getElementById("globalProgress");
     const progressText = document.getElementById("globalProgressText");
     progress.style.width = `${percent}%`;
-    progressText.textContent = `${Math.round(percent)}%`;
+    progressText.textContent = `Progression : ${Math.round(percent)}%`;
 }
 
 // Export pour la compatibilité avec le code existant

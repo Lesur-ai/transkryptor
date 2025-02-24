@@ -2,7 +2,7 @@
 const API_URL = window.location.origin;
 
 const CONFIG = {
-    version: '3.0.10',
+    version: '3.0.12',
     chunkDuration: 60, // 60 secondes par morceau
     chunkOverlap: 0.03, // 30 ms de chevauchement
     batchSize: 10, // 10 morceaux par lot
