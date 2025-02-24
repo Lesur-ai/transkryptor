@@ -1,8 +1,16 @@
-// Import des fonctions
 import { synthesizeAnalysis } from './synthesizer.js';
-import { getRawTranscription, setAnalyzedTranscription } from './state.js';
+import { 
+    getRawTranscription, 
+    setAnalyzedTranscription,
+    setTotalBatches,
+    setCompletedBatches,
+    incrementCompletedBatches,
+    getCompletedBatches
+} from './state.js';
 import { getConfig } from './config.js';
-import { log } from './utils/utils.js';
+import { log, updateGlobalProgress } from './utils/utils.js';
+import { analyzeChunkWithRetry } from './utils/analysisUtils.js';
+import { initializeBatchProgress } from './utils/progressUtils.js';
 
 // Export des fonctions pour l'interface globale
 window.synthesizeAnalysis = synthesizeAnalysis;
@@ -25,23 +33,60 @@ async function analyzeTranscription() {
         document.getElementById("downloadAnalysisButton").style.display = "none";
         document.getElementById("synthesizeButton").style.display = "none";
         document.getElementById("downloadSynthesisButton").style.display = "none";
+        document.getElementById("batchProgress").innerHTML = '';
 
-        // Analyse de la transcription
         log("Début de l'analyse...");
-        const response = await axios.post(config.apiEndpoints.analyze, {
-            prompt: rawTranscription,
-            apiKey: anthropicKey
-        });
+        updateGlobalProgress(0);
 
-        // Affichage du résultat
-        const analyzedText = response.data.content[0].text;
+        // Découper en chunks
+        const sentences = rawTranscription.match(/[^.!?]+[.!?]+/g) || [];
+        const chunks = [];
+        let currentChunk = "";
+        let tokenCount = 0;
+
+        for (let sentence of sentences) {
+            const sentenceTokens = sentence.split(/\s+/).length;
+            if (tokenCount + sentenceTokens > 500 && currentChunk) {
+                chunks.push(currentChunk.trim());
+                currentChunk = "";
+                tokenCount = 0;
+            }
+            currentChunk += sentence + " ";
+            tokenCount += sentenceTokens;
+        }
+        if (currentChunk) chunks.push(currentChunk.trim());
+
+        // Afficher les totaux et initialiser le traitement
+        const totalChunks = chunks.length;
+        const totalBatches = Math.ceil(totalChunks / config.batchSize);
+        log(`Analyse de ${totalChunks} chunks en ${totalBatches} lots`);
+        setTotalBatches(totalBatches);
+        setCompletedBatches(0);
+        let analyzedText = '';
+
+        for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+            const batchSize = Math.min(config.batchSize, chunks.length - batchIndex * config.batchSize);
+            initializeBatchProgress(batchIndex, batchSize);
+            
+            // Traiter les chunks un par un pour préserver l'ordre
+            for (let j = 0; j < batchSize; j++) {
+                const chunkIndex = batchIndex * config.batchSize + j;
+                const result = await analyzeChunkWithRetry(chunks[chunkIndex], anthropicKey, chunkIndex, batchIndex, totalChunks);
+                analyzedText += result + '\n\n';
+
+                // Mettre à jour la progression globale
+                const completedChunks = chunkIndex + 1;
+                updateGlobalProgress((completedChunks / totalChunks) * 100);
+            }
+            incrementCompletedBatches();
+        }
+
         setAnalyzedTranscription(analyzedText);
         document.getElementById("analyzeResult").innerHTML = marked.parse(analyzedText);
-        
-        // Activation des boutons
         document.getElementById("downloadAnalysisButton").style.display = "block";
         document.getElementById("synthesizeButton").style.display = "block";
         
+        updateGlobalProgress(100);
         log("Analyse terminée");
     } catch (error) {
         log("Erreur lors de l'analyse : " + error.message);
