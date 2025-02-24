@@ -5,6 +5,7 @@ import { extractFactsInBatches } from './utils/factBatchExtractor.js';
 import { getAnalyzedTranscription } from './state.js';
 import { getConfig } from './config.js';
 import { log, updateGlobalProgress } from './utils/utils.js';
+import { resetBatchProgress } from './utils/progressUtils.js';
 import { generateQuestionBatches } from './utils/questionGenerator.js';
 import { formatMarkdownQuestions } from './utils/markdownFormatter.js';
 
@@ -32,6 +33,7 @@ export async function synthesizeAnalysis() {
 
         log("Début de l'extraction des faits...");
         updateGlobalProgress(0);
+        resetBatchProgress();
 
         // Découper en paragraphes et extraire les faits en parallèle
         const paragraphs = analyzedTranscription.split(/\n\n+/).filter(p => p.trim());
@@ -85,6 +87,7 @@ export async function synthesizeAnalysis() {
 
         // Phase 2B : Génération des questions par lots (90%)
         log("=== Phase 2B : Génération des questions ===");
+        resetBatchProgress();
         
         const questionsContent = await generateQuestionBatches(allFacts, anthropicKey);
         updateGlobalProgress(90);
@@ -99,15 +102,32 @@ export async function synthesizeAnalysis() {
             warnings.forEach(warning => log(warning));
         }
 
+        // Phase 2C : Construction du tableau (90% -> 100%)
+        log("=== Phase 2C : Construction du tableau des faits ===");
+        updateGlobalProgress(90);
+
+        // Calculer le nombre total de faits
+        const totalFacts = allFacts.reduce((count, batch) => 
+            count + batch.split('\n')
+                .filter(line => line.match(/^(CONCEPT|MÉCANISME|EXEMPLE):/))
+                .length, 0);
+        
+        log(`Début de la construction du tableau (${totalFacts} faits à traiter)`);
+
         // Créer le tableau des faits
         let factsTable = '<h2>Tableau chronologique des faits</h2>\n';
         factsTable += '<table class="facts-table">\n';
         factsTable += '<thead><tr><th class="fact-number">N°</th><th class="fact-type">Type</th><th class="fact-content">Fait</th></tr></thead>\n';
         factsTable += '<tbody>\n';
         
-        // Parcourir les faits collectés pendant la phase 1
-        let factNumber = 1;
-        allFacts.forEach(factGroup => {
+        // Fonction optimisée pour ajouter un lot de faits
+        async function addFactBatch(factGroup, startNumber, delay) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+            // Créer un fragment pour éviter les reflows multiples
+            const fragment = document.createDocumentFragment();
+            let factsInBatch = 0;
+            
             factGroup.split('\n').forEach(line => {
                 const trimmed = line.trim();
                 if (trimmed.startsWith('CONCEPT:') || 
@@ -130,25 +150,59 @@ export async function synthesizeAnalysis() {
                             break;
                     }
                     
-                    factsTable += `<tr>
-                        <td class="fact-number">${factNumber}</td>
+                    const row = document.createElement('tr');
+                    row.className = 'fact-row';
+                    row.innerHTML = `
+                        <td class="fact-number">${startNumber}</td>
                         <td class="fact-type"><span style="color: ${typeColor}"><strong>${type}</strong></span></td>
                         <td class="fact-content">${factText}</td>
-                    </tr>\n`;
-                    factNumber++;
+                    `;
+                    fragment.appendChild(row);
+                    startNumber++;
+                    factsInBatch++;
                 }
             });
-        });
-
-        factsTable += '</tbody></table>';
-
-        // Combiner les résultats dans l'ordre : synthèse, questions, tableau
-        const finalContent = marked.parse(synthContent) + 
-                           '<h2>Questions de révision</h2>' + 
-                           formatMarkdownQuestions(questionsContent) +
-                           factsTable;
+            
+            // Ajouter tous les éléments d'un coup
+            const tbody = document.querySelector('.facts-table tbody');
+            tbody.appendChild(fragment);
+            
+            // Animer toutes les lignes du lot
+            requestAnimationFrame(() => {
+                const rows = tbody.querySelectorAll('.fact-row:not(.visible)');
+                rows.forEach(row => row.classList.add('visible'));
+            });
+            
+            return factsInBatch;
+        }
         
-        document.getElementById("synthesisResult").innerHTML = finalContent;
+        factsTable += '</tbody></table>';
+        
+        // Ajouter le contenu initial
+        const initialContent = marked.parse(synthContent) + 
+                             '<h2>Questions de révision</h2>' + 
+                             formatMarkdownQuestions(questionsContent) +
+                             factsTable;
+        
+        document.getElementById("synthesisResult").innerHTML = initialContent;
+        
+        // Ajouter les lots progressivement avec progression
+        let factNumber = 1;
+        let processedFacts = 0;
+        
+        for (let i = 0; i < allFacts.length; i++) {
+            log(`Traitement du lot ${i + 1}/${allFacts.length}...`);
+            const factsInBatch = await addFactBatch(allFacts[i], factNumber, 300);
+            
+            processedFacts += factsInBatch;
+            factNumber += factsInBatch;
+            
+            // Mise à jour de la progression
+            const progress = 90 + (processedFacts/totalFacts * 10);
+            updateGlobalProgress(progress);
+            
+            log(`Progression : ${processedFacts}/${totalFacts} faits traités (${Math.round(processedFacts/totalFacts*100)}%)`);
+        }
         // Phase 2 terminée : 100%
         log("Synthèse terminée");
         updateGlobalProgress(100);

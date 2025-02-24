@@ -1,0 +1,59 @@
+.batch-progress {
+    margin: 1em 0;
+    font-family: 'Google Sans', sans-serif;
+}
+
+.batch-label {
+    font-weight: 500;
+    margin-bottom: 0.5em;
+    color: #5f6368;
+}
+
+.chunks {
+    display: flex;
+    gap: 0.5em;
+}
+
+.chunk {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.chunk.pending {
+    background-color: #e8eaed;
+}
+
+.chunk.processing {
+    background-color: #4285f4;
+    animation: pulse 1.5s infinite;
+}
+
+.chunk.completed {
+    background-color: #34a853;
+}
+
+.chunk.error {
+    background-color: #ea4335;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Animation d'apparition des lots */
+.batch-progress {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: batchFadeIn 0.5s ease forwards;
+}
+
+@keyframes batchFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

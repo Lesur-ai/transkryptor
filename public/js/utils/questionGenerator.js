@@ -60,12 +60,12 @@ function formatQuestions(text, startIndex) {
 
 async function generateQuestionsForGroup(facts, groupIndex, totalGroups, apiKey) {
     const config = getConfig();
-    updateChunkStatus(groupIndex, 0, 'processing');
+    updateChunkStatus(0, groupIndex, 'processing');
 
     // Vérifier si le groupe contient des faits valides
     if (!facts || facts.length === 0) {
         log(`Lot ${groupIndex + 1} ignoré : pas de faits`);
-        updateChunkStatus(groupIndex, 0, 'completed');
+        updateChunkStatus(0, groupIndex, 'completed');
         return '';
     }
     
@@ -124,10 +124,10 @@ FORMAT DE SORTIE STRICT :
         });
 
         const questions = response.data.content[0].text.trim();
-        updateChunkStatus(groupIndex, 0, 'completed');
+        updateChunkStatus(0, groupIndex, 'completed');
         return questions;
     } catch (error) {
-        updateChunkStatus(groupIndex, 0, 'error');
+        updateChunkStatus(0, groupIndex, 'error');
         throw error;
     }
 }
@@ -138,10 +138,8 @@ export async function generateQuestionBatches(facts, apiKey) {
     
     log(`Génération des questions en ${totalGroups} lots de 4 questions...`);
     
-    // Initialiser la progression pour chaque lot
-    for (let i = 0; i < totalGroups; i++) {
-        initializeBatchProgress(i, 1);
-    }
+    // Initialiser une seule ligne de progression
+    initializeBatchProgress(0, totalGroups);
     
     const batches = [];
     for (let i = 0; i < totalGroups; i++) {

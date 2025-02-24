@@ -61,11 +61,9 @@ export async function extractFactsInBatches(paragraphs, apiKey, batchSize = 5) {
     const totalBatches = batches.length;
     log(`Extraction des faits en ${totalBatches} lots...`);
 
-    // Initialiser la progression pour chaque lot
-    for (let i = 0; i < totalBatches; i++) {
-        const size = Math.min(batchSize, paragraphs.length - i * batchSize);
-        initializeBatchProgress(i, size);
-    }
+    // Initialiser uniquement le premier lot
+    const firstBatchSize = Math.min(batchSize, paragraphs.length);
+    initializeBatchProgress(0, firstBatchSize);
 
     const allFacts = [];
     let previousFacts = [];
@@ -74,22 +72,30 @@ export async function extractFactsInBatches(paragraphs, apiKey, batchSize = 5) {
         const batch = batches[batchIndex];
         log(`Traitement du lot ${batchIndex + 1}/${totalBatches} (${batch.length} paragraphes)`);
         
-        // Lancer les extractions en parallèle
-        const promises = batch.map((paragraph, index) => {
-            const globalIndex = batchIndex * batchSize + index;
-            return extractFactsWithRetry(
-                paragraph, 
-                apiKey, 
-                previousFacts.flat(), 
-                globalIndex,
-                batchIndex,
-                index
-            );
-        });
-
+        const results = [];
         try {
+            // Traiter les paragraphes en parallèle dans le lot
+            const promises = batch.map((paragraph, index) => {
+                const globalIndex = batchIndex * batchSize + index;
+                return extractFactsWithRetry(
+                    paragraph, 
+                    apiKey, 
+                    previousFacts.flat(), 
+                    globalIndex,
+                    batchIndex,
+                    index
+                );
+            });
+
             // Attendre tous les résultats du lot
-            const results = await Promise.all(promises);
+            results.push(...await Promise.all(promises));
+
+            // Attendre avant de passer au lot suivant et initialiser le prochain lot
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (batchIndex < batches.length - 1) {
+                const nextBatchSize = Math.min(batchSize, paragraphs.length - ((batchIndex + 1) * batchSize));
+                initializeBatchProgress(batchIndex + 1, nextBatchSize);
+            }
             
             // Trier par index pour préserver l'ordre
             results.sort((a, b) => a.index - b.index);

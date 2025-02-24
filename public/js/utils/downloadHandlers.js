@@ -84,6 +84,69 @@ function generateSynthesisHTML(content) {
             border-left: 4px solid #dadce0;
             background: #f8f9fa;
         }
+        
+        /* Questions */
+        .question-block {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0066cc;
+            margin: 1em 0;
+            padding: 1em;
+            border-radius: 4px;
+        }
+        .question {
+            color: #0066cc;
+            font-weight: 500;
+            margin-bottom: 0.5em;
+        }
+        .reponse {
+            color: #008060;
+            margin-bottom: 0.5em;
+            padding-left: 1em;
+            border-left: 2px solid #008060;
+        }
+        .application {
+            color: #9933cc;
+            font-style: italic;
+            margin-top: 0.5em;
+            padding-left: 1em;
+            border-left: 2px solid #9933cc;
+        }
+        
+        /* Tableau des faits */
+        .facts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+            font-size: 0.95em;
+        }
+        .facts-table th,
+        .facts-table td {
+            padding: 0.75em;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .facts-table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+        .facts-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .facts-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        .facts-table .fact-number {
+            width: 50px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .facts-table .fact-type {
+            width: 120px;
+            text-align: center;
+        }
+        .facts-table .fact-content {
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
