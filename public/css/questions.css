@@ -1,0 +1,46 @@
+.question-block {
+    background-color: #f8f9fa;
+    border-left: 4px solid #0066cc;
+    margin: 1em 0;
+    padding: 1em;
+    border-radius: 4px;
+}
+
+.question {
+    color: #0066cc;
+    font-weight: 500;
+    margin-bottom: 0.5em;
+}
+
+.reponse {
+    color: #008060;
+    margin-bottom: 0.5em;
+    padding-left: 1em;
+    border-left: 2px solid #008060;
+}
+
+.application {
+    color: #9933cc;
+    font-style: italic;
+    margin-top: 0.5em;
+    padding-left: 1em;
+    border-left: 2px solid #9933cc;
+}
+
+.question::before {
+    content: "Question : ";
+    font-weight: normal;
+    color: #666;
+}
+
+.reponse::before {
+    content: "Réponse : ";
+    font-weight: normal;
+    color: #666;
+}
+
+.application::before {
+    content: "Application : ";
+    font-weight: normal;
+    color: #666;
+}

@@ -28,49 +28,54 @@ Utilise le format Markdown suivant :
 
 # [Titre du sujet]
 
-## 1. Introduction
-[Présentation du contexte et objectifs]
+## 1. Points clés à retenir
+- Point important 1
+  * Détail ou explication
+  * Exemple concret si pertinent
+- Point important 2
+  * Détail ou explication
+  * Exemple concret si pertinent
+[Continuer avec tous les points importants]
 
-## 2. Concepts fondamentaux
-[Définitions et principes théoriques]
+## 2. Concepts essentiels
+- Concept 1
+  * Définition claire et concise
+  * Points importants à comprendre
+  * Application ou exemple concret
+- Concept 2
+  * Définition claire et concise
+  * Points importants à comprendre
+  * Application ou exemple concret
+[Continuer avec tous les concepts]
 
 ## 3. Mécanismes et applications
-[Explications détaillées et cas d'utilisation]
+- Mécanisme principal 1
+  * Comment il fonctionne
+  * Cas d'utilisation
+  * Points importants
+- Mécanisme principal 2
+  * Fonctionnement détaillé
+  * Applications pratiques
+  * Éléments clés
+[Continuer avec tous les mécanismes]
 
 ## 4. Analyse et implications
-[Conséquences et perspectives]
+- Implication majeure 1
+  * Conséquences directes
+  * Impact sur le domaine
+  * Points à retenir
+- Implication majeure 2
+  * Effets à long terme
+  * Aspects critiques
+  * Considérations importantes
+[Continuer avec toutes les implications]
 
 RÈGLES DE RÉDACTION :
 - Utiliser une structure Markdown claire et cohérente
 - Garder un style clair et pédagogique
 - Créer des liens logiques entre les sections
 - Utiliser les exemples de manière pertinente
-- Écrire en prose continue dans chaque section`;
-
-export const questionsPrompt = (allFacts, synthesis) => `En te basant sur cette synthèse et ces faits, génère 15 questions de révision pertinentes.
-
-SYNTHÈSE PRÉCÉDENTE :
-${synthesis}
-
-FAITS DISPONIBLES :
-${allFacts.join('\n\n')}
-
-FORMAT SOUHAITÉ :
-## 5. Questions de révision
-
-### Question 1
-[Question qui teste la compréhension d'un concept clé]
-
-**Réponse :** [Réponse détaillée basée sur les faits et la synthèse]
-
-[Répéter pour les 15 questions]
-
-RÈGLES POUR LES QUESTIONS :
-- Couvrir tous les aspects importants de la synthèse
-- Varier les types de questions (compréhension, analyse, application)
-- Assurer une progression logique
-- Inclure des questions qui font des liens entre différents concepts
-- Fournir des réponses complètes et détaillées`;
+- Utiliser des bullet points pour tous les éléments importants`;
 
 export const synthesisSystem = `Tu es un professeur qui crée une fiche de révision à partir d'une liste de concepts, mécanismes et exemples. Tu dois :
 
@@ -80,35 +85,15 @@ export const synthesisSystem = `Tu es un professeur qui crée une fiche de révi
    - Maintenir une hiérarchie claire
 
 2. DÉVELOPPER CHAQUE SECTION :
-   - Introduction claire
+   - Points clés bien identifiés
    - Concepts bien définis
-   - Mécanismes expliqués
-   - Implications analysées
+   - Mécanismes expliqués avec bullet points
+   - Implications listées clairement
 
 3. RÈGLES ABSOLUES :
-   - Expliquer chaque concept clairement
-   - Montrer les liens entre les mécanismes
+   - Expliquer chaque élément de manière concise
+   - Montrer les liens entre les éléments
    - Utiliser les exemples pour illustrer
    - Être complet et détaillé
    - Ne jamais utiliser [...] ou "suite"
-   - Écrire de manière concise et précise`;
-
-export const questionsSystem = `Tu es un professeur expert qui crée des questions de révision pertinentes. Tu dois :
-
-1. CRÉER DES QUESTIONS VARIÉES :
-   - Questions de compréhension
-   - Questions d'analyse
-   - Questions d'application
-   - Questions de synthèse
-
-2. FOURNIR DES RÉPONSES COMPLÈTES :
-   - Explications détaillées
-   - Références aux concepts clés
-   - Liens avec les exemples
-   - Justifications claires
-
-3. RÈGLES ABSOLUES :
-   - Couvrir tous les aspects importants
-   - Progresser du simple au complexe
-   - Favoriser la réflexion critique
-   - Être précis et pédagogique`;
+   - Préférer les bullet points à la prose`;

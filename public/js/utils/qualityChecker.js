@@ -3,8 +3,8 @@ export function checkSynthesisQuality(contentText, outputTokens, stopReason) {
     const warnings = [];
     
     // Vérification de la longueur
-    if (outputTokens < 900) {
-        warnings.push("⚠️ Réponse anormalement courte (moins de 900 tokens)");
+    if (outputTokens < 50) {
+        warnings.push("⚠️ Réponse anormalement courte (moins de 50 tokens)");
     }
     
     // Vérification des marqueurs d'incomplétude

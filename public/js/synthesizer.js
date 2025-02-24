@@ -1,18 +1,27 @@
 import { debugStyle } from './styles/debugStyle.js';
 import { checkSynthesisQuality } from './utils/qualityChecker.js';
-import { synthesisOnlyPrompt, questionsPrompt, synthesisSystem, questionsSystem } from './prompts/synthesisPrompts.js';
-import { extractFactsFromParagraph } from './utils/factExtractor.js';
+import { synthesisOnlyPrompt, synthesisSystem } from './prompts/synthesisPrompts.js';
+import { extractFactsInBatches } from './utils/factBatchExtractor.js';
 import { getAnalyzedTranscription } from './state.js';
 import { getConfig } from './config.js';
 import { log, updateGlobalProgress } from './utils/utils.js';
+import { generateQuestionBatches } from './utils/questionGenerator.js';
+import { formatMarkdownQuestions } from './utils/markdownFormatter.js';
 
 export async function synthesizeAnalysis() {
     try {
-        const anthropicKey = document.getElementById("anthropicKey").value;
+        const anthropicKey = document.getElementById("anthropicKey")?.value || localStorage.getItem("anthropicKey");
         const analyzedTranscription = getAnalyzedTranscription();
         const config = getConfig();
+        
+        log(`État de l'analyse : ${analyzedTranscription ? 'présente' : 'absente'} (${analyzedTranscription?.length || 0} caractères)`);
+        log(`État de la clé API : ${anthropicKey ? 'présente' : 'absente'} (${anthropicKey?.length || 0} caractères)`);
 
-        if (!analyzedTranscription || !anthropicKey) {
+        if (!anthropicKey) {
+            throw new Error("Veuillez d'abord configurer votre clé API Anthropic.");
+        }
+        
+        if (!analyzedTranscription || analyzedTranscription.trim() === '') {
             throw new Error("Veuillez d'abord analyser la transcription ou charger une analyse.");
         }
 
@@ -24,112 +33,77 @@ export async function synthesizeAnalysis() {
         log("Début de l'extraction des faits...");
         updateGlobalProgress(0);
 
-        // Découper en paragraphes
-        const paragraphs = analyzedTranscription.split(/\n\n+/);
-        let allFacts = [];
-        let completedParagraphs = 0;
+        // Découper en paragraphes et extraire les faits en parallèle
+        const paragraphs = analyzedTranscription.split(/\n\n+/).filter(p => p.trim());
+        const allFacts = await extractFactsInBatches(paragraphs, anthropicKey);
 
-        // Extraire les faits de chaque paragraphe
-        for (const paragraph of paragraphs) {
-            if (paragraph.trim()) {
-                log(`=== Paragraphe ${completedParagraphs + 1}/${paragraphs.length} ===`);
-                const facts = await extractFactsFromParagraph(paragraph, anthropicKey, allFacts);
-                allFacts.push(facts);
-                
-                // Afficher les faits dans les logs web
-                facts.split('\n')
-                    .filter(line => {
-                        const trimmed = line.trim();
-                        return trimmed.startsWith('CONCEPT:') || 
-                               trimmed.startsWith('MÉCANISME:') || 
-                               trimmed.startsWith('EXEMPLE:');
-                    })
-                    .forEach(fact => {
-                        const [type, ...content] = fact.split(':');
-                        const factText = content.join(':').trim();
-                        let icon = '';
-                        switch(type) {
-                            case 'CONCEPT': icon = '🔍'; break;
-                            case 'MÉCANISME': icon = '⚙️'; break;
-                            case 'EXEMPLE': icon = '💡'; break;
-                        }
-                        log(`${icon} ${factText}`);
-                    });
-                
-                // Mise à jour de la progression
-                updateGlobalProgress((completedParagraphs / paragraphs.length) * 90);
-                completedParagraphs++;
-            }
-        }
+        updateGlobalProgress(50);
 
-        // Phase 2A : Création de la synthèse (90%)
+        // Phase 2A : Création de la synthèse (75%)
         log("=== Phase 2A : Création de la synthèse ===");
-        updateGlobalProgress(85);
+        updateGlobalProgress(60);
         
-        const synthResponse = await axios.post(config.apiEndpoints.analyze, {
-            apiKey: anthropicKey,
-            messages: [{
-                role: "user",
-                content: synthesisOnlyPrompt(allFacts)
-            }],
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 8192,
-            temperature: 0.7,
-            system: synthesisSystem
-        });
+        let synthContent;
+        let synthResponse;
+        const maxRetries = 3;
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                synthResponse = await axios.post(config.apiEndpoints.analyze, {
+                    apiKey: anthropicKey,
+                    messages: [{
+                        role: "user",
+                        content: synthesisOnlyPrompt(allFacts)
+                    }],
+                    model: "claude-3-5-sonnet-20241022",
+                    max_tokens: 8192,
+                    temperature: 0.7,
+                    system: synthesisSystem
+                });
 
-        const synthContent = synthResponse.data.content[0].text;
+                synthContent = synthResponse.data.content[0].text;
 
-        // Logging de la phase 2A
-        log(`Statistiques de tokens (Phase 2A) :
+                // Logging de la phase 2A
+                log(`\nStatistiques de tokens (Phase 2A - Tentative ${attempt + 1}/${maxRetries}) :
     - Stop reason : ${synthResponse.data.stop_reason}
     - Tokens en entrée : ${synthResponse.data.tokenCount}
     - Tokens en sortie : ${synthResponse.data.responseTokenCount}
-    - Ratio d'utilisation : ${((synthResponse.data.responseTokenCount / 8192) * 100).toFixed(2)}%`);
-        updateGlobalProgress(90);
+    - Ratio d'utilisation : ${((synthResponse.data.responseTokenCount / 8192) * 100).toFixed(2)}%\n`);
+                
+                updateGlobalProgress(75);
+                break; // Sortir de la boucle si succès
+                
+            } catch (error) {
+                if (attempt === maxRetries - 1) {
+                    throw error; // Relancer l'erreur si dernière tentative
+                }
+                const waitTime = 20000 * (attempt + 1); // 20s, 40s, 60s
+                log(`Tentative ${attempt + 1} échouée pour la synthèse. Nouvelle tentative dans ${waitTime/1000} secondes...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+        }
 
-        // Phase 2B : Génération des questions (95%)
+        // Phase 2B : Génération des questions par lots (90%)
         log("=== Phase 2B : Génération des questions ===");
         
-        const questionsResponse = await axios.post(config.apiEndpoints.analyze, {
-            apiKey: anthropicKey,
-            messages: [{
-                role: "user",
-                content: questionsPrompt(allFacts, synthContent)
-            }],
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 8192,
-            temperature: 0.7,
-            system: questionsSystem
-        });
-
-        const questionsContent = questionsResponse.data.content[0].text;
-        updateGlobalProgress(95);
+        const questionsContent = await generateQuestionBatches(allFacts, anthropicKey);
+        updateGlobalProgress(90);
 
         // Vérifications de la qualité
         const warnings = checkSynthesisQuality(synthContent + questionsContent, 
-            questionsResponse.data.responseTokenCount, 
-            questionsResponse.data.stop_reason);
-
-        // Logging de la phase 2B
-        log(`Statistiques de tokens (Phase 2B) :
-    - Stop reason : ${questionsResponse.data.stop_reason}
-    - Tokens en entrée : ${questionsResponse.data.tokenCount}
-    - Tokens en sortie : ${questionsResponse.data.responseTokenCount}
-    - Ratio d'utilisation : ${((questionsResponse.data.responseTokenCount / 8192) * 100).toFixed(2)}%`);
+            synthResponse.data.responseTokenCount, 
+            synthResponse.data.stop_reason);
         
         if (warnings.length > 0) {
             log("AVERTISSEMENTS :");
             warnings.forEach(warning => log(warning));
         }
 
-        // Combiner les résultats
-        const contentText = synthContent + '\n\n' + questionsContent;
-
         // Créer le tableau des faits
-        let factsTable = "\n\n## Tableau chronologique des faits\n\n";
-        factsTable += "| N° | Type | Fait |\n";
-        factsTable += "|-----|------|------|\n";
+        let factsTable = '<h2>Tableau chronologique des faits</h2>\n';
+        factsTable += '<table class="facts-table">\n';
+        factsTable += '<thead><tr><th class="fact-number">N°</th><th class="fact-type">Type</th><th class="fact-content">Fait</th></tr></thead>\n';
+        factsTable += '<tbody>\n';
         
         // Parcourir les faits collectés pendant la phase 1
         let factNumber = 1;
@@ -156,16 +130,25 @@ export async function synthesizeAnalysis() {
                             break;
                     }
                     
-                    factsTable += `| ${factNumber} | <span style="color: ${typeColor}"><strong>${type}</strong></span> | ${factText} |\n`;
+                    factsTable += `<tr>
+                        <td class="fact-number">${factNumber}</td>
+                        <td class="fact-type"><span style="color: ${typeColor}"><strong>${type}</strong></span></td>
+                        <td class="fact-content">${factText}</td>
+                    </tr>\n`;
                     factNumber++;
                 }
             });
         });
 
-        // Ajouter le tableau à la synthèse
-        const finalContent = contentText + factsTable;
+        factsTable += '</tbody></table>';
+
+        // Combiner les résultats dans l'ordre : synthèse, questions, tableau
+        const finalContent = marked.parse(synthContent) + 
+                           '<h2>Questions de révision</h2>' + 
+                           formatMarkdownQuestions(questionsContent) +
+                           factsTable;
         
-        document.getElementById("synthesisResult").innerHTML = marked.parse(finalContent);
+        document.getElementById("synthesisResult").innerHTML = finalContent;
         // Phase 2 terminée : 100%
         log("Synthèse terminée");
         updateGlobalProgress(100);

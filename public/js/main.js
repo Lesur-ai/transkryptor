@@ -13,6 +13,7 @@ window.testAPIKeys = async function() {
 
         log("Test des clés API en cours...");
         const config = getConfig();
+        log(`Test des clés avec l'endpoint : ${config.apiEndpoints.testKeys}`);
         const response = await axios.post(config.apiEndpoints.testKeys, {
             openaiKey,
             anthropicKey
