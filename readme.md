@@ -20,8 +20,8 @@
     - [GET /](#get-)
     - [POST /test-keys](#post-test-keys)
     - [POST /analyze](#post-analyze)
-  - [Mises à jour importantes V3.0.0](#mises-à-jour-importantes-v300)
-  - [Mises à jour importantes V2.0.0](#mises-à-jour-importantes-v200)
+  - [Mises à jour importantes V3](#mises-à-jour-importantes-v3)
+  - [Mises à jour importantes V2](#mises-à-jour-importantes-v2)
   - [Architecture technique](#architecture-technique)
     - [Frontend](#frontend)
     - [Backend](#backend)
@@ -206,38 +206,46 @@ Lance l'analyse d'une transcription.
 }
 ```
 
-## Mises à jour importantes V3.0.0
+## Mises à jour importantes V3
 
-- Refonte majeure de l'architecture en modules :
-  - Séparation des responsabilités
-  - Code plus maintenable
-  - Meilleure réutilisabilité
+- Refonte complète du système d'analyse :
+  - Traitement par chunks de 500 tokens pour une meilleure précision
+  - Parallélisation intelligente préservant l'ordre chronologique
+  - Vérification automatique de la qualité du nettoyage
+  - Gestion des erreurs avec retries progressifs (20s, 40s, 60s)
 
-- Amélioration de l'analyse :
-  - Contexte des 20 derniers faits pour une meilleure continuité
-  - Extraction plus précise des concepts
-  - Synthèse mieux structurée
+- Amélioration du suivi en temps réel :
+  - Progression visuelle par LED pour chaque chunk
+  - Logs détaillés avec statistiques de tokens
+  - Aperçu des 10 premiers mots de chaque chunk
+  - Affichage des réductions de tokens en pourcentage
 
 - Nouvelle architecture modulaire :
   ```
   public/js/
-  ├── styles/
-  │   └── debugStyle.js         # Styles pour les logs
   ├── utils/
-  │   ├── qualityChecker.js     # Vérification de la qualité
+  │   ├── analysisUtils.js      # Traitement des chunks
+  │   ├── progressUtils.js      # Gestion de la progression
   │   └── factExtractor.js      # Extraction des faits
   ├── prompts/
   │   └── synthesisPrompts.js   # Prompts pour Claude
-  └── synthesizer.js            # Module principal
+  ├── analysis.js              # Module principal d'analyse
+  └── synthesizer.js           # Module de synthèse
   ```
 
 - Améliorations de la qualité :
-  - Vérification automatique de la structure
-  - Détection des questions/réponses manquantes
-  - Contrôle de la longueur minimale
-  - Détection des marqueurs d'incomplétude
+  - Nettoyage intelligent des répétitions et hésitations
+  - Préservation garantie de l'ordre chronologique
+  - Validation du ratio de tokens (max 66% de réduction)
+  - Détection et correction des anomalies
 
-## Mises à jour importantes V2.0.0
+- Interface utilisateur :
+  - Design Google Material modernisé
+  - Affichage en temps réel des statistiques
+  - Barre de progression globale et par lot
+  - Messages d'erreur détaillés et informatifs
+
+## Mises à jour importantes V2
 
 - Interface utilisateur modernisée avec style Google
 - Amélioration de l'ergonomie avec layout 50/50
@@ -267,21 +275,26 @@ Lance l'analyse d'une transcription.
 transkryptor/
 ├── public/
 │   ├── css/
-│   │   └── styles.css
+│   │   ├── base.css          # Styles de base
+│   │   ├── columns.css       # Layout des colonnes
+│   │   ├── forms.css         # Styles des formulaires
+│   │   └── components.css    # Composants UI (LED, progress...)
 │   ├── js/
-│   │   ├── styles/
-│   │   │   └── debugStyle.js
 │   │   ├── utils/
-│   │   │   ├── qualityChecker.js
-│   │   │   └── factExtractor.js
+│   │   │   ├── analysisUtils.js     # Traitement des chunks
+│   │   │   ├── progressUtils.js     # Gestion de la progression
+│   │   │   ├── factExtractor.js     # Extraction des faits
+│   │   │   ├── qualityChecker.js    # Vérification qualité
+│   │   │   └── downloadHandlers.js   # Gestion des téléchargements
 │   │   ├── prompts/
-│   │   │   └── synthesisPrompts.js
-│   │   ├── main.js
-│   │   ├── audio.js
-│   │   ├── analysis.js
-│   │   ├── synthesizer.js
-│   │   ├── transcriptionAnalyzer.js
-│   │   └── ui.js
+│   │   │   └── synthesisPrompts.js   # Prompts pour Claude
+│   │   ├── main.js                  # Point d'entrée
+│   │   ├── audio.js                 # Gestion audio
+│   │   ├── analysis.js              # Module d'analyse
+│   │   ├── synthesizer.js           # Module de synthèse
+│   │   ├── config.js                # Configuration
+│   │   ├── state.js                 # Gestion d'état
+│   │   └── ui.js                    # Interface utilisateur
 │   └── index.html
 ├── server.js
 ├── package.json
