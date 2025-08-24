@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transkryptor v4</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <h1>Transkryptor v4</h1>
+            <div class="step">
+                <div class="step-header"><span class="step-number">1</span><span class="step-title">Écosystème</span></div>
+                <div class="workflow-selector">
+                    <div class="workflow-option active" data-workflow="cloud-temple">Cloud Temple</div>
+                    <div class="workflow-option" data-workflow="openai-anthropic">OpenAI + Anthropic</div>
+                </div>
+            </div>
+            <div class="step" id="config-cloud-temple">
+                <div class="step-header"><span class="step-number">2</span><span class="step-title">Configuration</span></div>
+                <div class="form-group">
+                    <label for="model-select">Modèle d'analyse</label>
+                    <select id="model-select"><option>Chargement...</option></select>
+                </div>
+            </div>
+            <div class="step" id="config-openai-anthropic" style="display: none;">
+                <div class="step-header"><span class="step-number">2</span><span class="step-title">Clés API</span></div>
+                <div class="form-group">
+                    <label for="openai-key">Clé OpenAI (Whisper)</label>
+                    <input type="password" id="openai-key" placeholder="sk-...">
+                </div>
+                <div class="form-group">
+                    <label for="anthropic-key">Clé Anthropic (Analyse)</label>
+                    <input type="password" id="anthropic-key" placeholder="sk-...">
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-header"><span class="step-number">3</span><span class="step-title">Fichier Audio</span></div>
+                <label for="audio-file" class="file-input-wrapper">
+                    <span id="file-name">Cliquez ou glissez-déposez</span>
+                </label>
+                <input type="file" id="audio-file" accept=".mp3,.wav,.m4a">
+            </div>
+            <div style="margin-top: auto;">
+                <button id="process-btn" class="btn btn-primary" style="width: 100%;">Lancer le Traitement</button>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="stats-area" id="stats-card">
+                <div class="stats-grid" id="main-stats-grid">
+                    <div class="stat-card"><div class="stat-card-title">Progression</div><div class="stat-card-value" id="stat-progress">N/A</div></div>
+                    <div class="stat-card"><div class="stat-card-title">Vitesse</div><div class="stat-card-value" id="stat-speed">N/A</div></div>
+                    <div class="stat-card"><div class="stat-card-title">Taille Traitée</div><div class="stat-card-value" id="stat-size">N/A</div></div>
+                    <div class="stat-card"><div class="stat-card-title">Temps Écoulé</div><div class="stat-card-value" id="stat-time">0s</div></div>
+                    <div class="stat-card"><div class="stat-card-title">Tps. Moyen / Chunk</div><div class="stat-card-value" id="stat-avg-time">N/A</div></div>
+                </div>
+                <div class="card" id="file-info-card"></div>
+                <div class="card chart-card">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+            </div>
+            <div class="progress-visualization" id="progress-visualization">
+                <!-- La visualisation des chunks (LEDs) apparaîtra ici -->
+            </div>
+            <div class="card results-card">
+                <div class="results-header">
+                    <div class="results-tabs">
+                        <div class="tab active" data-tab="transcription">Transcription</div>
+                        <div class="tab" data-tab="analysis">Analyse</div>
+                        <div class="tab" data-tab="synthesis">Synthèse</div>
+                    </div>
+                    <button id="download-btn" class="btn btn-tonal" disabled>Télécharger</button>
+                </div>
+                <div class="tab-content" id="tab-content-container">
+                    <div class="placeholder">Sélectionnez un fichier pour commencer.</div>
+                </div>
+            </div>
+            <div class="card server-logs-card">
+                <div class="server-logs-header">Logs du Serveur</div>
+                <div class="server-logs-content" id="server-logs-content">
+                    <!-- Les logs du serveur en temps réel apparaîtront ici -->
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="/js/main.js"></script>
+</body>
+</html>

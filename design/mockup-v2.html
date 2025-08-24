@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transkryptor v4 - Maquette v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0c66e4;
+            --background-color: #f7f8fa;
+            --surface-color: #ffffff;
+            --text-color: #172b4d;
+            --secondary-text-color: #6b778c;
+            --border-color: #dfe1e6;
+            --font-family: 'Inter', sans-serif;
+            --border-radius: 6px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        header {
+            background-color: var(--surface-color);
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        header h1 {
+            font-size: 22px;
+            margin: 0;
+            font-weight: 600;
+        }
+        main {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 1024px) {
+            main { grid-template-columns: 1fr; }
+        }
+        .card {
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        .config-card {
+            padding: 24px;
+        }
+        .config-card h2 {
+            margin-top: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .workflow-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .workflow-option {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .workflow-option.active {
+            background-color: #e9f2ff;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #0052cc; }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .results-tabs { display: flex; }
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            color: var(--secondary-text-color);
+        }
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .btn-secondary {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 14px;
+            font-size: 14px;
+        }
+        .tab-content { padding: 24px; line-height: 1.6; white-space: pre-wrap; }
+        .placeholder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            color: var(--secondary-text-color);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Transkryptor v4</h1>
+        </header>
+        <main>
+            <div class="card config-card">
+                <h2>1. Choisissez votre écosystème</h2>
+                <div class="workflow-selector">
+                    <div class="workflow-option active" id="wf-cloud-temple">Cloud Temple</div>
+                    <div class="workflow-option" id="wf-openai">OpenAI + Anthropic</div>
+                </div>
+
+                <div id="config-cloud-temple">
+                    <h2>2. Configurez le traitement</h2>
+                    <div class="form-group">
+                        <label for="model">Modèle d'analyse</label>
+                        <select id="model">
+                            <option>llama-3.3-70b</option>
+                            <option>gemma-3-27b</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="config-openai" style="display: none;">
+                    <h2>2. Configurez vos clés API</h2>
+                    <div class="form-group">
+                        <label for="openai-key">Clé OpenAI (pour Whisper)</label>
+                        <input type="text" id="openai-key" placeholder="sk-...">
+                    </div>
+                    <div class="form-group">
+                        <label for="anthropic-key">Clé Anthropic (pour Analyse)</label>
+                        <input type="text" id="anthropic-key" placeholder="sk-...">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 24px;">
+                    <label for="audio-file">3. Choisissez un fichier audio</label>
+                    <input type="file" id="audio-file">
+                </div>
+
+                <button class="btn btn-primary" style="margin-top: 12px;">Lancer le Traitement</button>
+            </div>
+
+            <div class="card results-card">
+                <div class="results-header">
+                    <div class="results-tabs">
+                        <div class="tab active">Transcription</div>
+                        <div class="tab">Analyse</div>
+                        <div class="tab">Synthèse</div>
+                    </div>
+                    <button class="btn btn-secondary">Télécharger</button>
+                </div>
+                <div class="tab-content">
+                    <div class="placeholder">
+                        <p>Vos résultats apparaîtront ici...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const wfCloudTemple = document.getElementById('wf-cloud-temple');
+        const wfOpenai = document.getElementById('wf-openai');
+        const configCloudTemple = document.getElementById('config-cloud-temple');
+        const configOpenai = document.getElementById('config-openai');
+
+        wfCloudTemple.addEventListener('click', () => {
+            wfCloudTemple.classList.add('active');
+            wfOpenai.classList.remove('active');
+            configCloudTemple.style.display = 'block';
+            configOpenai.style.display = 'none';
+        });
+
+        wfOpenai.addEventListener('click', () => {
+            wfOpenai.classList.add('active');
+            wfCloudTemple.classList.remove('active');
+            configOpenai.style.display = 'block';
+            configCloudTemple.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

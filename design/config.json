@@ -1,0 +1,13 @@
+{
+  "api_url": "https://api.ai.cloud-temple.com/v1/audio/transcriptions",
+  "api_token": "WolFH3xGSCMPvlfEru5JAt_KWZIrYreQOm1dDB2x5X4",
+  "default_language": "fr",
+  "default_prompt": "",
+  "chunk_duration_ms": 10000,
+  "chunk_overlap_ms": 300,
+  "batch_size": 10,
+  "output_directory": "./transkryptor_outputs",
+  "rework_enabled": false,
+  "rework_follow": false,
+  "rework_model": "qwen3:30b-a3b"
+}

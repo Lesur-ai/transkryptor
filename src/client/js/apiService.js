@@ -1,0 +1,109 @@
+/**
+ * @file apiService.js
+ * @description Module de communication avec l'API backend.
+ * Ce fichier centralise tous les appels HTTP vers le serveur.
+ */
+
+const API_BASE_URL = ''; // L'URL de base est la même que celle du site
+
+/**
+ * Récupère la liste des modèles disponibles pour un fournisseur donné.
+ * @param {string} provider - L'identifiant du fournisseur (ex: 'cloud-temple').
+ * @returns {Promise<Array>} La liste des modèles.
+ */
+export async function getModels(provider) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/models?provider=${provider}`);
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`Erreur lors de la récupération des modèles pour ${provider}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Envoie un fichier audio au backend pour transcription.
+ * @param {File} file - Le fichier audio à transcrire.
+ * @param {string} provider - L'identifiant du fournisseur.
+ * @param {string} [apiKey] - La clé API (optionnelle, pour OpenAI).
+ * @param {object} [metadata={}] - Métadonnées additionnelles comme l'index du chunk.
+ * @returns {Promise<object>} Le résultat de la transcription.
+ */
+export async function transcribe(file, provider, apiKey = null, metadata = {}) {
+    const formData = new FormData();
+    const fileName = file instanceof Blob ? 'chunk.wav' : file.name;
+    formData.append('file', file, fileName);
+    formData.append('provider', provider);
+    if (metadata.chunkIndex !== undefined) {
+        formData.append('chunkIndex', metadata.chunkIndex);
+        formData.append('totalChunks', metadata.totalChunks);
+    }
+    
+    // Note: La gestion fine des clés API (OpenAI vs Anthropic) sera ajoutée ici
+    // Pour l'instant, on suppose que le backend gère la clé Cloud Temple par défaut.
+    if (apiKey) {
+        formData.append('apiKey', apiKey);
+    }
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // Timeout de 60 secondes
+
+        const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
+        }
+        return await response.json(); // Retourne l'objet complet { text: "...", _serverDuration: 1234 }
+    } catch (error) {
+        console.error(`Erreur lors de la transcription avec ${provider}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Envoie du texte au backend pour analyse.
+ * @param {string} text - Le texte à analyser.
+ * @param {string} provider - L'identifiant du fournisseur.
+ * @param {string} model - L'identifiant du modèle à utiliser.
+ * @param {string} [apiKey] - La clé API (optionnelle, pour Anthropic).
+ * @param {object} [metadata={}] - Métadonnées additionnelles.
+ * @returns {Promise<object>} Le résultat de l'analyse.
+ */
+export async function analyze(text, provider, model, apiKey = null, metadata = {}) {
+    const body = {
+        text,
+        provider,
+        ...metadata,
+        model,
+        apiKey, // Le backend utilisera la clé d'environnement si celle-ci est nulle
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`Erreur lors de l'analyse avec ${provider}:`, error);
+        throw error;
+    }
+}

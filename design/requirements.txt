@@ -1,0 +1,7 @@
+click
+httpx
+pydub
+rich
+python-dotenv
+soundfile
+numpy

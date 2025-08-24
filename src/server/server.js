@@ -1,0 +1,250 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+const { encode } = require('gpt-3-encoder');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const FormData = require('form-data');
+const Logger = require('./logger');
+
+const app = express();
+
+// --- Logique pour le streaming des logs (Server-Sent Events) ---
+let clients = []; // Stocke les clients connectés pour les logs
+
+// Middleware pour ajouter les headers SSE
+app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    next();
+});
+
+// Endpoint auquel le client se connecte pour recevoir les logs
+app.get('/api/logs', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    const clientId = Date.now();
+    clients.push({ id: clientId, res });
+    console.log(`Client ${clientId} connecté pour les logs.`);
+
+    req.on('close', () => {
+        clients = clients.filter(client => client.id !== clientId);
+        console.log(`Client ${clientId} déconnecté.`);
+    });
+});
+
+// Fonction pour envoyer les logs à tous les clients connectés
+function broadcastLog(logMessage) {
+    for (const client of clients) {
+        client.res.write(`data: ${JSON.stringify(logMessage)}\n\n`);
+    }
+}
+
+// On passe la fonction de broadcast au logger
+Logger.setBroadcastFunction(broadcastLog);
+
+// Configuration de Multer pour stocker les fichiers en mémoire
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+
+// Le serveur sert maintenant les fichiers statiques depuis le dossier src/client
+app.use(express.static(path.join(__dirname, '../client')));
+
+
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// --- API Gateway Endpoints ---
+
+// Endpoint pour lister les fournisseurs de services disponibles
+app.get('/api/providers', (req, res) => {
+    const providers = [
+        { id: 'cloud-temple', name: 'Cloud Temple' },
+        { id: 'openai', name: 'OpenAI' },
+        { id: 'anthropic', name: 'Anthropic' }
+    ];
+    res.json(providers);
+});
+
+// Endpoint pour lister les modèles disponibles pour un fournisseur donné
+app.get('/api/models', async (req, res) => {
+    const { provider } = req.query;
+
+    if (!provider) {
+        return res.status(400).json({ error: 'Le paramètre "provider" est requis' });
+    }
+
+    try {
+        let models = [];
+        if (provider === 'cloud-temple') {
+            Logger.info('Récupération des modèles depuis Cloud Temple...');
+            const response = await axios.get('https://api.ai.cloud-temple.com/v1/models', {
+                headers: {
+                    'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}`
+                }
+            });
+            // Nous ne retournons que les informations utiles au frontend
+            models = response.data.data.map(model => ({
+                id: model.id,
+                name: model.id, // On peut améliorer ça si le nom est dans un autre champ
+                aliases: model.aliases
+            }));
+            Logger.success('Modèles Cloud Temple récupérés');
+        } else if (provider === 'openai') {
+            // Logique pour OpenAI (à implémenter)
+            // Pour l'instant, on retourne une liste statique
+            models = [{ id: 'gpt-4o', name: 'GPT-4o' }];
+        } else if (provider === 'anthropic') {
+            // Logique pour Anthropic (à implémenter)
+            // Pour l'instant, on retourne une liste statique
+            models = [{ id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet' }];
+        } else {
+            return res.status(400).json({ error: 'Fournisseur non supporté' });
+        }
+        res.json(models);
+    } catch (error) {
+        Logger.error(`Erreur lors de la récupération des modèles pour ${provider}`, error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+});
+
+// Endpoint pour la transcription audio
+app.post('/api/transcribe', upload.single('file'), async (req, res) => {
+    const { provider, apiKey } = req.body;
+    // Correction: Parser les index en nombres entiers
+    const chunkIndex = req.body.chunkIndex ? parseInt(req.body.chunkIndex, 10) : undefined;
+    const totalChunks = req.body.totalChunks ? parseInt(req.body.totalChunks, 10) : undefined;
+    const file = req.file;
+    const startTime = Date.now();
+
+    if (!provider || !file) {
+        Logger.error('Paramètres manquants pour la transcription');
+        return res.status(400).json({ error: 'Les paramètres "provider" et "file" sont requis' });
+    }
+
+    try {
+        let transcription;
+        if (provider === 'cloud-temple') {
+            const formData = new FormData();
+            formData.append('file', file.buffer, file.originalname);
+            formData.append('response_format', 'json');
+
+            const response = await axios.post('https://api.ai.cloud-temple.com/v1/audio/transcriptions', formData, {
+                headers: {
+                    ...formData.getHeaders(), // On réintroduit les headers générés par form-data
+                    'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}`
+                },
+                maxContentLength: Infinity, // Ajout pour gérer les gros fichiers
+                maxBodyLength: Infinity
+            });
+            transcription = response.data;
+        } else if (provider === 'openai') {
+            const formData = new FormData();
+            formData.append('file', file.buffer, file.originalname);
+            formData.append('model', 'whisper-1');
+
+            const key = apiKey || process.env.OPENAI_API_KEY;
+            if (!key) return res.status(400).json({ error: 'Clé API OpenAI manquante' });
+
+            const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Authorization': `Bearer ${key}`
+                },
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity
+            });
+            transcription = response.data;
+        } else {
+            return res.status(400).json({ error: 'Fournisseur de transcription non supporté' });
+        }
+        
+        const duration = Date.now() - startTime;
+        Logger.logOperation('TRANSCRIPTION', { chunkIndex, totalChunks }, 'SUCCESS', duration);
+        // Ajoute la durée de traitement du serveur à la réponse
+        res.json({ ...transcription, _serverDuration: duration });
+
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        Logger.logOperation('TRANSCRIPTION', { chunkIndex, totalChunks }, 'ERROR', duration);
+        Logger.error(`Erreur transcription chunk ${chunkIndex}`, error);
+        res.status(500).json({ 
+            error: 'Erreur interne du serveur lors de la transcription',
+            details: error.response ? error.response.data : error.message
+        });
+    }
+});
+
+// Endpoint pour l'analyse de texte
+app.post('/api/analyze', async (req, res) => {
+    const { provider, model, text, apiKey, chunkIndex, totalChunks, textPreview } = req.body;
+    const startTime = Date.now();
+
+    if (!provider || !model || !text) {
+        Logger.error('Paramètres manquants pour l\'analyse');
+        return res.status(400).json({ error: 'Les paramètres "provider", "model" et "text" sont requis' });
+    }
+
+    try {
+        let analysis;
+        if (provider === 'cloud-temple') {
+            Logger.info(`Analyse avec Cloud Temple (modèle: ${model})...`);
+            const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
+                model: model,
+                messages: [{ role: 'user', content: text }]
+            }, {
+                headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
+            });
+            analysis = response.data;
+            Logger.success('Analyse Cloud Temple réussie');
+        } else if (provider === 'anthropic') {
+            Logger.info(`Analyse avec Anthropic (modèle: ${model})...`);
+            const key = apiKey || process.env.ANTHROPIC_API_KEY;
+            if (!key) return res.status(400).json({ error: 'Clé API Anthropic manquante' });
+
+            const response = await axios.post('https://api.anthropic.com/v1/messages', {
+                model: model,
+                max_tokens: 8192,
+                messages: [{ role: "user", content: text }]
+            }, {
+                headers: {
+                    "x-api-key": key,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json"
+                }
+            });
+            analysis = response.data;
+            Logger.success('Analyse Anthropic réussie');
+        } else {
+            return res.status(400).json({ error: 'Fournisseur d\'analyse non supporté' });
+        }
+        const duration = Date.now() - startTime;
+        Logger.logOperation('ANALYSE', { chunkIndex, totalChunks, textPreview }, 'SUCCESS', duration);
+        res.json(analysis);
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        Logger.logOperation('ANALYSE', { chunkIndex, totalChunks, textPreview }, 'ERROR', duration);
+        Logger.error(`Erreur lors de l'analyse avec ${provider}`, error);
+        res.status(500).json({ 
+            error: 'Erreur interne du serveur lors de l\'analyse',
+            details: error.response ? error.response.data : error.message
+        });
+    }
+});
+
+
+// --- Servir l'application Frontend ---
+
+// L'injection de script n'est plus nécessaire car le frontend sera une SPA
+// qui connaît déjà l'URL de son API.
+// On sert simplement le fichier index.html du nouveau client.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/index.html'));
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    Logger.success(`Serveur démarré sur le port ${PORT}`);
+});

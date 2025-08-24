@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transkryptor v4 - Maquette v4 (Finale)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --md-sys-primary: #0061a4;
+            --md-sys-on-primary: #ffffff;
+            --md-sys-primary-container: #d1e4ff;
+            --md-sys-on-primary-container: #001d36;
+            --md-sys-secondary: #535f70;
+            --md-sys-surface: #fdfcff;
+            --md-sys-surface-container-highest: #e1e2e6;
+            --md-sys-on-surface: #1a1c1e;
+            --md-sys-on-surface-variant: #43474e;
+            --md-sys-outline: #73777f;
+            --font-family: 'Google Sans', sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--md-sys-surface);
+            color: var(--md-sys-on-surface);
+            margin: 0;
+            overflow: hidden;
+        }
+        .app-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            height: 100vh;
+        }
+        .sidebar {
+            background-color: #f4f7fb;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--md-sys-surface-container-highest);
+        }
+        .sidebar h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--md-sys-primary);
+            margin: 0 0 32px 0;
+        }
+        .step { margin-bottom: 24px; }
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .step-number {
+            background-color: var(--md-sys-primary-container);
+            color: var(--md-sys-on-primary-container);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+        .step-title { font-size: 18px; font-weight: 700; }
+        .workflow-selector { display: flex; flex-direction: column; gap: 12px; }
+        .workflow-option {
+            padding: 16px;
+            border: 1px solid var(--md-sys-outline);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .workflow-option.active {
+            border-color: var(--md-sys-primary);
+            background-color: var(--md-sys-primary-container);
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--md-sys-on-surface-variant);
+        }
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--md-sys-outline);
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        /* Custom File Input */
+        .file-input-wrapper {
+            border: 2px dashed var(--md-sys-outline);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .file-input-wrapper:hover { border-color: var(--md-sys-primary); }
+        .file-input-wrapper span {
+            display: block;
+            color: var(--md-sys-on-surface-variant);
+        }
+        input[type="file"] { display: none; }
+
+        .main-content {
+            padding: 32px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 24px;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 16px;
+            border: 1px solid var(--md-sys-surface-container-highest);
+        }
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--md-sys-surface-container-highest);
+        }
+        .results-tabs { display: flex; }
+        .tab {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            color: var(--md-sys-on-surface-variant);
+        }
+        .tab.active { color: var(--md-sys-primary); border-bottom-color: var(--md-sys-primary); }
+        .tab-content { padding: 24px; line-height: 1.7; }
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 100px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary { background-color: var(--md-sys-primary); color: var(--md-sys-on-primary); }
+        .btn-primary:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .btn-tonal { background-color: var(--md-sys-primary-container); color: var(--md-sys-on-primary-container); }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background-color: #f4f7fb;
+            padding: 16px;
+            border-radius: 12px;
+        }
+        .stat-card-title {
+            font-size: 14px;
+            color: var(--md-sys-on-surface-variant);
+            margin-bottom: 8px;
+        }
+        .stat-card-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--md-sys-primary);
+        }
+        .chart-placeholder {
+            height: 150px;
+            background-color: #f4f7fb;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--md-sys-on-surface-variant);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <h1>Transkryptor v4</h1>
+            <div class="step">
+                <div class="step-header"><span class="step-number">1</span><span class="step-title">Écosystème</span></div>
+                <div class="workflow-selector">
+                    <div class="workflow-option active">Cloud Temple</div>
+                    <div class="workflow-option">OpenAI + Anthropic</div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-header"><span class="step-number">2</span><span class="step-title">Configuration</span></div>
+                <div class="form-group">
+                    <label for="model">Modèle d'analyse</label>
+                    <select id="model"><option>llama-3.3-70b</option></select>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-header"><span class="step-number">3</span><span class="step-title">Fichier Audio</span></div>
+                <label for="audio-file" class="file-input-wrapper">
+                    <span>Cliquez ou glissez-déposez</span>
+                </label>
+                <input type="file" id="audio-file">
+            </div>
+            <div style="margin-top: auto;">
+                <button class="btn btn-primary" style="width: 100%;">Lancer le Traitement</button>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="card">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-card-title">Progression</div><div class="stat-card-value">6 / 10 lots</div></div>
+                    <div class="stat-card"><div class="stat-card-title">Tokens / sec</div><div class="stat-card-value">1,245</div></div>
+                    <div class="stat-card"><div class="stat-card-title">Qualité</div><div class="stat-card-value">98.2%</div></div>
+                </div>
+                <div class="chart-placeholder">
+                    [ Graphique de la performance en temps réel ]
+                </div>
+            </div>
+            <div class="card">
+                <div class="results-header">
+                    <div class="results-tabs">
+                        <div class="tab active">Transcription</div>
+                        <div class="tab">Analyse</div>
+                        <div class="tab">Synthèse</div>
+                    </div>
+                    <button class="btn btn-tonal">Télécharger</button>
+                </div>
+                <div class="tab-content">
+                    Bonjour et bienvenue dans ce podcast...
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
