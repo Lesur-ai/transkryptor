@@ -19,25 +19,32 @@
 
 Transkryptor v4 est une refonte complète de l'application, la transformant en une plateforme moderne, sécurisée et multi-fournisseurs pour la transcription, l'analyse et la synthèse de contenu audio. L'objectif principal de cette version est d'offrir une flexibilité maximale à l'utilisateur tout en garantissant une expérience utilisateur intuitive et réactive.
 
-L'application intègre désormais la plateforme LLMaaS de Cloud Temple (qualifiée SecNumCloud) aux côtés des fournisseurs historiques OpenAI et Anthropic.
+Cette application sert de **démonstrateur technologique** pour l'offre **LLMaaS de Cloud Temple**, illustrant la facilité d'intégration et la puissance d'une plateforme souveraine et qualifiée **SecNumCloud**.
 
 ## Fonctionnalités Clés
 
-- **Multi-Fournisseurs** : Choisissez entre l'écosystème Cloud Temple (transcription et analyse) ou la combinaison OpenAI (transcription) + Anthropic (analyse).
-- **Interface Moderne** : Une interface utilisateur entièrement repensée, épurée, et "responsive".
-- **Backend Sécurisé** : Toutes les clés API et les appels externes sont gérés par un serveur backend Node.js, agissant comme une passerelle sécurisée. Aucune clé n'est exposée côté client.
-- **Suivi en Temps Réel** : Visualisez la progression du traitement en temps réel avec une grille de statut pour chaque morceau de fichier, des statistiques détaillées (vitesse, temps écoulé, etc.) et les logs du serveur.
-- **Transcription par Morceaux** : Les fichiers audio sont découpés, transcrits en parallèle et réassemblés, avec une gestion robuste des erreurs et des tentatives multiples.
-- **Analyse Intelligente** : Le texte transcrit est découpé en lots cohérents et analysé en parallèle.
-- **Synthèse Exécutive** : Générez une synthèse structurée (résumé, points clés, actions) à partir de l'analyse en un clic.
-- **Persistance des Clés** : Les clés API pour OpenAI et Anthropic sont sauvegardées localement dans votre navigateur pour ne pas avoir à les ressaisir.
-- **Validation des Clés** : Les clés API sont testées avant de lancer un traitement coûteux.
+- **Multi-Fournisseurs** : Choisissez entre l'écosystème **Cloud Temple SecNumCloud** (transcription et analyse) ou la combinaison OpenAI (transcription) + Anthropic (analyse).
+- **Interface Moderne et Réactive** : Une interface utilisateur entièrement repensée, épurée, et "responsive", offrant une expérience claire et intuitive.
+- **Backend Sécurisé (API Gateway)** : Toutes les clés API et les appels externes sont gérés par un serveur backend Node.js. Aucune clé n'est exposée côté client, garantissant une sécurité maximale.
+- **Suivi en Temps Réel Détaillé** :
+    - Visualisez la progression du traitement avec une grille de statut pour chaque morceau de fichier.
+    - Suivez des statistiques avancées (vitesse, temps écoulé, etc.).
+    - Observez les logs du serveur en direct pour une transparence totale du processus.
+- **Traitement Parallèle Robuste** :
+    - **Transcription** : Les fichiers audio sont découpés, transcrits en parallèle et réassemblés.
+    - **Analyse** : Le texte transcrit est découpé en lots sémantiques et analysé en parallèle.
+    - **Gestion des Erreurs** : Un système de tentatives multiples avec délai exponentiel assure la robustesse du traitement.
+- **Synthèse Exécutive** : Générez une synthèse structurée (résumé, points clés, actions) à partir de l'analyse en un clic, avec la possibilité de changer de modèle pour affiner le résultat.
+- **Améliorations de l'Expérience Utilisateur** :
+    - **Persistance des Clés** : Les clés API pour OpenAI et Anthropic sont sauvegardées localement dans votre navigateur.
+    - **Validation des Clés** : Les clés sont testées avant de lancer un traitement pour éviter les erreurs coûteuses.
+    - **Affichage Progressif** : Les résultats apparaissent au fur et à mesure de leur traitement.
 
 ## Architecture
 
-La v4 adopte une architecture client-serveur claire :
-- **Frontend** : Une application monopage (SPA) en JavaScript "vanilla" (pur) et modulaire. Elle gère l'interface utilisateur et communique uniquement avec son propre backend.
-- **Backend** : Un serveur Node.js/Express qui sert de passerelle API (`API Gateway`). Il reçoit les requêtes du frontend, les enrichit avec les clés API stockées de manière sécurisée, et les relaie vers les fournisseurs externes appropriés (Cloud Temple, OpenAI, Anthropic).
+La v4 adopte une architecture client-serveur moderne et sécurisée :
+- **Frontend** : Une application monopage (SPA) en **JavaScript "vanilla" (pur) et modulaire**. Elle gère l'interface utilisateur et communique uniquement avec son propre backend. L'état de l'application est géré de manière centralisée, assurant une cohérence des données.
+- **Backend** : Un serveur **Node.js/Express** qui implémente le design pattern **API Gateway**. Il reçoit les requêtes du frontend, les authentifie, les enrichit avec les clés API stockées de manière sécurisée dans les variables d'environnement, et les relaie vers les fournisseurs externes appropriés (Cloud Temple, OpenAI, Anthropic).
 
 ## Installation
 
@@ -63,27 +70,28 @@ La v4 adopte une architecture client-serveur claire :
 
 ## Configuration
 
-1.  **Créer un fichier `.env`** à la racine du projet en copiant le modèle `.env.example`.
-2.  **Renseigner les clés API** dans ce fichier `.env` :
-    -   `CLOUD_TEMPLE_API_KEY` : Votre clé pour l'API Cloud Temple (utilisée par défaut pour cet écosystème).
-    -   `OPENAI_API_KEY` (Optionnel) : Une clé par défaut si vous ne souhaitez pas que les utilisateurs fournissent la leur.
-    -   `ANTHROPIC_API_KEY` (Optionnel) : Idem pour Anthropic.
+1.  **Créer un fichier `.env`** à la racine du projet en copiant le modèle `env.example`.
+2.  **Renseigner les clés API** dans ce fichier `.env`. Ces clés seront utilisées par le serveur et ne seront jamais exposées au client.
+    -   `CLOUD_TEMPLE_API_KEY` : Votre clé pour l'API Cloud Temple.
+    -   `OPENAI_API_KEY` (Optionnel) : Une clé OpenAI par défaut.
+    -   `ANTHROPIC_API_KEY` (Optionnel) : Une clé Anthropic par défaut.
 
 ## Utilisation
 
-1.  **Choisissez votre écosystème** : "Cloud Temple" ou "OpenAI + Anthropic".
+1.  **Choisissez votre écosystème** : "Cloud Temple SecNumCloud" ou "OpenAI + Anthropic".
 2.  **Configurez** :
-    -   Pour Cloud Temple, sélectionnez le modèle d'analyse souhaité.
-    -   Pour OpenAI/Anthropic, entrez vos clés API personnelles (elles seront sauvegardées dans votre navigateur).
+    -   Pour Cloud Temple, sélectionnez le modèle d'analyse souhaité dans la liste dynamique.
+    -   Pour OpenAI/Anthropic, entrez vos clés API personnelles (elles seront testées et sauvegardées dans votre navigateur).
 3.  **Sélectionnez un fichier audio** (.mp3, .wav, .m4a).
 4.  **Cliquez sur "Lancer le Traitement"**.
-5.  **Suivez la progression** en temps réel. Les résultats de la transcription et de l'analyse apparaîtront au fur et à mesure.
-6.  Une fois l'analyse terminée, le bouton **"Lancer la Synthèse"** devient actif. Vous pouvez, si vous le souhaitez, changer de modèle avant de lancer la synthèse.
+5.  **Suivez la progression** en temps réel.
+6.  Une fois l'analyse terminée, le bouton **"Lancer la Synthèse"** devient actif.
 7.  **Téléchargez** vos résultats à tout moment.
+8.  Cliquez sur le bouton **"À propos"** pour comprendre le fonctionnement détaillé du démonstrateur.
 
 ## Structure des Fichiers
 
-Le projet est maintenant organisé dans un dossier `src/` avec une séparation claire entre le client et le serveur.
+Le projet est organisé dans un dossier `src/` avec une séparation claire entre le client et le serveur.
 
 ```
 transkryptor/

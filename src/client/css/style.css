@@ -175,6 +175,27 @@ input[type="file"] { display: none; }
 .btn-primary { background-color: var(--md-sys-primary); color: var(--md-sys-on-primary); }
 .btn-primary:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .btn-tonal { background-color: var(--md-sys-primary-container); color: var(--md-sys-on-primary-container); }
+.btn-secondary {
+    width: 100%;
+    background-color: transparent;
+    color: var(--md-sys-secondary);
+    border: 1px solid var(--md-sys-outline);
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--md-sys-surface-container-highest);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.copyright {
+    font-size: 12px;
+    color: var(--md-sys-on-surface-variant);
+    text-align: center;
+    margin-top: 16px;
+}
 
 /* Stats */
 #main-stats-grid {
@@ -301,4 +322,68 @@ input[type="file"] { display: none; }
 }
 .tab-content strong {
     font-weight: 700;
+}
+
+/* --- Modal --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.modal-content {
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--md-sys-surface-container-highest);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--md-sys-primary);
+}
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--md-sys-on-surface-variant);
+}
+.modal-body h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+.modal-body a {
+    color: var(--md-sys-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.modal-body a:hover {
+    text-decoration: underline;
+}
+.modal-body ol, .modal-body ul {
+    padding-left: 20px;
 }

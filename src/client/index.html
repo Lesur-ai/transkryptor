@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transkryptor v4</title>
+    <title>Transkryptor v4.0.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,11 +12,11 @@
 <body>
     <div class="app-layout">
         <aside class="sidebar">
-            <h1>Transkryptor v4</h1>
+            <h1>Transkryptor v4.0.0</h1>
             <div class="step">
                 <div class="step-header"><span class="step-number">1</span><span class="step-title">Écosystème</span></div>
                 <div class="workflow-selector">
-                    <div class="workflow-option active" data-workflow="cloud-temple">Cloud Temple</div>
+                    <div class="workflow-option active" data-workflow="cloud-temple">Cloud Temple SecNumCloud</div>
                     <div class="workflow-option" data-workflow="openai-anthropic">OpenAI + Anthropic</div>
                 </div>
             </div>
@@ -45,8 +45,10 @@
                 </label>
                 <input type="file" id="audio-file" accept=".mp3,.wav,.m4a">
             </div>
-            <div style="margin-top: auto;">
-                <button id="process-btn" class="btn btn-primary" style="width: 100%;">Lancer le Traitement</button>
+            <div class="sidebar-footer">
+                <button id="process-btn" class="btn btn-primary">Lancer le Traitement</button>
+                <button id="about-btn" class="btn btn-secondary">À propos</button>
+                <p class="copyright">© Christophe Lesur - Cloud Temple - Ete 2025</p>
             </div>
         </aside>
         <div class="content-wrapper">
@@ -95,5 +97,34 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module" src="/js/main.js"></script>
+
+    <!-- Modale "À propos" -->
+    <div id="about-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>À propos de Transkryptor v4.0.0</h2>
+                <button id="close-modal-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Transkryptor est un démonstrateur technologique conçu pour illustrer la puissance et la simplicité d'intégration de l'offre <a href="https://www.cloud-temple.com/large-language-model-as-a-service-llmaas/" target="_blank">LLMaaS de Cloud Temple</a>, une plateforme souveraine et qualifiée SecNumCloud.</strong></p>
+                
+                <h3>Comment ça marche ?</h3>
+                <p>Cette application orchestre plusieurs services d'IA pour transformer un fichier audio en une synthèse exploitable :</p>
+                <ol>
+                    <li><strong>Transcription :</strong> Votre fichier audio est découpé en morceaux et envoyé à un modèle de reconnaissance vocale (Whisper) pour le convertir en texte.</li>
+                    <li><strong>Analyse :</strong> Le texte brut est ensuite corrigé, nettoyé et structuré par un grand modèle de langage (LLM) pour en améliorer la lisibilité.</li>
+                    <li><strong>Synthèse :</strong> Enfin, un LLM génère un résumé exécutif, identifie les points clés et propose des actions, vous offrant une vue d'ensemble rapide et efficace.</li>
+                </ol>
+
+                <h3>Ce que vous voyez à l'écran :</h3>
+                <ul>
+                    <li><strong>Statistiques :</strong> Suivez en temps réel la vitesse de traitement, la progression et le temps écoulé.</li>
+                    <li><strong>Visualisation :</strong> La grille colorée représente chaque morceau de votre fichier, changeant de couleur selon son état (en attente, en cours, terminé, erreur).</li>
+                    <li><strong>Logs du Serveur :</strong> Observez en direct les communications entre l'application et les API, démontrant la transparence du processus.</li>
+                </ul>
+                <p>Ce démonstrateur met en lumière la facilité avec laquelle des applications complexes et à haute valeur ajoutée peuvent être construites sur une infrastructure de confiance. Pour en savoir plus, consultez notre <a href="https://docs.cloud-temple.com/llmaas" target="_blank">documentation technique</a>.</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -28,3 +28,7 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Cline Rules & Memory Bank
+.clinerules/
+memory-bank/

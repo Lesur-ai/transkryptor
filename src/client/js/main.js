@@ -22,6 +22,9 @@ const openaiKeyInput = document.getElementById('openai-key');
 const anthropicKeyInput = document.getElementById('anthropic-key');
 const fileNameSpan = document.getElementById('file-name');
 const statTime = document.getElementById('stat-time');
+const aboutBtn = document.getElementById('about-btn');
+const aboutModal = document.getElementById('about-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
 const fileInfoCard = document.getElementById('file-info-card');
 const serverLogsContent = document.getElementById('server-logs-content');
 const chartCard = document.querySelector('.chart-card');
@@ -89,6 +92,7 @@ async function handleProcess() {
     }
 
     processBtn.disabled = true;
+    synthesizeBtn.disabled = true; // On désactive le bouton de synthèse au début
     processBtn.textContent = 'Validation des clés...';
 
     if (state.currentWorkflow === 'openai-anthropic') {
@@ -191,6 +195,7 @@ async function handleProcess() {
         const transcriptionProvider = state.currentWorkflow === 'cloud-temple' ? 'cloud-temple' : 'openai';
         await processAndTranscribeInChunks(state.selectedFile, transcriptionProvider, state.apiKeys.openai, onTranscriptionProgress);
         // L'état est déjà à jour grâce à l'affichage progressif, pas besoin de le remettre à jour ici.
+        resultsUI.setActiveTab('analysis'); // Activer l'onglet Analyse
         resultsUI.showPlaceholder('Analyse du texte en cours...');
         progressUI.clearProgress();
         chartUI.resetChart();
@@ -275,6 +280,7 @@ async function handleSynthesize() {
 
     try {
         updateState({ processingState: 'synthesizing' });
+        resultsUI.setActiveTab('synthesis'); // Activer l'onglet Synthèse
         resultsUI.showPlaceholder('Génération de la synthèse en cours...');
 
         const provider = state.currentWorkflow === 'cloud-temple' ? 'cloud-temple' : 'anthropic';
@@ -294,9 +300,40 @@ async function handleSynthesize() {
         resultsUI.showPlaceholder(`Erreur lors de la synthèse : ${error.message}`);
         alert(`Erreur de synthèse: ${error.message}`);
     } finally {
-        synthesizeBtn.disabled = false;
-        synthesizeBtn.textContent = 'Lancer la Synthèse';
+    synthesizeBtn.disabled = false;
+    synthesizeBtn.textContent = 'Lancer la Synthèse';
     }
+}
+
+function setupModal() {
+    const showModal = () => {
+        aboutModal.style.display = 'flex';
+        setTimeout(() => {
+            aboutModal.style.opacity = '1';
+            aboutModal.querySelector('.modal-content').style.transform = 'scale(1)';
+        }, 10);
+    };
+
+    const hideModal = () => {
+        aboutModal.style.opacity = '0';
+        aboutModal.querySelector('.modal-content').style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            aboutModal.style.display = 'none';
+        }, 300);
+    };
+
+    aboutBtn.addEventListener('click', showModal);
+    closeModalBtn.addEventListener('click', hideModal);
+    aboutModal.addEventListener('click', (event) => {
+        if (event.target === aboutModal) {
+            hideModal();
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && aboutModal.style.display !== 'none') {
+            hideModal();
+        }
+    });
 }
 
 function initialize() {
@@ -316,6 +353,7 @@ function initialize() {
     statsUI.initStats();
     progressUI.initProgress('progress-visualization');
     chartUI.initChart(document.getElementById('performance-chart'));
+    setupModal();
 
     workflowOptions.forEach(opt => opt.addEventListener('click', handleWorkflowChange));
     modelSelect.addEventListener('change', (e) => updateState({ selectedModel: e.target.value }));
