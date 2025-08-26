@@ -144,7 +144,7 @@ export async function processAndAnalyzeInBatches({ text, provider, model, apiKey
                         chunkIndex: i,
                         processedTokens: processedTokens,
                         processedSize: processedSize,
-                        currentText: allAnalyzedTexts.filter(Boolean).join('\n\n')
+                        text: analyzedText // Ne renvoyer que le texte du chunk
                     });
                 } catch (error) {
                     onProgress({ type: 'chunk_error', chunkIndex: i, error: error.message });
@@ -155,5 +155,13 @@ export async function processAndAnalyzeInBatches({ text, provider, model, apiKey
         await Promise.all(batchPromises);
     }
 
-    return allAnalyzedTexts.filter(Boolean).join('\n\n');
+    // Attendre que tous les chunks soient terminés avant de joindre
+    await Promise.all(
+        Array.from({ length: totalChunks }, (_, i) => 
+            allAnalyzedTexts[i] === undefined ? new Promise(resolve => {
+                // On pourrait ajouter un timeout ici si nécessaire
+            }) : Promise.resolve()
+        )
+    );
+    return allAnalyzedTexts.join('\n\n');
 }

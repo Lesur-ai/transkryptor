@@ -31,6 +31,8 @@ const chartCard = document.querySelector('.chart-card');
 
 let timerInterval = null;
 let chunkDurations = []; // Pour stocker les durées de chaque chunk
+let transcriptionResults = [];
+let analysisResults = [];
 
 // --- Functions ---
 
@@ -132,6 +134,8 @@ async function handleProcess() {
 
     processBtn.textContent = 'Traitement en cours...';
     chunkDurations = []; // Réinitialise les durées
+    transcriptionResults = []; // Réinitialise les résultats
+    analysisResults = []; // Réinitialise les résultats
     const startTime = Date.now();
     timerInterval = setInterval(() => {
         statTime.textContent = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
@@ -181,8 +185,10 @@ async function handleProcess() {
                 chartUI.addChartData(elapsedTime.toFixed(1), speedRatio);
 
                 // Mise à jour progressive de l'UI
-                if (progress.currentText) {
-                    updateState({ results: { ...getState().results, transcription: progress.currentText } });
+                if (progress.text) {
+                    transcriptionResults[progress.chunkIndex] = progress.text;
+                    const currentText = transcriptionResults.filter(Boolean).join(' ');
+                    updateState({ results: { ...getState().results, transcription: currentText } });
                     resultsUI.updateTranscriptionView();
                 }
                 break;
@@ -229,8 +235,10 @@ async function handleProcess() {
                 chartUI.addChartData(elapsedTime.toFixed(1), speed);
 
                 // Mise à jour progressive de l'UI
-                if (progress.currentText) {
-                    updateState({ results: { ...getState().results, analysis: progress.currentText } });
+                if (progress.text) {
+                    analysisResults[progress.chunkIndex] = progress.text;
+                    const currentText = analysisResults.filter(Boolean).join('\n\n');
+                    updateState({ results: { ...getState().results, analysis: currentText } });
                     resultsUI.updateAnalysisView();
                 }
                 break;
@@ -241,7 +249,7 @@ async function handleProcess() {
         };
 
         const analysisProvider = state.currentWorkflow === 'cloud-temple' ? 'cloud-temple' : 'anthropic';
-        const analysisText = await processAndAnalyzeInBatches({
+        await processAndAnalyzeInBatches({
             text: state.results.transcription,
             provider: analysisProvider,
             model: state.selectedModel,
@@ -250,6 +258,8 @@ async function handleProcess() {
             totalFileSize: state.selectedFile.size
         });
         // L'état est déjà à jour, on s'assure juste que la dernière version est bien affichée
+        const finalText = analysisResults.join('\n\n');
+        updateState({ results: { ...getState().results, analysis: finalText } });
         resultsUI.updateAnalysisView(); 
         synthesizeBtn.disabled = false; // Activer le bouton de synthèse
 

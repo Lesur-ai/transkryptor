@@ -109,7 +109,7 @@ export async function processAndTranscribeInChunks(audioFile, provider, apiKey, 
                         chunkIndex: i,
                         processedDuration: processedDuration,
                         chunkDuration: duration,
-                        currentText: allTranscriptions.filter(Boolean).join(' ')
+                        text: text // Ne renvoyer que le texte du chunk
                     });
                 } catch (error) {
                     onProgress({ type: 'chunk_error', chunkIndex: i, error: error.message });
@@ -120,5 +120,13 @@ export async function processAndTranscribeInChunks(audioFile, provider, apiKey, 
         await Promise.all(batchPromises);
     }
 
-    return allTranscriptions.filter(Boolean).join(' ');
+    // Attendre que tous les chunks soient terminés avant de joindre
+    await Promise.all(
+        Array.from({ length: numChunks }, (_, i) => 
+            allTranscriptions[i] === undefined ? new Promise(resolve => {
+                // On pourrait ajouter un timeout ici si nécessaire
+            }) : Promise.resolve()
+        )
+    );
+    return allTranscriptions.join(' ');
 }
