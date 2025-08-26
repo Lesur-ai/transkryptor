@@ -47,5 +47,5 @@ export function getState() {
  */
 export function updateState(newState) {
     Object.assign(appState, newState);
-    console.log('State updated:', appState); // Pour le débogage
+    // console.log('State updated:', appState); // Pour le débogage
 }

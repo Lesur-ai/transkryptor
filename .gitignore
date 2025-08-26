@@ -32,3 +32,7 @@ Thumbs.db
 # Cline Rules & Memory Bank
 .clinerules/
 memory-bank/
+
+# Fichiers d'infrastructure de déploiement
+Dockerfile
+docker-compose.yml

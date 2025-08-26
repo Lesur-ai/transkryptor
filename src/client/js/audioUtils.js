@@ -18,11 +18,12 @@ function writeString(view, offset, string) {
 /**
  * Convertit un AudioBuffer en un Blob au format WAV.
  * @param {AudioBuffer} audioBuffer - Le buffer audio à convertir.
- * @returns {Blob} Un Blob contenant les données audio au format WAV.
+ * @returns {Promise<Blob>} Une promesse qui se résout avec un Blob au format WAV.
  */
 export function audioBufferToWav(audioBuffer) {
-    const numberOfChannels = audioBuffer.numberOfChannels;
-    const sampleRate = audioBuffer.sampleRate;
+    return new Promise((resolve) => {
+        const numberOfChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
     const length = audioBuffer.length;
     const bytesPerSample = 2; // 16-bit PCM
     const blockAlign = numberOfChannels * bytesPerSample;
@@ -47,16 +48,31 @@ export function audioBufferToWav(audioBuffer) {
     writeString(view, 36, 'data');
     view.setUint32(40, dataSize, true);
 
-    // Données audio (PCM)
-    const offset = 44;
-    for (let i = 0; i < length; i++) {
-        for (let channel = 0; channel < numberOfChannels; channel++) {
-            const sample = audioBuffer.getChannelData(channel)[i];
-            // Clamp and convert to 16-bit integer
-            const value = Math.max(-1, Math.min(1, sample)) * 32767;
-            view.setInt16(offset + i * blockAlign + channel * bytesPerSample, value, true);
-        }
+    // Données audio (PCM) - Version optimisée
+    const channels = [];
+    for (let i = 0; i < numberOfChannels; i++) {
+        channels.push(audioBuffer.getChannelData(i));
     }
 
-    return new Blob([buffer], { type: 'audio/wav' });
+    let offset = 44;
+    
+    // Fonction pour traiter une partie des données et céder le contrôle
+    async function process() {
+        for (let i = 0; i < length; i++) {
+            for (let channel = 0; channel < numberOfChannels; channel++) {
+                const sample = channels[channel][i];
+                const value = Math.max(-1, Math.min(1, sample)) * 32767;
+                view.setInt16(offset, value, true);
+                offset += bytesPerSample;
+            }
+            // Faire une pause toutes les 100 000 samples pour ne pas bloquer le thread principal
+            if (i > 0 && i % 100000 === 0) {
+                await new Promise(requestAnimationFrame);
+            }
+        }
+        resolve(new Blob([buffer], { type: 'audio/wav' }));
+    }
+    
+    process();
+    });
 }
