@@ -107,3 +107,62 @@ export async function analyze(text, provider, model, apiKey = null, metadata = {
         throw error;
     }
 }
+
+/**
+ * Envoie le texte de l'analyse au backend pour synthèse.
+ * @param {string} analysisText - Le texte de l'analyse à synthétiser.
+ * @param {string} provider - L'identifiant du fournisseur.
+ * @param {string} model - L'identifiant du modèle à utiliser.
+ * @param {string} [apiKey] - La clé API (optionnelle).
+ * @returns {Promise<object>} Le résultat de la synthèse.
+ */
+export async function synthesize(analysisText, provider, model, apiKey = null) {
+    const body = {
+        text: analysisText,
+        provider,
+        model,
+        apiKey,
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/synthesize`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`Erreur lors de la synthèse avec ${provider}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Valide une clé API auprès du backend.
+ * @param {string} provider - Le fournisseur ('openai' or 'anthropic').
+ * @param {string} apiKey - La clé API à valider.
+ * @returns {Promise<object>} Le résultat de la validation.
+ */
+export async function validateKey(provider, apiKey) {
+    const body = { provider, apiKey };
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/validate-key`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error(`Erreur lors de la validation de la clé pour ${provider}:`, error);
+        // En cas d'erreur réseau, on considère la validation comme échouée
+        return { success: false, message: `Erreur réseau lors de la validation pour ${provider}.` };
+    }
+}

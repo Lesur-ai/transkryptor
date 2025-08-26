@@ -17,13 +17,16 @@ Le développement initial de la version 4 est terminé. L'application a été en
     -   Sélection de l'écosystème (Cloud Temple vs OpenAI/Anthropic).
     -   Transcription et analyse par lots parallèles.
     -   Affichage des statistiques en temps réel (vitesse, taille, temps, etc.).
-    -   Affichage des logs serveur en temps réel.
+    -   Affichage des logs serveur en temps réel (disposition corrigée).
     -   Téléchargement des résultats.
+    -   **Synthèse de l'analyse** avec choix du modèle et affichage Markdown.
+    -   **Validation des clés API** avant traitement.
+    -   **Sauvegarde des clés API** dans le navigateur.
+    -   **Affichage progressif** des résultats de transcription et d'analyse.
 
 ## 3. Ce qui Reste à Faire
 
 Le périmètre de cette session de développement est complet. Les prochaines étapes pourraient inclure :
--   Implémentation de la fonctionnalité de **Synthèse**.
 -   Ajout de plus de fournisseurs de services.
 -   Mise en place d'un système d'authentification utilisateur.
 
@@ -40,3 +43,6 @@ Le périmètre de cette session de développement est complet. Les prochaines é
 -   **25/08/2025 :** Résolution du bug de transcription en implémentant le rééchantillonnage audio côté client.
 -   **25/08/2025 :** Résolution du bug de "chunks perdus" en implémentant une gestion d'erreurs robuste avec feedback visuel.
 -   **25/08/2025 :** Finalisation de l'UI de progression (grille compacte, statistiques détaillées, logs temps réel).
+-   **26/08/2025 :** Implémentation de la fonctionnalité de synthèse et correction des bugs UI (Markdown, position des logs, défilement).
+-   **26/08/2025 :** Ajout de la persistance et de la validation des clés API pour une meilleure expérience utilisateur.
+-   **26/08/2025 :** Implémentation de l'affichage progressif des résultats.

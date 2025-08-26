@@ -111,7 +111,8 @@ export async function processAndTranscribeInChunks(audioFile, provider, apiKey, 
                         completed: ++completedChunks,
                         chunkIndex: i,
                         processedDuration: processedDuration,
-                        chunkDuration: duration
+                        chunkDuration: duration,
+                        currentText: allTranscriptions.filter(Boolean).join(' ')
                     });
                 } catch (error) {
                     onProgress({ type: 'chunk_error', chunkIndex: i, error: error.message });

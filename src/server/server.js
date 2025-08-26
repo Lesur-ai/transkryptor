@@ -193,7 +193,8 @@ app.post('/api/analyze', async (req, res) => {
             Logger.info(`Analyse avec Cloud Temple (modèle: ${model})...`);
             const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
                 model: model,
-                messages: [{ role: 'user', content: text }]
+                messages: [{ role: 'user', content: text }],
+                max_tokens: 8192
             }, {
                 headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
             });
@@ -231,6 +232,124 @@ app.post('/api/analyze', async (req, res) => {
             error: 'Erreur interne du serveur lors de l\'analyse',
             details: error.response ? error.response.data : error.message
         });
+    }
+});
+
+// Endpoint pour la synthèse de texte
+const SYNTHESIS_PROMPT = `
+À partir de l'analyse fournie ci-dessous, rédige une synthèse exécutive claire, concise et professionnelle. La synthèse doit être structurée pour une compréhension rapide et une prise de décision efficace.
+
+**Format attendu :**
+
+**1. Résumé Exécutif :**
+   - Un paragraphe de 3 à 5 phrases maximum qui résume l'essentiel de l'analyse. Quelle est l'information la plus critique à retenir ?
+
+**2. Points Clés :**
+   - Une liste à puces (3 à 5 points) qui met en évidence les découvertes, conclusions ou thèmes les plus importants de l'analyse. Chaque point doit être une phrase courte et percutante.
+
+**3. Actions Recommandées / Prochaines Étapes :**
+   - Une liste à puces (2 à 3 points) de suggestions concrètes ou de questions à explorer basées sur l'analyse. Que devrait-on faire avec cette information ?
+
+---
+**Analyse à synthétiser :**
+`;
+
+app.post('/api/synthesize', async (req, res) => {
+    const { provider, model, text, apiKey } = req.body;
+    const startTime = Date.now();
+
+    if (!provider || !model || !text) {
+        Logger.error('Paramètres manquants pour la synthèse');
+        return res.status(400).json({ error: 'Les paramètres "provider", "model" et "text" sont requis' });
+    }
+
+    const fullPrompt = `${SYNTHESIS_PROMPT}\n\n${text}`;
+
+    try {
+        let synthesisText;
+        if (provider === 'cloud-temple') {
+            Logger.info(`Synthèse avec Cloud Temple (modèle: ${model})...`);
+            const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
+                model: model,
+                messages: [{ role: 'user', content: fullPrompt }],
+                max_tokens: 4096
+            }, {
+                headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
+            });
+            synthesisText = response.data.choices[0].message.content;
+            Logger.success('Synthèse Cloud Temple réussie');
+
+        } else if (provider === 'anthropic') {
+            Logger.info(`Synthèse avec Anthropic (modèle: ${model})...`);
+            const key = apiKey || process.env.ANTHROPIC_API_KEY;
+            if (!key) return res.status(400).json({ error: 'Clé API Anthropic manquante' });
+
+            const response = await axios.post('https://api.anthropic.com/v1/messages', {
+                model: model,
+                max_tokens: 4096,
+                messages: [{ role: "user", content: fullPrompt }]
+            }, {
+                headers: {
+                    "x-api-key": key,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json"
+                }
+            });
+            synthesisText = response.data.content[0].text;
+            Logger.success('Synthèse Anthropic réussie');
+        } else {
+            return res.status(400).json({ error: 'Fournisseur de synthèse non supporté' });
+        }
+        
+        const duration = Date.now() - startTime;
+        Logger.logOperation('SYNTHESE', { model }, 'SUCCESS', duration);
+        res.json({ synthesis: synthesisText });
+
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        Logger.logOperation('SYNTHESE', { model }, 'ERROR', duration);
+        Logger.error(`Erreur lors de la synthèse avec ${provider}`, error);
+        res.status(500).json({ 
+            error: 'Erreur interne du serveur lors de la synthèse',
+            details: error.response ? error.response.data : error.message
+        });
+    }
+});
+
+// Endpoint pour valider les clés API
+app.post('/api/validate-key', async (req, res) => {
+    const { provider, apiKey } = req.body;
+
+    if (!provider || !apiKey) {
+        return res.status(400).json({ error: 'Les paramètres "provider" et "apiKey" sont requis' });
+    }
+
+    try {
+        if (provider === 'openai') {
+            // Appel léger pour valider la clé OpenAI (lister les modèles)
+            await axios.get('https://api.openai.com/v1/models', {
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            });
+        } else if (provider === 'anthropic') {
+            // Appel léger pour valider la clé Anthropic (ping)
+            await axios.post('https://api.anthropic.com/v1/messages', {
+                model: "claude-3-haiku-20240307", // Modèle rapide et peu coûteux
+                max_tokens: 1,
+                messages: [{ role: "user", content: "ping" }]
+            }, {
+                headers: {
+                    "x-api-key": apiKey,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json"
+                }
+            });
+        } else {
+            return res.status(400).json({ error: 'Fournisseur non supporté' });
+        }
+        res.json({ success: true, message: `Clé pour ${provider} valide.` });
+    } catch (error) {
+        Logger.error(`Échec de validation de la clé pour ${provider}`, error.response ? error.response.data : error.message);
+        res.status(401).json({ success: false, message: `Clé API pour ${provider} invalide.` });
     }
 });
 

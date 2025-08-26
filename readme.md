@@ -1,363 +1,117 @@
-# Transkryptor 3.0.0
+# Transkryptor v4.0.0
+
+![Screenshot](images/screenshoot.png)
 
 ## Table des matières
-- [Transkryptor 3.0.0](#transkryptor-300)
+- [Transkryptor v4.0.0](#transkryptor-v400)
   - [Table des matières](#table-des-matières)
   - [Introduction](#introduction)
-  - [Fonctionnalités](#fonctionnalités)
-  - [Installation de Node.js](#installation-de-nodejs)
-    - [Windows](#windows)
-    - [macOS](#macos)
-    - [Linux (Ubuntu/Debian)](#linux-ubuntudebian)
-    - [Linux (Fedora)](#linux-fedora)
-  - [Installation de Transkryptor](#installation-de-transkryptor)
-  - [Configuration requise](#configuration-requise)
+  - [Fonctionnalités Clés](#fonctionnalités-clés)
+  - [Architecture](#architecture)
+  - [Installation](#installation)
   - [Configuration](#configuration)
-    - [Clés API](#clés-api)
-    - [Configuration du serveur](#configuration-du-serveur)
   - [Utilisation](#utilisation)
-  - [API](#api)
-    - [GET /](#get-)
-    - [POST /test-keys](#post-test-keys)
-    - [POST /analyze](#post-analyze)
-  - [Mises à jour importantes V3](#mises-à-jour-importantes-v3)
-  - [Mises à jour importantes V2](#mises-à-jour-importantes-v2)
-  - [Architecture technique](#architecture-technique)
-    - [Frontend](#frontend)
-    - [Backend](#backend)
-    - [APIs externes](#apis-externes)
-    - [Architecture des fichiers](#architecture-des-fichiers)
-  - [Gestion des erreurs et journalisation](#gestion-des-erreurs-et-journalisation)
-  - [Considérations de sécurité](#considérations-de-sécurité)
-  - [Performances et optimisation](#performances-et-optimisation)
-  - [Dépannage](#dépannage)
-  - [Contributions et développement](#contributions-et-développement)
+  - [Structure des Fichiers](#structure-des-fichiers)
   - [Feuille de route](#feuille-de-route)
   - [Licence](#licence)
-  - [Crédits](#crédits)
 
 ## Introduction
 
-Transkryptor est une application web sophistiquée conçue pour faciliter la transcription de fichiers audio, l'analyse des transcriptions, et la génération de synthèses. En tirant parti des capacités avancées des API OpenAI et Anthropic, Transkryptor offre une solution complète pour le traitement et l'analyse de contenu audio.
+Transkryptor v4 est une refonte complète de l'application, la transformant en une plateforme moderne, sécurisée et multi-fournisseurs pour la transcription, l'analyse et la synthèse de contenu audio. L'objectif principal de cette version est d'offrir une flexibilité maximale à l'utilisateur tout en garantissant une expérience utilisateur intuitive et réactive.
 
-## Fonctionnalités
+L'application intègre désormais la plateforme LLMaaS de Cloud Temple (qualifiée SecNumCloud) aux côtés des fournisseurs historiques OpenAI et Anthropic.
 
-- **Transcription audio**: 
-  - Support des fichiers au format M4A
-  - Transcription automatique utilisant des modèles de reconnaissance vocale avancés
+## Fonctionnalités Clés
 
-- **Analyse de transcription**: 
-  - Analyse approfondie du contenu transcrit
-  - Extraction de concepts clés, de sentiments, et d'autres informations pertinentes
+- **Multi-Fournisseurs** : Choisissez entre l'écosystème Cloud Temple (transcription et analyse) ou la combinaison OpenAI (transcription) + Anthropic (analyse).
+- **Interface Moderne** : Une interface utilisateur entièrement repensée, épurée, et "responsive".
+- **Backend Sécurisé** : Toutes les clés API et les appels externes sont gérés par un serveur backend Node.js, agissant comme une passerelle sécurisée. Aucune clé n'est exposée côté client.
+- **Suivi en Temps Réel** : Visualisez la progression du traitement en temps réel avec une grille de statut pour chaque morceau de fichier, des statistiques détaillées (vitesse, temps écoulé, etc.) et les logs du serveur.
+- **Transcription par Morceaux** : Les fichiers audio sont découpés, transcrits en parallèle et réassemblés, avec une gestion robuste des erreurs et des tentatives multiples.
+- **Analyse Intelligente** : Le texte transcrit est découpé en lots cohérents et analysé en parallèle.
+- **Synthèse Exécutive** : Générez une synthèse structurée (résumé, points clés, actions) à partir de l'analyse en un clic.
+- **Persistance des Clés** : Les clés API pour OpenAI et Anthropic sont sauvegardées localement dans votre navigateur pour ne pas avoir à les ressaisir.
+- **Validation des Clés** : Les clés API sont testées avant de lancer un traitement coûteux.
 
-- **Génération de synthèse**: 
-  - Création de résumés concis et informatifs basés sur l'analyse
+## Architecture
 
-- **Validation des clés API**: 
-  - Test des clés API OpenAI et Anthropic pour assurer leur validité
+La v4 adopte une architecture client-serveur claire :
+- **Frontend** : Une application monopage (SPA) en JavaScript "vanilla" (pur) et modulaire. Elle gère l'interface utilisateur et communique uniquement avec son propre backend.
+- **Backend** : Un serveur Node.js/Express qui sert de passerelle API (`API Gateway`). Il reçoit les requêtes du frontend, les enrichit avec les clés API stockées de manière sécurisée, et les relaie vers les fournisseurs externes appropriés (Cloud Temple, OpenAI, Anthropic).
 
-- **Suivi de progression**: 
-  - Affichage en temps réel de la progression globale et par lot des opérations
+## Installation
 
-- **Options de téléchargement**: 
-  - Possibilité de télécharger les transcriptions, analyses, et synthèses au format texte
+1.  **Prérequis** : Assurez-vous d'avoir [Node.js](https://nodejs.org/) (version 18.x ou supérieure) installé.
 
-## Installation de Node.js
+2.  **Cloner le dépôt** :
+    ```bash
+    git clone https://github.com/chrlesur/transkryptor.git
+    cd transkryptor
+    ```
 
-### Windows
-1. Téléchargez l'installateur Node.js depuis [nodejs.org](https://nodejs.org/)
-2. Lancez l'installateur (.msi) et suivez les instructions
-3. Vérifiez l'installation dans PowerShell ou CMD :
-```bash
-node --version
-npm --version
-```
+3.  **Installer les dépendances** :
+    ```bash
+    npm install
+    ```
 
-### macOS
-1. Via Homebrew (recommandé) :
-```bash
-# Installer Homebrew si nécessaire
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+4.  **Lancer l'application** :
+    ```bash
+    npm start
+    ```
 
-# Installer Node.js
-brew install node
-```
-
-2. Ou via l'installateur depuis [nodejs.org](https://nodejs.org/)
-
-3. Vérifiez l'installation :
-```bash
-node --version
-npm --version
-```
-
-### Linux (Ubuntu/Debian)
-```bash
-# Ajout du dépôt NodeSource
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-
-# Installation de Node.js
-sudo apt-get install -y nodejs
-
-# Vérification
-node --version
-npm --version
-```
-
-### Linux (Fedora)
-```bash
-# Installation de Node.js
-sudo dnf install nodejs
-
-# Vérification
-node --version
-npm --version
-```
-
-## Installation de Transkryptor
-
-1. Clonez le dépôt :
-```bash
-git clone https://github.com/chrlesur/transkryptor.git
-cd transkryptor
-```
-
-2. Installez les dépendances :
-```bash
-npm install
-```
-
-3. Créez un fichier .env à la racine du projet :
-```
-PORT=3000
-```
-
-4. Lancez l'application :
-```bash
-node server.js
-```
-
-5. Accédez à l'application via : http://localhost:3000
-
-## Configuration requise
-
-- Node.js 18.x ou supérieur
-- Navigateur web moderne (Chrome, Firefox, Safari, Edge)
-- Connexion Internet stable (pour les API OpenAI et Anthropic)
-- 2GB RAM minimum
-- Espace disque : 500MB minimum
+5.  Ouvrez votre navigateur et accédez à `http://localhost:3000`.
 
 ## Configuration
 
-### Clés API
-1. Obtenez une clé API OpenAI sur [https://platform.openai.com](https://platform.openai.com)
-2. Obtenez une clé API Anthropic sur [https://www.anthropic.com](https://www.anthropic.com)
-3. Entrez ces clés dans l'interface utilisateur de Transkryptor
-
-### Configuration du serveur
-Le serveur utilise les variables d'environnement suivantes :
-- `PORT`: Le port sur lequel le serveur écoute (par défaut : 3000)
+1.  **Créer un fichier `.env`** à la racine du projet en copiant le modèle `.env.example`.
+2.  **Renseigner les clés API** dans ce fichier `.env` :
+    -   `CLOUD_TEMPLE_API_KEY` : Votre clé pour l'API Cloud Temple (utilisée par défaut pour cet écosystème).
+    -   `OPENAI_API_KEY` (Optionnel) : Une clé par défaut si vous ne souhaitez pas que les utilisateurs fournissent la leur.
+    -   `ANTHROPIC_API_KEY` (Optionnel) : Idem pour Anthropic.
 
 ## Utilisation
 
-1. Ouvrez votre navigateur et accédez à `http://localhost:3000`
-2. **Configuration des clés API**
-   - Entrez vos clés API OpenAI et Anthropic
-   - Cliquez sur "Tester les clés API"
+1.  **Choisissez votre écosystème** : "Cloud Temple" ou "OpenAI + Anthropic".
+2.  **Configurez** :
+    -   Pour Cloud Temple, sélectionnez le modèle d'analyse souhaité.
+    -   Pour OpenAI/Anthropic, entrez vos clés API personnelles (elles seront sauvegardées dans votre navigateur).
+3.  **Sélectionnez un fichier audio** (.mp3, .wav, .m4a).
+4.  **Cliquez sur "Lancer le Traitement"**.
+5.  **Suivez la progression** en temps réel. Les résultats de la transcription et de l'analyse apparaîtront au fur et à mesure.
+6.  Une fois l'analyse terminée, le bouton **"Lancer la Synthèse"** devient actif. Vous pouvez, si vous le souhaitez, changer de modèle avant de lancer la synthèse.
+7.  **Téléchargez** vos résultats à tout moment.
 
-3. **Transcription**
-   - Sélectionnez un fichier audio M4A
-   - Appuyez sur "Transcrire"
-   - Suivez la progression
+## Structure des Fichiers
 
-4. **Analyse**
-   - Une fois la transcription terminée, cliquez sur "Analyser la transcription"
+Le projet est maintenant organisé dans un dossier `src/` avec une séparation claire entre le client et le serveur.
 
-5. **Synthèse**
-   - Après l'analyse, cliquez sur "Synthétiser l'analyse"
-
-6. **Téléchargement**
-   - Utilisez les boutons "Télécharger" pour sauvegarder vos résultats
-
-## API
-
-### GET /
-Sert la page d'accueil de l'application.
-
-### POST /test-keys
-Teste la validité des clés API fournies.
-
-**Payload**:
-```json
-{
-  "openaiKey": "votre-clé-openai",
-  "anthropicKey": "votre-clé-anthropic"
-}
-```
-
-### POST /analyze
-Lance l'analyse d'une transcription.
-
-**Payload**:
-```json
-{
-  "prompt": "Votre texte à analyser",
-  "apiKey": "votre-clé-anthropic"
-}
-```
-
-## Mises à jour importantes V3
-
-- Refonte complète du système d'analyse :
-  - Traitement par chunks de 500 tokens pour une meilleure précision
-  - Parallélisation intelligente préservant l'ordre chronologique
-  - Vérification automatique de la qualité du nettoyage
-  - Gestion des erreurs avec retries progressifs (20s, 40s, 60s)
-
-- Amélioration du suivi en temps réel :
-  - Progression visuelle par LED pour chaque chunk
-  - Logs détaillés avec statistiques de tokens
-  - Aperçu des 10 premiers mots de chaque chunk
-  - Affichage des réductions de tokens en pourcentage
-
-- Nouvelle architecture modulaire :
-  ```
-  public/js/
-  ├── utils/
-  │   ├── analysisUtils.js      # Traitement des chunks
-  │   ├── progressUtils.js      # Gestion de la progression
-  │   └── factExtractor.js      # Extraction des faits
-  ├── prompts/
-  │   └── synthesisPrompts.js   # Prompts pour Claude
-  ├── analysis.js              # Module principal d'analyse
-  └── synthesizer.js           # Module de synthèse
-  ```
-
-- Améliorations de la qualité :
-  - Nettoyage intelligent des répétitions et hésitations
-  - Préservation garantie de l'ordre chronologique
-  - Validation du ratio de tokens (max 66% de réduction)
-  - Détection et correction des anomalies
-
-- Interface utilisateur :
-  - Design Google Material modernisé
-  - Affichage en temps réel des statistiques
-  - Barre de progression globale et par lot
-  - Messages d'erreur détaillés et informatifs
-
-## Mises à jour importantes V2
-
-- Interface utilisateur modernisée avec style Google
-- Amélioration de l'ergonomie avec layout 50/50
-- Intégration de l'API Claude 3.5 Sonnet d'Anthropic en derniere version
-- Nouveau système de progression par lots
-- Modernisation des prompts d'analyse, ils sont beaucoups plus efficaces.
-- Persistances des clefs API
-
-## Architecture technique
-
-### Frontend
-- HTML5, CSS3, JavaScript modulaire
-- Style Google Material Design
-- Architecture en composants
-
-### Backend
-- Node.js
-- Express.js
-- Modules : cors, axios, gpt-3-encoder, path
-
-### APIs externes
-- OpenAI Whisper API pour la transcription
-- Anthropic API (Claude 3.5 Sonnet) pour l'analyse
-
-### Architecture des fichiers
 ```
 transkryptor/
-├── public/
-│   ├── css/
-│   │   ├── base.css          # Styles de base
-│   │   ├── columns.css       # Layout des colonnes
-│   │   ├── forms.css         # Styles des formulaires
-│   │   └── components.css    # Composants UI (LED, progress...)
-│   ├── js/
-│   │   ├── utils/
-│   │   │   ├── analysisUtils.js     # Traitement des chunks
-│   │   │   ├── progressUtils.js     # Gestion de la progression
-│   │   │   ├── factExtractor.js     # Extraction des faits
-│   │   │   ├── qualityChecker.js    # Vérification qualité
-│   │   │   └── downloadHandlers.js   # Gestion des téléchargements
-│   │   ├── prompts/
-│   │   │   └── synthesisPrompts.js   # Prompts pour Claude
-│   │   ├── main.js                  # Point d'entrée
-│   │   ├── audio.js                 # Gestion audio
-│   │   ├── analysis.js              # Module d'analyse
-│   │   ├── synthesizer.js           # Module de synthèse
-│   │   ├── config.js                # Configuration
-│   │   ├── state.js                 # Gestion d'état
-│   │   └── ui.js                    # Interface utilisateur
-│   └── index.html
-├── server.js
+├── src/
+│   ├── client/
+│   │   ├── css/
+│   │   ├── js/
+│   │   │   ├── ui/         # Modules de gestion de l'interface
+│   │   │   ├── analysisProcessor.js
+│   │   │   ├── apiService.js
+│   │   │   ├── audioProcessor.js
+│   │   │   ├── main.js     # Point d'entrée principal
+│   │   │   └── ...
+│   │   └── index.html
+│   └── server/
+│       ├── logger.js
+│       └── server.js       # Serveur Express
+├── .env
 ├── package.json
-└── .env
-```
-
-## Gestion des erreurs et journalisation
-
-Système de logs intégré avec horodatage et niveaux de gravité.
-Exemple de log :
-```
-[2024-03-22 14:30:25] INFO: Test des clés API en cours...
-[2024-03-22 14:30:26] SUCCESS: Clés API validées
-```
-
-## Considérations de sécurité
-
-- Stockage sécurisé des clés API
-- Configuration CORS
-- Rate limiting recommandé en production
-- Validation des entrées utilisateur
-
-## Performances et optimisation
-
-- Traitement par lots
-- Comptage de tokens optimisé
-- Mise en cache des ressources statiques
-
-## Dépannage
-
-- Vérifiez que le serveur est en cours d'exécution
-- Confirmez l'accès à http://localhost:3000
-- Validez les clés API
-- Consultez les logs serveur
-- Vérifiez la connexion internet
-
-## Contributions et développement
-
-1. Forkez le projet
-2. Installez les dépendances de développement :
-```bash
-npm install --save-dev nodemon eslint prettier
-```
-
-3. Lancez en mode développement :
-```bash
-npm run dev
+└── readme.md
 ```
 
 ## Feuille de route
 
-- Support multi-formats audio
-- Interface React/Vue.js
-- Système d'authentification
-- Base de données
-- Support multilingue
-- Optimisation grands fichiers
+-   Ajout de nouveaux fournisseurs de services.
+-   Mise en place d'un système d'authentification utilisateur pour gérer les projets.
+-   Support de plus de formats audio/vidéo.
 
 ## Licence
 
 GPL 3.0
-
-## Crédits
-
-Développé par Christophe LESUR
-APIs : OpenAI Whisper et Anthropic Claude

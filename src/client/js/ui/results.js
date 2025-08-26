@@ -21,8 +21,13 @@ function renderActiveTabContent() {
     const content = state.results[activeTab];
 
     if (content) {
-        const htmlContent = content.replace(/\n/g, '<br>');
-        contentContainer.innerHTML = `<p>${htmlContent}</p>`;
+        // La transcription simple n'a pas besoin de Markdown
+        if (activeTab === 'transcription') {
+            contentContainer.innerHTML = `<p>${content.replace(/\n/g, '<br>')}</p>`;
+        } else {
+            // On utilise marked.parse() pour l'analyse et la synthèse
+            contentContainer.innerHTML = marked.parse(content);
+        }
         downloadBtn.disabled = false;
     } else {
         showPlaceholder(`Aucun contenu pour l'onglet "${activeTab}".`);
@@ -67,6 +72,14 @@ export function updateTranscriptionView() {
 export function updateAnalysisView() {
     // Passe à l'onglet 'analysis' et l'affiche
     setActiveTab('analysis');
+}
+
+/**
+ * Met à jour la vue lorsqu'une nouvelle synthèse est disponible.
+ */
+export function updateSynthesisView() {
+    // Passe à l'onglet 'synthesis' et l'affiche
+    setActiveTab('synthesis');
 }
 
 /**

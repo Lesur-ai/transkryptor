@@ -16,6 +16,7 @@ import * as chartUI from './ui/chart.js';
 const workflowOptions = document.querySelectorAll('.workflow-option');
 const modelSelect = document.getElementById('model-select');
 const processBtn = document.getElementById('process-btn');
+const synthesizeBtn = document.getElementById('synthesize-btn');
 const fileInput = document.getElementById('audio-file');
 const openaiKeyInput = document.getElementById('openai-key');
 const anthropicKeyInput = document.getElementById('anthropic-key');
@@ -65,8 +66,8 @@ function handleWorkflowChange(event) {
     if (selectedWorkflow === 'cloud-temple') {
         updateModelList('cloud-temple');
     } else {
-        modelSelect.innerHTML = `<option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>`;
-        updateState({ selectedModel: 'claude-3-5-sonnet-20240620' });
+        modelSelect.innerHTML = `<option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet</option>`;
+        updateState({ selectedModel: 'claude-3-7-sonnet-20250219' });
     }
 }
 
@@ -86,11 +87,45 @@ async function handleProcess() {
         alert("Veuillez sélectionner un fichier audio.");
         return;
     }
-    if (state.currentWorkflow === 'openai-anthropic') {
-        updateState({ apiKeys: { openai: openaiKeyInput.value, anthropic: anthropicKeyInput.value } });
-    }
 
     processBtn.disabled = true;
+    processBtn.textContent = 'Validation des clés...';
+
+    if (state.currentWorkflow === 'openai-anthropic') {
+        const apiKeys = { openai: openaiKeyInput.value, anthropic: anthropicKeyInput.value };
+        
+        try {
+            const [openaiResult, anthropicResult] = await Promise.all([
+                api.validateKey('openai', apiKeys.openai),
+                api.validateKey('anthropic', apiKeys.anthropic)
+            ]);
+
+            if (!openaiResult.success) {
+                alert('Erreur de validation : La clé API OpenAI est invalide.');
+                processBtn.disabled = false;
+                processBtn.textContent = 'Lancer le Traitement';
+                return;
+            }
+            if (!anthropicResult.success) {
+                alert('Erreur de validation : La clé API Anthropic est invalide.');
+                processBtn.disabled = false;
+                processBtn.textContent = 'Lancer le Traitement';
+                return;
+            }
+            
+            // Si les clés sont valides, on les sauvegarde et on met à jour l'état
+            updateState({ apiKeys });
+            localStorage.setItem('openaiApiKey', apiKeys.openai);
+            localStorage.setItem('anthropicApiKey', apiKeys.anthropic);
+
+        } catch (error) {
+            alert(`Une erreur est survenue lors de la validation des clés : ${error.message}`);
+            processBtn.disabled = false;
+            processBtn.textContent = 'Lancer le Traitement';
+            return;
+        }
+    }
+
     processBtn.textContent = 'Traitement en cours...';
     chunkDurations = []; // Réinitialise les durées
     const startTime = Date.now();
@@ -140,6 +175,12 @@ async function handleProcess() {
                 });
                 progressUI.updateChunkStatus(progress.chunkIndex, 'completed');
                 chartUI.addChartData(elapsedTime.toFixed(1), speedRatio);
+
+                // Mise à jour progressive de l'UI
+                if (progress.currentText) {
+                    updateState({ results: { ...getState().results, transcription: progress.currentText } });
+                    resultsUI.updateTranscriptionView();
+                }
                 break;
             }
             default: // Initial call
@@ -148,10 +189,8 @@ async function handleProcess() {
         };
 
         const transcriptionProvider = state.currentWorkflow === 'cloud-temple' ? 'cloud-temple' : 'openai';
-        const transcriptionText = await processAndTranscribeInChunks(state.selectedFile, transcriptionProvider, state.apiKeys.openai, onTranscriptionProgress);
-        updateState({ results: { ...state.results, transcription: transcriptionText } });
-        resultsUI.updateTranscriptionView();
-
+        await processAndTranscribeInChunks(state.selectedFile, transcriptionProvider, state.apiKeys.openai, onTranscriptionProgress);
+        // L'état est déjà à jour grâce à l'affichage progressif, pas besoin de le remettre à jour ici.
         resultsUI.showPlaceholder('Analyse du texte en cours...');
         progressUI.clearProgress();
         chartUI.resetChart();
@@ -183,6 +222,12 @@ async function handleProcess() {
                 });
                 progressUI.updateChunkStatus(progress.chunkIndex, 'completed');
                 chartUI.addChartData(elapsedTime.toFixed(1), speed);
+
+                // Mise à jour progressive de l'UI
+                if (progress.currentText) {
+                    updateState({ results: { ...getState().results, analysis: progress.currentText } });
+                    resultsUI.updateAnalysisView();
+                }
                 break;
             }
             default: // Initial call
@@ -199,11 +244,12 @@ async function handleProcess() {
             onProgress: onAnalysisProgress,
             totalFileSize: state.selectedFile.size
         });
-        updateState({ results: { ...state.results, analysis: analysisText } });
-        resultsUI.updateAnalysisView();
+        // L'état est déjà à jour, on s'assure juste que la dernière version est bien affichée
+        resultsUI.updateAnalysisView(); 
+        synthesizeBtn.disabled = false; // Activer le bouton de synthèse
 
         updateState({ processingState: 'done' });
-        alert("Traitement terminé !");
+        // alert("Traitement terminé !"); // On n'alerte plus ici, l'utilisateur peut lancer la synthèse
 
     } catch (error) {
         updateState({ processingState: 'error' });
@@ -211,13 +257,61 @@ async function handleProcess() {
         statsUI.hideStats();
         alert(`Erreur: ${error.message}`);
     } finally {
-        processBtn.disabled = false;
-        processBtn.textContent = 'Lancer le Traitement';
-        clearInterval(timerInterval);
+    processBtn.disabled = false;
+    processBtn.textContent = 'Lancer le Traitement';
+    clearInterval(timerInterval);
+    }
+}
+
+async function handleSynthesize() {
+    const state = getState();
+    if (!state.results.analysis) {
+        alert("Veuillez d'abord terminer une analyse avant de lancer la synthèse.");
+        return;
+    }
+
+    synthesizeBtn.disabled = true;
+    synthesizeBtn.textContent = 'Synthèse...';
+
+    try {
+        updateState({ processingState: 'synthesizing' });
+        resultsUI.showPlaceholder('Génération de la synthèse en cours...');
+
+        const provider = state.currentWorkflow === 'cloud-temple' ? 'cloud-temple' : 'anthropic';
+        const apiKey = state.currentWorkflow === 'cloud-temple' ? null : state.apiKeys.anthropic;
+        
+        const synthesisText = await api.synthesize(state.results.analysis, provider, state.selectedModel, apiKey);
+        
+        updateState({ 
+            results: { ...state.results, synthesis: synthesisText.synthesis },
+            processingState: 'done' 
+        });
+        
+        resultsUI.updateSynthesisView();
+
+    } catch (error) {
+        updateState({ processingState: 'error' });
+        resultsUI.showPlaceholder(`Erreur lors de la synthèse : ${error.message}`);
+        alert(`Erreur de synthèse: ${error.message}`);
+    } finally {
+        synthesizeBtn.disabled = false;
+        synthesizeBtn.textContent = 'Lancer la Synthèse';
     }
 }
 
 function initialize() {
+    // Charger les clés API depuis le localStorage au démarrage
+    const savedOpenAIKey = localStorage.getItem('openaiApiKey');
+    const savedAnthropicKey = localStorage.getItem('anthropicApiKey');
+    if (savedOpenAIKey) {
+        openaiKeyInput.value = savedOpenAIKey;
+    }
+    if (savedAnthropicKey) {
+        anthropicKeyInput.value = savedAnthropicKey;
+    }
+    // Mettre à jour l'état initial avec les clés chargées
+    updateState({ apiKeys: { openai: savedOpenAIKey, anthropic: savedAnthropicKey } });
+
     resultsUI.initResults();
     statsUI.initStats();
     progressUI.initProgress('progress-visualization');
@@ -227,6 +321,11 @@ function initialize() {
     modelSelect.addEventListener('change', (e) => updateState({ selectedModel: e.target.value }));
     fileInput.addEventListener('change', handleFileSelect);
     processBtn.addEventListener('click', handleProcess);
+    synthesizeBtn.addEventListener('click', handleSynthesize);
+
+    // Sauvegarder les clés API à chaque modification
+    openaiKeyInput.addEventListener('input', (e) => localStorage.setItem('openaiApiKey', e.target.value));
+    anthropicKeyInput.addEventListener('input', (e) => localStorage.setItem('anthropicApiKey', e.target.value));
 
     const logSource = new EventSource('/api/logs');
     logSource.onmessage = (event) => {

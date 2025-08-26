@@ -49,45 +49,51 @@
                 <button id="process-btn" class="btn btn-primary" style="width: 100%;">Lancer le Traitement</button>
             </div>
         </aside>
-        <main class="main-content">
-            <div class="stats-area" id="stats-card">
-                <div class="stats-grid" id="main-stats-grid">
-                    <div class="stat-card"><div class="stat-card-title">Progression</div><div class="stat-card-value" id="stat-progress">N/A</div></div>
-                    <div class="stat-card"><div class="stat-card-title">Vitesse</div><div class="stat-card-value" id="stat-speed">N/A</div></div>
-                    <div class="stat-card"><div class="stat-card-title">Taille Traitée</div><div class="stat-card-value" id="stat-size">N/A</div></div>
-                    <div class="stat-card"><div class="stat-card-title">Temps Écoulé</div><div class="stat-card-value" id="stat-time">0s</div></div>
-                    <div class="stat-card"><div class="stat-card-title">Tps. Moyen / Chunk</div><div class="stat-card-value" id="stat-avg-time">N/A</div></div>
-                </div>
-                <div class="card" id="file-info-card"></div>
-                <div class="card chart-card">
-                    <canvas id="performance-chart"></canvas>
-                </div>
-            </div>
-            <div class="progress-visualization" id="progress-visualization">
-                <!-- La visualisation des chunks (LEDs) apparaîtra ici -->
-            </div>
-            <div class="card results-card">
-                <div class="results-header">
-                    <div class="results-tabs">
-                        <div class="tab active" data-tab="transcription">Transcription</div>
-                        <div class="tab" data-tab="analysis">Analyse</div>
-                        <div class="tab" data-tab="synthesis">Synthèse</div>
+        <div class="content-wrapper">
+            <main class="main-content">
+                <div class="stats-area" id="stats-card">
+                    <div class="stats-grid" id="main-stats-grid">
+                        <div class="stat-card"><div class="stat-card-title">Progression</div><div class="stat-card-value" id="stat-progress">N/A</div></div>
+                        <div class="stat-card"><div class="stat-card-title">Vitesse</div><div class="stat-card-value" id="stat-speed">N/A</div></div>
+                        <div class="stat-card"><div class="stat-card-title">Taille Traitée</div><div class="stat-card-value" id="stat-size">N/A</div></div>
+                        <div class="stat-card"><div class="stat-card-title">Temps Écoulé</div><div class="stat-card-value" id="stat-time">0s</div></div>
+                        <div class="stat-card"><div class="stat-card-title">Tps. Moyen / Chunk</div><div class="stat-card-value" id="stat-avg-time">N/A</div></div>
                     </div>
-                    <button id="download-btn" class="btn btn-tonal" disabled>Télécharger</button>
+                    <div class="card" id="file-info-card"></div>
+                    <div class="card chart-card">
+                        <canvas id="performance-chart"></canvas>
+                    </div>
                 </div>
-                <div class="tab-content" id="tab-content-container">
-                    <div class="placeholder">Sélectionnez un fichier pour commencer.</div>
+                <div class="progress-visualization" id="progress-visualization">
+                    <!-- La visualisation des chunks (LEDs) apparaîtra ici -->
                 </div>
-            </div>
+                <div class="card results-card">
+                    <div class="results-header">
+                        <div class="results-tabs">
+                            <div class="tab active" data-tab="transcription">Transcription</div>
+                            <div class="tab" data-tab="analysis">Analyse</div>
+                            <div class="tab" data-tab="synthesis">Synthèse</div>
+                        </div>
+                        <div class="results-actions">
+                            <button id="synthesize-btn" class="btn btn-tonal" disabled>Lancer la Synthèse</button>
+                            <button id="download-btn" class="btn btn-tonal" disabled>Télécharger</button>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="tab-content-container">
+                        <div class="placeholder">Sélectionnez un fichier pour commencer.</div>
+                    </div>
+                </div>
+            </main>
             <div class="card server-logs-card">
                 <div class="server-logs-header">Logs du Serveur</div>
                 <div class="server-logs-content" id="server-logs-content">
                     <!-- Les logs du serveur en temps réel apparaîtront ici -->
                 </div>
             </div>
-        </main>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module" src="/js/main.js"></script>
 </body>
 </html>

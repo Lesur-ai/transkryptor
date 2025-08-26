@@ -99,30 +99,40 @@ body {
 }
 input[type="file"] { display: none; }
 
+.content-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
 .main-content {
+    flex-grow: 1;
     padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 24px;
-    height: calc(100vh - 48px); /* Hauteur totale moins le padding */
-    overflow-y: auto;
+    /* overflow-y: auto; */ /* Retiré pour que le conteneur principal ne scrolle plus */
+    min-height: 0;
 }
 .stats-area {
-    flex-shrink: 0; /* Ne se réduit pas */
+    flex-shrink: 0;
 }
 .progress-visualization {
     flex-shrink: 0;
 }
 .results-card {
-    flex-grow: 1; /* Prend l'espace restant */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     min-height: 200px;
 }
 .server-logs-card {
+    flex-shrink: 0;
+    max-height: 250px;
+    margin: 0 24px 24px 24px;
     display: flex;
     flex-direction: column;
-    max-height: 200px; /* Limite la hauteur de la boite de logs */
 }
 .card {
     background-color: #fff;
@@ -137,6 +147,7 @@ input[type="file"] { display: none; }
     border-bottom: 1px solid var(--md-sys-surface-container-highest);
 }
 .results-tabs { display: flex; }
+.results-actions { display: flex; gap: 12px; }
 .tab {
     padding: 12px 16px;
     cursor: pointer;
@@ -145,7 +156,13 @@ input[type="file"] { display: none; }
     color: var(--md-sys-on-surface-variant);
 }
 .tab.active { color: var(--md-sys-primary); border-bottom-color: var(--md-sys-primary); }
-.tab-content { padding: 24px; line-height: 1.7; }
+.tab-content { 
+    padding: 24px; 
+    line-height: 1.7; 
+    overflow-y: auto; /* Ajout du scroll ici */
+    flex-grow: 1; /* Permet au contenu de prendre la place disponible */
+    min-height: 0; /* Correction pour le flexbox scroll */
+}
 .btn {
     padding: 12px 24px;
     font-size: 15px;
@@ -265,4 +282,23 @@ input[type="file"] { display: none; }
 }
 .server-logs-content p {
     margin: 0 0 4px 0;
+}
+
+/* --- Markdown Content Styling --- */
+.tab-content p {
+    margin-top: 0;
+}
+.tab-content h1, .tab-content h2, .tab-content h3 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+}
+.tab-content ul, .tab-content ol {
+    padding-left: 2em;
+}
+.tab-content li {
+    margin-bottom: 0.5em;
+}
+.tab-content strong {
+    font-weight: 700;
 }

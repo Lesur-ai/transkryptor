@@ -8,6 +8,13 @@ import * as api from './apiService.js';
 const TOKEN_LIMIT = 500;
 const BATCH_SIZE = 10;
 
+/**
+ * Estime le nombre de tokens dans un texte.
+ * NOTE : Il s'agit d'une approximation grossière basée sur les mots.
+ * Pour un comptage précis, une librairie de tokenization spécifique au modèle serait nécessaire.
+ * @param {string} text Le texte à évaluer.
+ * @returns {number} Le nombre approximatif de tokens.
+ */
 function countTokens(text) {
     return text.split(/\s+/).length;
 }
@@ -136,7 +143,8 @@ export async function processAndAnalyzeInBatches({ text, provider, model, apiKey
                         completed: ++completedChunks,
                         chunkIndex: i,
                         processedTokens: processedTokens,
-                        processedSize: processedSize
+                        processedSize: processedSize,
+                        currentText: allAnalyzedTexts.filter(Boolean).join('\n\n')
                     });
                 } catch (error) {
                     onProgress({ type: 'chunk_error', chunkIndex: i, error: error.message });
