@@ -44,8 +44,25 @@ function broadcastLog(logMessage) {
 // On passe la fonction de broadcast au logger
 Logger.setBroadcastFunction(broadcastLog);
 
-// Configuration de Multer pour stocker les fichiers en mémoire
-const upload = multer({ storage: multer.memoryStorage() });
+// --- Configuration de Multer pour le stockage sur disque ---
+// Créer le répertoire 'uploads' s'il n'existe pas
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Utiliser un nom de fichier unique pour éviter les conflits
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+
+const upload = multer({ storage: storage });
+
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -128,7 +145,8 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
         let transcription;
         if (provider === 'cloud-temple') {
             const formData = new FormData();
-            formData.append('file', file.buffer, file.originalname);
+            // Utiliser un stream depuis le fichier sur le disque au lieu du buffer en mémoire
+            formData.append('file', fs.createReadStream(file.path), file.originalname);
             formData.append('response_format', 'json');
 
             const response = await axios.post('https://api.ai.cloud-temple.com/v1/audio/transcriptions', formData, {
@@ -142,7 +160,8 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
             transcription = response.data;
         } else if (provider === 'openai') {
             const formData = new FormData();
-            formData.append('file', file.buffer, file.originalname);
+            // Utiliser un stream depuis le fichier sur le disque au lieu du buffer en mémoire
+            formData.append('file', fs.createReadStream(file.path), file.originalname);
             formData.append('model', 'whisper-1');
 
             const key = apiKey || process.env.OPENAI_API_KEY;
@@ -163,10 +182,22 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
         
         const duration = Date.now() - startTime;
         Logger.logOperation('TRANSCRIPTION', { chunkIndex, totalChunks }, 'SUCCESS', duration);
+        
+        // Nettoyer le fichier temporaire après le traitement
+        fs.unlink(file.path, (err) => {
+            if (err) console.error(`Erreur non bloquante lors de la suppression du fichier temporaire ${file.path}`, err);
+        });
+
         // Ajoute la durée de traitement du serveur à la réponse
         res.json({ ...transcription, _serverDuration: duration });
 
     } catch (error) {
+        // S'assurer que le fichier temporaire est supprimé même en cas d'erreur
+        if (file && file.path) {
+            fs.unlink(file.path, (err) => {
+                if (err) console.error(`Erreur non bloquante lors de la suppression du fichier temporaire (échec) ${file.path}`, err);
+            });
+        }
         const duration = Date.now() - startTime;
         Logger.logOperation('TRANSCRIPTION', { chunkIndex, totalChunks }, 'ERROR', duration);
         Logger.error(`Erreur transcription chunk ${chunkIndex}`, error);

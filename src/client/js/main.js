@@ -145,7 +145,7 @@ async function handleProcess() {
         resultsUI.showPlaceholder('Préparation du fichier audio...');
 
         const onTranscriptionProgress = (progress) => {
-            console.log('PROGRESS EVENT:', progress); // Log de débogage
+            // console.log('PROGRESS EVENT:', progress); // Log de débogage
             switch (progress.type) {
                 case 'audio_info':
                     statsUI.renderFileInfo(progress);

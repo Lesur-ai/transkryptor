@@ -87,17 +87,14 @@ export async function processAndTranscribeInChunks(audioFile, provider, apiKey, 
 
             for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
                 const sourceData = audioBuffer.getChannelData(channel);
-                const chunkData = chunkAudioBuffer.getChannelData(channel);
                 const startSample = Math.floor(start * audioBuffer.sampleRate);
-                for (let i = 0; i < chunkLength; i++) {
-                    // Vérification de sécurité pour éviter le "out of bounds"
-                    if (startSample + i < sourceData.length) {
-                        chunkData[i] = sourceData[startSample + i];
-                    }
-                }
+                const endSample = startSample + chunkLength;
+                // Remplacer la boucle manuelle par la méthode .subarray() beaucoup plus performante
+                const chunkData = sourceData.subarray(startSample, endSample);
+                chunkAudioBuffer.copyToChannel(chunkData, channel);
             }
                 
-                const chunkBlob = audioBufferToWav(chunkAudioBuffer);
+                const chunkBlob = await audioBufferToWav(chunkAudioBuffer);
                 const metadata = { chunkIndex: i, totalChunks: numChunks };
                 
                 onProgress({ type: 'chunk_processing', chunkIndex: i });
