@@ -1,0 +1,8 @@
+# Dépendances et logs locaux
+node_modules
+npm-debug.log
+
+# Fichiers d'environnement et de configuration Git
+.env
+.git
+.gitignore

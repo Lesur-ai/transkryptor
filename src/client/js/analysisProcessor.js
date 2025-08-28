@@ -20,7 +20,11 @@ function countTokens(text) {
 }
 
 function splitTextIntoChunks(text) {
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+    let sentences = text.match(/[^.!?]+[.!?]+/g);
+    // Si aucune phrase avec ponctuation n'est trouvée, on traite le texte comme une seule grande phrase.
+    if (!sentences) {
+        sentences = [text];
+    }
     const chunks = [];
     let currentChunk = "";
     let tokenCount = 0;

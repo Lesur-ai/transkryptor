@@ -21,7 +21,7 @@ export async function getModels(provider) {
         }
         return await response.json();
     } catch (error) {
-        console.error(`Erreur lors de la récupération des modèles pour ${provider}:`, error);
+        console.error(`Erreur lors de la récupération des modèles pour ${provider}.`);
         throw error;
     }
 }
@@ -79,7 +79,7 @@ export async function transcribe(file, provider, apiKey = null, metadata = {}) {
         }
         return await response.json(); // Retourne l'objet complet { text: "...", _serverDuration: 1234 }
     } catch (error) {
-        console.error(`Erreur lors de la transcription avec ${provider}:`, error);
+        console.error(`Erreur lors de la transcription avec ${provider}.`);
         throw error;
     }
 }
@@ -118,7 +118,7 @@ export async function analyze(text, provider, model, apiKey = null, metadata = {
         }
         return await response.json();
     } catch (error) {
-        console.error(`Erreur lors de l'analyse avec ${provider}:`, error);
+        console.error(`Erreur lors de l'analyse avec ${provider}.`);
         throw error;
     }
 }
@@ -155,7 +155,7 @@ export async function synthesize(analysisText, provider, model, apiKey = null) {
         }
         return await response.json();
     } catch (error) {
-        console.error(`Erreur lors de la synthèse avec ${provider}:`, error);
+        console.error(`Erreur lors de la synthèse avec ${provider}.`);
         throw error;
     }
 }
@@ -179,7 +179,7 @@ export async function validateKey(provider, apiKey) {
         });
         return await response.json();
     } catch (error) {
-        console.error(`Erreur lors de la validation de la clé pour ${provider}:`, error);
+        console.error(`Erreur lors de la validation de la clé pour ${provider}.`);
         // En cas d'erreur réseau, on considère la validation comme échouée
         return { success: false, message: `Erreur réseau lors de la validation pour ${provider}.` };
     }

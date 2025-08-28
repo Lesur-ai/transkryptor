@@ -264,9 +264,14 @@ async function handleProcess() {
 
     } catch (error) {
         updateState({ processingState: 'error' });
-        resultsUI.showPlaceholder(`Une erreur est survenue : ${error.message}`);
+        let errorMessage = error.message;
+        // Fournir un message plus clair pour les erreurs de décodage audio
+        if (error instanceof DOMException) {
+            errorMessage = "Impossible de décoder le fichier audio. Il est peut-être corrompu ou dans un format non supporté.";
+        }
+        resultsUI.showPlaceholder(`Une erreur est survenue : ${errorMessage}`);
         statsUI.hideStats();
-        alert(`Erreur: ${error.message}`);
+        alert(`Erreur: ${errorMessage}`);
     } finally {
     processBtn.disabled = false;
     processBtn.textContent = 'Lancer le Traitement';
