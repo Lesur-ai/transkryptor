@@ -110,7 +110,8 @@ ${chunk}`;
 export async function processAndAnalyzeInBatches({ text, provider, model, apiKey, onProgress, totalFileSize }) {
     const chunks = splitTextIntoChunks(text);
     const totalChunks = chunks.length;
-    onProgress({ total: totalChunks, completed: 0, processedTokens: 0 });
+    const totalTokens = countTokens(text); // Calcul du total de tokens
+    onProgress({ total: totalChunks, completed: 0, processedTokens: 0, totalTokens });
 
     let completedChunks = 0;
     let processedTokens = 0;
@@ -136,13 +137,19 @@ export async function processAndAnalyzeInBatches({ text, provider, model, apiKey
                     });
                     allAnalyzedTexts[i] = analyzedText;
                     processedTokens += countTokens(chunkText);
-                    const processedSize = ((i + 1) / totalChunks) * totalFileSize;
+                    completedChunks++;
+
+                    // Si c'est le dernier chunk, on force le compte de tokens à être égal au total pour éviter les écarts.
+                    const finalProcessedTokens = (completedChunks === totalChunks) ? totalTokens : processedTokens;
+
+                    // On n'utilise plus processedSize pour l'UI, mais on le garde au cas où
+                    const processedSize = (completedChunks / totalChunks) * totalFileSize;
                     onProgress({
                         type: 'chunk_completed',
                         total: totalChunks,
-                        completed: ++completedChunks,
+                        completed: completedChunks,
                         chunkIndex: i,
-                        processedTokens: processedTokens,
+                        processedTokens: finalProcessedTokens,
                         processedSize: processedSize,
                         currentText: allAnalyzedTexts.filter(Boolean).join('\n\n')
                     });

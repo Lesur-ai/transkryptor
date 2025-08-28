@@ -12,7 +12,7 @@ const Logger = require('./logger');
 const app = express();
 
 // --- Logique pour le streaming des logs (Server-Sent Events) ---
-let clients = []; // Stocke les clients connectés pour les logs
+const clients = new Map(); // Stocke les clients connectés pour les logs (clientId -> response)
 
 // Middleware pour ajouter les headers SSE
 app.use((req, res, next) => {
@@ -21,28 +21,36 @@ app.use((req, res, next) => {
     next();
 });
 
-// Endpoint auquel le client se connecte pour recevoir les logs
+// Endpoint auquel le client s'abonne pour recevoir ses logs
 app.get('/api/logs', (req, res) => {
+    const { clientId } = req.query;
+    if (!clientId) {
+        return res.status(400).send('clientId manquant.');
+    }
+
     res.setHeader('Content-Type', 'text/event-stream');
-    const clientId = Date.now();
-    clients.push({ id: clientId, res });
-    console.log(`Client ${clientId} connecté pour les logs.`);
+    clients.set(clientId, res);
+    
+    // On envoie juste une confirmation au client, le log de connexion se fera à la transcription.
+    Logger.info(clientId, `Client connecté pour les logs.`);
 
     req.on('close', () => {
-        clients = clients.filter(client => client.id !== clientId);
-        console.log(`Client ${clientId} déconnecté.`);
+        clients.delete(clientId);
+        // On utilise le logger pour la cohérence, avec l'ID "server"
+        Logger.info('server', `Client ${clientId} déconnecté.`);
     });
 });
 
-// Fonction pour envoyer les logs à tous les clients connectés
-function broadcastLog(logMessage) {
-    for (const client of clients) {
-        client.res.write(`data: ${JSON.stringify(logMessage)}\n\n`);
+// Fonction pour envoyer un log à un client spécifique
+function sendLogToClient(clientId, logMessage) {
+    const client = clients.get(clientId);
+    if (client) {
+        client.write(`data: ${JSON.stringify(logMessage)}\n\n`);
     }
 }
 
-// On passe la fonction de broadcast au logger
-Logger.setBroadcastFunction(broadcastLog);
+// On passe la fonction de broadcast ciblée au logger
+Logger.setBroadcastFunction(sendLogToClient);
 
 // Configuration de Multer pour stocker les fichiers en mémoire
 const upload = multer({ storage: multer.memoryStorage() });
@@ -70,7 +78,11 @@ app.get('/api/providers', (req, res) => {
 
 // Endpoint pour lister les modèles disponibles pour un fournisseur donné
 app.get('/api/models', async (req, res) => {
-    const { provider } = req.query;
+    const { provider, clientId } = req.query;
+
+    if (!provider || !clientId) {
+        return res.status(400).json({ error: 'Les paramètres "provider" et "clientId" sont requis' });
+    }
 
     if (!provider) {
         return res.status(400).json({ error: 'Le paramètre "provider" est requis' });
@@ -79,7 +91,7 @@ app.get('/api/models', async (req, res) => {
     try {
         let models = [];
         if (provider === 'cloud-temple') {
-            Logger.info('Récupération des modèles depuis Cloud Temple...');
+            Logger.info(clientId, 'Récupération des modèles depuis Cloud Temple...');
             const response = await axios.get('https://api.ai.cloud-temple.com/v1/models', {
                 headers: {
                     'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}`
@@ -91,7 +103,7 @@ app.get('/api/models', async (req, res) => {
                 name: model.id, // On peut améliorer ça si le nom est dans un autre champ
                 aliases: model.aliases
             }));
-            Logger.success('Modèles Cloud Temple récupérés');
+            Logger.success(clientId, 'Modèles Cloud Temple récupérés');
         } else if (provider === 'openai') {
             // Logique pour OpenAI (à implémenter)
             // Pour l'instant, on retourne une liste statique
@@ -105,23 +117,35 @@ app.get('/api/models', async (req, res) => {
         }
         res.json(models);
     } catch (error) {
-        Logger.error(`Erreur lors de la récupération des modèles pour ${provider}`, error);
+        Logger.error(clientId, `Erreur lors de la récupération des modèles pour ${provider}`, error);
         res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
 
 // Endpoint pour la transcription audio
 app.post('/api/transcribe', upload.single('file'), async (req, res) => {
-    const { provider, apiKey } = req.body;
+    const { provider, apiKey, clientId, originalFileName, originalFileType, originalFileSize } = req.body;
     // Correction: Parser les index en nombres entiers
     const chunkIndex = req.body.chunkIndex ? parseInt(req.body.chunkIndex, 10) : undefined;
     const totalChunks = req.body.totalChunks ? parseInt(req.body.totalChunks, 10) : undefined;
     const file = req.file;
     const startTime = Date.now();
 
-    if (!provider || !file) {
-        Logger.error('Paramètres manquants pour la transcription');
-        return res.status(400).json({ error: 'Les paramètres "provider" et "file" sont requis' });
+    // Log de la connexion entrante (serveur uniquement), une seule fois pour le premier chunk
+    if (file && chunkIndex === 0) {
+        Logger.logConnection(clientId, {
+            ip: req.ip,
+            fileInfo: {
+                name: originalFileName || file.originalname,
+                sizeMb: (originalFileSize / (1024 * 1024)).toFixed(2), // Utilise la taille du fichier original
+                type: originalFileType || file.mimetype,
+            },
+        });
+    }
+
+    if (!provider || !file || !clientId) {
+        // Pas de log ici car on n'a pas de client à qui l'envoyer
+        return res.status(400).json({ error: 'Les paramètres "provider", "file" et "clientId" sont requis' });
     }
 
     try {
@@ -162,14 +186,14 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
         }
         
         const duration = Date.now() - startTime;
-        Logger.logOperation('TRANSCRIPTION', { chunkIndex, totalChunks }, 'SUCCESS', duration);
+        Logger.logOperation(clientId, 'TRANSCRIPTION', { chunkIndex, totalChunks }, 'SUCCESS', duration);
         // Ajoute la durée de traitement du serveur à la réponse
         res.json({ ...transcription, _serverDuration: duration });
 
     } catch (error) {
         const duration = Date.now() - startTime;
-        Logger.logOperation('TRANSCRIPTION', { chunkIndex, totalChunks }, 'ERROR', duration);
-        Logger.error(`Erreur transcription chunk ${chunkIndex}`, error);
+        Logger.logOperation(clientId, 'TRANSCRIPTION', { chunkIndex, totalChunks }, 'ERROR', duration);
+        Logger.error(clientId, `Erreur transcription chunk ${chunkIndex}`, error);
         res.status(500).json({ 
             error: 'Erreur interne du serveur lors de la transcription',
             details: error.response ? error.response.data : error.message
@@ -179,18 +203,17 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
 
 // Endpoint pour l'analyse de texte
 app.post('/api/analyze', async (req, res) => {
-    const { provider, model, text, apiKey, chunkIndex, totalChunks, textPreview } = req.body;
+    const { provider, model, text, apiKey, chunkIndex, totalChunks, textPreview, clientId } = req.body;
     const startTime = Date.now();
 
-    if (!provider || !model || !text) {
-        Logger.error('Paramètres manquants pour l\'analyse');
-        return res.status(400).json({ error: 'Les paramètres "provider", "model" et "text" sont requis' });
+    if (!provider || !model || !text || !clientId) {
+        return res.status(400).json({ error: 'Les paramètres "provider", "model", "text" et "clientId" sont requis' });
     }
 
     try {
         let analysis;
         if (provider === 'cloud-temple') {
-            Logger.info(`Analyse avec Cloud Temple (modèle: ${model})...`);
+            Logger.info(clientId, `Analyse avec Cloud Temple (modèle: ${model})...`);
             const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
                 model: model,
                 messages: [{ role: 'user', content: text }],
@@ -199,9 +222,9 @@ app.post('/api/analyze', async (req, res) => {
                 headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
             });
             analysis = response.data;
-            Logger.success('Analyse Cloud Temple réussie');
+            Logger.success(clientId, 'Analyse Cloud Temple réussie');
         } else if (provider === 'anthropic') {
-            Logger.info(`Analyse avec Anthropic (modèle: ${model})...`);
+            Logger.info(clientId, `Analyse avec Anthropic (modèle: ${model})...`);
             const key = apiKey || process.env.ANTHROPIC_API_KEY;
             if (!key) return res.status(400).json({ error: 'Clé API Anthropic manquante' });
 
@@ -217,17 +240,17 @@ app.post('/api/analyze', async (req, res) => {
                 }
             });
             analysis = response.data;
-            Logger.success('Analyse Anthropic réussie');
+            Logger.success(clientId, 'Analyse Anthropic réussie');
         } else {
             return res.status(400).json({ error: 'Fournisseur d\'analyse non supporté' });
         }
         const duration = Date.now() - startTime;
-        Logger.logOperation('ANALYSE', { chunkIndex, totalChunks, textPreview }, 'SUCCESS', duration);
+        Logger.logOperation(clientId, 'ANALYSE', { chunkIndex, totalChunks, textPreview }, 'SUCCESS', duration);
         res.json(analysis);
     } catch (error) {
         const duration = Date.now() - startTime;
-        Logger.logOperation('ANALYSE', { chunkIndex, totalChunks, textPreview }, 'ERROR', duration);
-        Logger.error(`Erreur lors de l'analyse avec ${provider}`, error);
+        Logger.logOperation(clientId, 'ANALYSE', { chunkIndex, totalChunks, textPreview }, 'ERROR', duration);
+        Logger.error(clientId, `Erreur lors de l'analyse avec ${provider}`, error);
         res.status(500).json({ 
             error: 'Erreur interne du serveur lors de l\'analyse',
             details: error.response ? error.response.data : error.message
@@ -255,12 +278,11 @@ const SYNTHESIS_PROMPT = `
 `;
 
 app.post('/api/synthesize', async (req, res) => {
-    const { provider, model, text, apiKey } = req.body;
+    const { provider, model, text, apiKey, clientId } = req.body;
     const startTime = Date.now();
 
-    if (!provider || !model || !text) {
-        Logger.error('Paramètres manquants pour la synthèse');
-        return res.status(400).json({ error: 'Les paramètres "provider", "model" et "text" sont requis' });
+    if (!provider || !model || !text || !clientId) {
+        return res.status(400).json({ error: 'Les paramètres "provider", "model", "text" et "clientId" sont requis' });
     }
 
     const fullPrompt = `${SYNTHESIS_PROMPT}\n\n${text}`;
@@ -268,7 +290,7 @@ app.post('/api/synthesize', async (req, res) => {
     try {
         let synthesisText;
         if (provider === 'cloud-temple') {
-            Logger.info(`Synthèse avec Cloud Temple (modèle: ${model})...`);
+            Logger.info(clientId, `Synthèse avec Cloud Temple (modèle: ${model})...`);
             const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
                 model: model,
                 messages: [{ role: 'user', content: fullPrompt }],
@@ -277,10 +299,10 @@ app.post('/api/synthesize', async (req, res) => {
                 headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
             });
             synthesisText = response.data.choices[0].message.content;
-            Logger.success('Synthèse Cloud Temple réussie');
+            Logger.success(clientId, 'Synthèse Cloud Temple réussie');
 
         } else if (provider === 'anthropic') {
-            Logger.info(`Synthèse avec Anthropic (modèle: ${model})...`);
+            Logger.info(clientId, `Synthèse avec Anthropic (modèle: ${model})...`);
             const key = apiKey || process.env.ANTHROPIC_API_KEY;
             if (!key) return res.status(400).json({ error: 'Clé API Anthropic manquante' });
 
@@ -296,19 +318,19 @@ app.post('/api/synthesize', async (req, res) => {
                 }
             });
             synthesisText = response.data.content[0].text;
-            Logger.success('Synthèse Anthropic réussie');
+            Logger.success(clientId, 'Synthèse Anthropic réussie');
         } else {
             return res.status(400).json({ error: 'Fournisseur de synthèse non supporté' });
         }
         
         const duration = Date.now() - startTime;
-        Logger.logOperation('SYNTHESE', { model }, 'SUCCESS', duration);
+        Logger.logOperation(clientId, 'SYNTHESE', { model }, 'SUCCESS', duration);
         res.json({ synthesis: synthesisText });
 
     } catch (error) {
         const duration = Date.now() - startTime;
-        Logger.logOperation('SYNTHESE', { model }, 'ERROR', duration);
-        Logger.error(`Erreur lors de la synthèse avec ${provider}`, error);
+        Logger.logOperation(clientId, 'SYNTHESE', { model }, 'ERROR', duration);
+        Logger.error(clientId, `Erreur lors de la synthèse avec ${provider}`, error);
         res.status(500).json({ 
             error: 'Erreur interne du serveur lors de la synthèse',
             details: error.response ? error.response.data : error.message
@@ -318,10 +340,10 @@ app.post('/api/synthesize', async (req, res) => {
 
 // Endpoint pour valider les clés API
 app.post('/api/validate-key', async (req, res) => {
-    const { provider, apiKey } = req.body;
+    const { provider, apiKey, clientId } = req.body;
 
-    if (!provider || !apiKey) {
-        return res.status(400).json({ error: 'Les paramètres "provider" et "apiKey" sont requis' });
+    if (!provider || !apiKey || !clientId) {
+        return res.status(400).json({ error: 'Les paramètres "provider", "apiKey" et "clientId" sont requis' });
     }
 
     try {
@@ -348,7 +370,7 @@ app.post('/api/validate-key', async (req, res) => {
         }
         res.json({ success: true, message: `Clé pour ${provider} valide.` });
     } catch (error) {
-        Logger.error(`Échec de validation de la clé pour ${provider}`, error.response ? error.response.data : error.message);
+        Logger.error(clientId, `Échec de validation de la clé pour ${provider}`, error.response ? error.response.data : error.message);
         res.status(401).json({ success: false, message: `Clé API pour ${provider} invalide.` });
     }
 });
@@ -365,5 +387,6 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    Logger.success(`Serveur démarré sur le port ${PORT}`);
+    // Pour les logs globaux du serveur, on utilise un ID statique.
+    Logger.success('server', `Serveur démarré sur le port ${PORT}`);
 });

@@ -3,6 +3,7 @@
  * @description Module de communication avec l'API backend.
  * Ce fichier centralise tous les appels HTTP vers le serveur.
  */
+import { getState } from './state.js';
 
 const API_BASE_URL = ''; // L'URL de base est la même que celle du site
 
@@ -12,8 +13,9 @@ const API_BASE_URL = ''; // L'URL de base est la même que celle du site
  * @returns {Promise<Array>} La liste des modèles.
  */
 export async function getModels(provider) {
+    const { clientId } = getState();
     try {
-        const response = await fetch(`${API_BASE_URL}/api/models?provider=${provider}`);
+        const response = await fetch(`${API_BASE_URL}/api/models?provider=${provider}&clientId=${clientId}`);
         if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
         }
@@ -33,13 +35,24 @@ export async function getModels(provider) {
  * @returns {Promise<object>} Le résultat de la transcription.
  */
 export async function transcribe(file, provider, apiKey = null, metadata = {}) {
+    const { clientId } = getState();
     const formData = new FormData();
     const fileName = file instanceof Blob ? 'chunk.wav' : file.name;
     formData.append('file', file, fileName);
     formData.append('provider', provider);
+    formData.append('clientId', clientId);
     if (metadata.chunkIndex !== undefined) {
         formData.append('chunkIndex', metadata.chunkIndex);
         formData.append('totalChunks', metadata.totalChunks);
+    }
+    if (metadata.originalFileName) {
+        formData.append('originalFileName', metadata.originalFileName);
+    }
+    if (metadata.originalFileType) {
+        formData.append('originalFileType', metadata.originalFileType);
+    }
+    if (metadata.originalFileSize) {
+        formData.append('originalFileSize', metadata.originalFileSize);
     }
     
     // Note: La gestion fine des clés API (OpenAI vs Anthropic) sera ajoutée ici
@@ -81,12 +94,14 @@ export async function transcribe(file, provider, apiKey = null, metadata = {}) {
  * @returns {Promise<object>} Le résultat de l'analyse.
  */
 export async function analyze(text, provider, model, apiKey = null, metadata = {}) {
+    const { clientId } = getState();
     const body = {
         text,
         provider,
         ...metadata,
         model,
         apiKey, // Le backend utilisera la clé d'environnement si celle-ci est nulle
+        clientId,
     };
 
     try {
@@ -117,11 +132,13 @@ export async function analyze(text, provider, model, apiKey = null, metadata = {
  * @returns {Promise<object>} Le résultat de la synthèse.
  */
 export async function synthesize(analysisText, provider, model, apiKey = null) {
+    const { clientId } = getState();
     const body = {
         text: analysisText,
         provider,
         model,
         apiKey,
+        clientId,
     };
 
     try {
@@ -150,7 +167,8 @@ export async function synthesize(analysisText, provider, model, apiKey = null) {
  * @returns {Promise<object>} Le résultat de la validation.
  */
 export async function validateKey(provider, apiKey) {
-    const body = { provider, apiKey };
+    const { clientId } = getState();
+    const body = { provider, apiKey, clientId };
     try {
         const response = await fetch(`${API_BASE_URL}/api/validate-key`, {
             method: 'POST',

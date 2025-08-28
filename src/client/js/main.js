@@ -200,9 +200,14 @@ async function handleProcess() {
         progressUI.clearProgress();
         chartUI.resetChart();
         chartUI.updateChartLabel('Vitesse (tokens/s)');
+        statsUI.updateStatLabel('size', 'Tokens'); // Changer le libellé pour l'analyse
         const analysisStartTime = Date.now();
+        let totalTokens = 0; // Pour stocker le total de tokens
 
         const onAnalysisProgress = (progress) => {
+            if (progress.totalTokens) {
+                totalTokens = progress.totalTokens;
+            }
             switch (progress.type) {
                 case 'chunk_processing':
                     progressUI.updateChunkStatus(progress.chunkIndex, 'processing');
@@ -216,13 +221,11 @@ async function handleProcess() {
                 case 'chunk_completed': {
                     const elapsedTime = (Date.now() - analysisStartTime) / 1000;
                 const speed = (progress.processedTokens / (elapsedTime || 1)).toFixed(0);
-                const totalSize = (state.selectedFile.size / (1024*1024)).toFixed(2);
-                const processedSize = (progress.processedSize / (1024*1024)).toFixed(2);
                 const avgTime = (elapsedTime / progress.completed).toFixed(1);
                 statsUI.updateStats({
                     progress: `${progress.completed} / ${progress.total}`,
                     speed: `${speed} tokens/s`,
-                    size: `${processedSize} / ${totalSize} MB`,
+                    size: `${progress.processedTokens} / ${totalTokens}`,
                     avgTime: `${avgTime}s`
                 });
                 progressUI.updateChunkStatus(progress.chunkIndex, 'completed');
@@ -237,6 +240,9 @@ async function handleProcess() {
             }
             default: // Initial call
                 progressUI.setupProgress(progress.total);
+                if (progress.totalTokens) {
+                    statsUI.updateStats({ size: `0 / ${progress.totalTokens}` });
+                }
             }
         };
 
@@ -337,6 +343,10 @@ function setupModal() {
 }
 
 function initialize() {
+    // Générer un identifiant unique pour cette session client
+    const clientId = `client_${Date.now().toString(36)}_${Math.random().toString(36).substring(2)}`;
+    updateState({ clientId });
+
     // Charger les clés API depuis le localStorage au démarrage
     const savedOpenAIKey = localStorage.getItem('openaiApiKey');
     const savedAnthropicKey = localStorage.getItem('anthropicApiKey');
@@ -365,7 +375,8 @@ function initialize() {
     openaiKeyInput.addEventListener('input', (e) => localStorage.setItem('openaiApiKey', e.target.value));
     anthropicKeyInput.addEventListener('input', (e) => localStorage.setItem('anthropicApiKey', e.target.value));
 
-    const logSource = new EventSource('/api/logs');
+    // S'abonner au flux de logs en utilisant l'ID unique du client
+    const logSource = new EventSource(`/api/logs?clientId=${clientId}`);
     logSource.onmessage = (event) => {
         const logData = JSON.parse(event.data);
         const p = document.createElement('p');

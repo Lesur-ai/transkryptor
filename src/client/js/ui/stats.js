@@ -37,6 +37,22 @@ export function updateStats({ progress, speed, size, avgTime }) {
 }
 
 /**
+ * Met à jour le libellé d'une carte de statistique.
+ * @param {string} statKey - La clé de la stat (ex: 'size').
+ * @param {string} newLabel - Le nouveau libellé.
+ */
+export function updateStatLabel(statKey, newLabel) {
+    // On cherche le conteneur de la stat par son ID, puis le titre à l'intérieur
+    const statCard = document.getElementById(`stat-${statKey}`);
+    if (statCard) {
+        const titleElement = statCard.previousElementSibling; // Le titre est l'élément juste avant la valeur
+        if (titleElement && titleElement.classList.contains('stat-card-title')) {
+            titleElement.textContent = newLabel;
+        }
+    }
+}
+
+/**
  * Affiche les informations du fichier audio.
  * @param {object} info - { duration, sampleRate, channels }
  */
@@ -71,4 +87,5 @@ export function initStats() {
     // La carte est maintenant visible par défaut
     showStats();
     renderFileInfo({}); // Affiche les placeholders
+    updateStatLabel('size', 'Taille'); // Réinitialise le libellé au cas où
 }

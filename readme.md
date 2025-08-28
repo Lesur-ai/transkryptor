@@ -1,4 +1,4 @@
-# Transkryptor v4.0.0
+# Transkryptor 4
 
 ![Screenshot](images/screenshoot.png)
 

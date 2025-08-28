@@ -98,7 +98,13 @@ export async function processAndTranscribeInChunks(audioFile, provider, apiKey, 
             }
                 
                 const chunkBlob = audioBufferToWav(chunkAudioBuffer);
-                const metadata = { chunkIndex: i, totalChunks: numChunks };
+                const metadata = { 
+                    chunkIndex: i, 
+                    totalChunks: numChunks,
+                    originalFileName: audioFile.name, // Ajout du nom de fichier original
+                    originalFileType: audioFile.type, // Ajout du type de fichier original
+                    originalFileSize: audioFile.size // Ajout de la taille du fichier original
+                };
                 
                 onProgress({ type: 'chunk_processing', chunkIndex: i });
                 try {

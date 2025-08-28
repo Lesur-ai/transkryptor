@@ -1,9 +1,9 @@
-# Transkryptor v4.0.0
+# Transkryptor 4
 
 ![Screenshot](images/screenshoot.png)
 
 ## Table of Contents
-- [Transkryptor v4.0.0](#transkryptor-v400)
+- [Transkryptor 4](#transkryptor-4)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Key Features](#key-features)
@@ -83,11 +83,11 @@ v4 adopts a modern and secure client-server architecture:
     -   For Cloud Temple, select the desired analysis model from the dynamic list.
     -   For OpenAI/Anthropic, enter your personal API keys (they will be tested and saved in your browser).
 3.  **Select an audio file** (.mp3, .wav, .m4a).
-4.  **Click "Lancer le Traitement"** (Start Processing).
+4.  **Click "Start Processing"**.
 5.  **Follow the progress** in real time.
-6.  Once the analysis is complete, the **"Lancer la Synthèse"** (Start Synthesis) button will become active.
+6.  Once the analysis is complete, the **"Start Synthesis"** button will become active.
 7.  **Download** your results at any time.
-8.  Click the **"À propos"** (About) button to understand the detailed workings of the demonstrator.
+8.  Click the **"About"** button to understand the detailed workings of the demonstrator.
 
 ## File Structure
 
