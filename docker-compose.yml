@@ -11,5 +11,3 @@ services:
     restart: always
     env_file:
       - .env
-    extra_hosts:
-      - "prod-syslog.app.ai.cloud-temple.com:192.168.10.5"
