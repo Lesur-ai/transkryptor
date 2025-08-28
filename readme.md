@@ -1,9 +1,9 @@
-# Transkryptor 4
+# Transkryptor v4.0.14
 
 ![Screenshot](images/screenshoot.png)
 
 ## Table des matières
-- [Transkryptor v4.0.0](#transkryptor-v400)
+- [Transkryptor v4.0.14](#transkryptor-v4014)
   - [Table des matières](#table-des-matières)
   - [Introduction](#introduction)
   - [Fonctionnalités Clés](#fonctionnalités-clés)
@@ -31,7 +31,7 @@ Cette application sert de **démonstrateur technologique** pour l'offre **LLMaaS
     - Suivez des statistiques avancées (vitesse, temps écoulé, etc.).
     - Observez les logs du serveur en direct pour une transparence totale du processus.
 - **Traitement Parallèle Robuste** :
-    - **Transcription** : Les fichiers audio sont découpés, transcrits en parallèle et réassemblés.
+    - **Transcription** : Les fichiers audio sont découpés, transcrits en parallèle et réassemblés. Le traitement a été renforcé pour gérer différents formats audio (stéréo/mono) et éviter les erreurs.
     - **Analyse** : Le texte transcrit est découpé en lots sémantiques et analysé en parallèle.
     - **Gestion des Erreurs** : Un système de tentatives multiples avec délai exponentiel assure la robustesse du traitement.
 - **Synthèse Exécutive** : Générez une synthèse structurée (résumé, points clés, actions) à partir de l'analyse en un clic, avec la possibilité de changer de modèle pour affiner le résultat.

@@ -1,0 +1,15 @@
+services:
+  transkryptor:
+    build:
+      context: .
+      args:
+        - HTTP_PROXY=${HTTP_PROXY}
+        - HTTPS_PROXY=${HTTPS_PROXY}
+    image: transkryptor:${APP_VERSION:-latest}
+    ports:
+      - "3000:3000"
+    restart: always
+    env_file:
+      - .env
+    extra_hosts:
+      - "prod-syslog.app.ai.cloud-temple.com:192.168.10.5"

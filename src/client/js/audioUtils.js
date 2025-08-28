@@ -16,11 +16,11 @@ function writeString(view, offset, string) {
 }
 
 /**
- * Convertit un AudioBuffer en un Blob au format WAV.
+ * Convertit un AudioBuffer en un Blob au format WAV de manière asynchrone pour ne pas geler le navigateur.
  * @param {AudioBuffer} audioBuffer - Le buffer audio à convertir.
- * @returns {Blob} Un Blob contenant les données audio au format WAV.
+ * @returns {Promise<Blob>} Une promesse qui se résout avec un Blob contenant les données audio au format WAV.
  */
-export function audioBufferToWav(audioBuffer) {
+export async function audioBufferToWav(audioBuffer) {
     const numberOfChannels = audioBuffer.numberOfChannels;
     const sampleRate = audioBuffer.sampleRate;
     const length = audioBuffer.length;
@@ -47,15 +47,25 @@ export function audioBufferToWav(audioBuffer) {
     writeString(view, 36, 'data');
     view.setUint32(40, dataSize, true);
 
-    // Données audio (PCM)
+    // Données audio (PCM) - Approche optimisée et asynchrone
     const offset = 44;
-    for (let i = 0; i < length; i++) {
-        for (let channel = 0; channel < numberOfChannels; channel++) {
-            const sample = audioBuffer.getChannelData(channel)[i];
-            // Clamp and convert to 16-bit integer
-            const value = Math.max(-1, Math.min(1, sample)) * 32767;
-            view.setInt16(offset + i * blockAlign + channel * bytesPerSample, value, true);
+    const channelData = [];
+    for (let i = 0; i < numberOfChannels; i++) {
+        channelData.push(audioBuffer.getChannelData(i));
+    }
+
+    const chunkSize = 4096; // Traiter 4096 samples à la fois
+    for (let i = 0; i < length; i += chunkSize) {
+        const end = Math.min(i + chunkSize, length);
+        for (let j = i; j < end; j++) {
+            for (let channel = 0; channel < numberOfChannels; channel++) {
+                const sample = channelData[channel][j];
+                const value = Math.max(-1, Math.min(1, sample)) * 32767;
+                view.setInt16(offset + j * blockAlign + channel * bytesPerSample, value, true);
+            }
         }
+        // Céder le contrôle au thread principal après chaque bloc
+        await new Promise(resolve => requestAnimationFrame(resolve));
     }
 
     return new Blob([buffer], { type: 'audio/wav' });

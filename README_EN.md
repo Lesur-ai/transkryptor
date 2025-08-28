@@ -1,9 +1,9 @@
-# Transkryptor 4
+# Transkryptor v4.0.14
 
 ![Screenshot](images/screenshoot.png)
 
 ## Table of Contents
-- [Transkryptor 4](#transkryptor-4)
+- [Transkryptor v4.0.14](#transkryptor-v4014)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Key Features](#key-features)
@@ -31,7 +31,7 @@ This application serves as a **technology demonstrator** for the **Cloud Temple 
     - Track advanced statistics (speed, elapsed time, etc.).
     - View live server logs for full process transparency.
 - **Robust Parallel Processing**:
-    - **Transcription**: Audio files are chunked, transcribed in parallel, and reassembled.
+    - **Transcription**: Audio files are chunked, transcribed in parallel, and reassembled. The processing has been enhanced to handle various audio formats (stereo/mono) and prevent errors.
     - **Analysis**: The transcribed text is split into semantic batches and analyzed in parallel.
     - **Error Handling**: A retry system with exponential backoff ensures robust processing.
 - **Executive Synthesis**: Generate a structured summary (executive summary, key points, action items) from the analysis with a single click, with the option to change models to refine the result.
