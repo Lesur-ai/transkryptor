@@ -1,91 +1,72 @@
 /**
  * @file stats.js
  * @description Module pour gérer l'affichage des statistiques en temps réel.
+ * Transkryptor v5 — Design Cloud Temple dark theme.
  */
 
-// --- DOM Elements ---
-const statsCard = document.getElementById('stats-card');
+const dashboard = document.getElementById('dashboard');
 
-/**
- * Affiche le conteneur de statistiques.
- */
 export function showStats() {
-    statsCard.style.display = 'block';
+    if (dashboard) dashboard.style.display = 'flex';
 }
 
-/**
- * Masque le conteneur de statistiques.
- */
 export function hideStats() {
-    statsCard.style.display = 'none';
+    if (dashboard) dashboard.style.display = 'none';
 }
 
-/**
- * Met à jour les cartes de statistiques principales.
- * @param {object} stats - { progress, speed, size, avgTime }
- */
 export function updateStats({ progress, speed, size, avgTime }) {
     const statProgress = document.getElementById('stat-progress');
     const statSpeed = document.getElementById('stat-speed');
     const statSize = document.getElementById('stat-size');
     const statAvgTime = document.getElementById('stat-avg-time');
 
-    if (progress) statProgress.textContent = progress;
-    if (speed) statSpeed.textContent = speed;
-    if (size) statSize.textContent = size;
-    if (avgTime) statAvgTime.textContent = avgTime;
+    if (progress && statProgress) statProgress.textContent = progress;
+    if (speed && statSpeed) statSpeed.textContent = speed;
+    if (size && statSize) statSize.textContent = size;
+    if (avgTime && statAvgTime) statAvgTime.textContent = avgTime;
 }
 
-/**
- * Met à jour le libellé d'une carte de statistique.
- * @param {string} statKey - La clé de la stat (ex: 'size').
- * @param {string} newLabel - Le nouveau libellé.
- */
 export function updateStatLabel(statKey, newLabel) {
-    // On cherche le conteneur de la stat par son ID, puis le titre à l'intérieur
-    const statCard = document.getElementById(`stat-${statKey}`);
-    if (statCard) {
-        const titleElement = statCard.previousElementSibling; // Le titre est l'élément juste avant la valeur
-        if (titleElement && titleElement.classList.contains('stat-card-title')) {
-            titleElement.textContent = newLabel;
-        }
+    if (statKey === 'size') {
+        const label = document.getElementById('stat-size-label');
+        if (label) label.textContent = newLabel;
     }
 }
 
-/**
- * Affiche les informations du fichier audio.
- * @param {object} info - { duration, sampleRate, channels }
- */
 export function renderFileInfo(info) {
-    const fileInfoCard = document.getElementById('file-info-card');
-    const duration = info.duration ? `${info.duration.toFixed(1)}s` : 'N/A';
-    const sampleRate = info.sampleRate ? `${info.sampleRate / 1000}kHz` : 'N/A';
-    const channels = info.channels ? (info.channels === 1 ? 'Mono' : 'Stéréo') : 'N/A';
+    const fileInfoRow = document.getElementById('file-info-row');
+    if (!fileInfoRow) return;
 
-    fileInfoCard.innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-card-title">Durée</div>
-                <div class="stat-card-value">${duration}</div>
+    const duration = info.duration ? `${info.duration.toFixed(1)}s` : '—';
+    const sampleRate = info.sampleRate ? `${info.sampleRate / 1000}kHz` : '—';
+    const channels = info.channels ? (info.channels === 1 ? 'Mono' : 'Stéréo') : '—';
+
+    fileInfoRow.innerHTML = `
+        <div class="file-info-card">
+            <div class="stat-icon">🕐</div>
+            <div class="stat-info">
+                <div class="stat-label">Durée</div>
+                <div class="stat-value">${duration}</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-card-title">Fréquence</div>
-                <div class="stat-card-value">${sampleRate}</div>
+        </div>
+        <div class="file-info-card">
+            <div class="stat-icon">🔊</div>
+            <div class="stat-info">
+                <div class="stat-label">Fréquence</div>
+                <div class="stat-value">${sampleRate}</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-card-title">Canaux</div>
-                <div class="stat-card-value">${channels}</div>
+        </div>
+        <div class="file-info-card">
+            <div class="stat-icon">🎧</div>
+            <div class="stat-info">
+                <div class="stat-label">Canaux</div>
+                <div class="stat-value">${channels}</div>
             </div>
         </div>
     `;
 }
 
-/**
- * Initialise le module des statistiques.
- */
 export function initStats() {
-    // La carte est maintenant visible par défaut
     showStats();
-    renderFileInfo({}); // Affiche les placeholders
-    updateStatLabel('size', 'Taille'); // Réinitialise le libellé au cas où
+    renderFileInfo({});
 }

@@ -1,15 +1,11 @@
 /**
  * @file chart.js
  * @description Gère l'affichage du graphique de performance.
+ * Transkryptor v5 — Couleurs adaptées au dark theme Cloud Temple.
  */
 
-// Chart.js est chargé via un CDN dans l'HTML pour simplifier
 let performanceChart = null;
 
-/**
- * Initialise le graphique.
- * @param {HTMLCanvasElement} canvasElement - L'élément canvas pour le graphique.
- */
 export function initChart(canvasElement) {
     if (!canvasElement) return;
     const ctx = canvasElement.getContext('2d');
@@ -20,10 +16,13 @@ export function initChart(canvasElement) {
             datasets: [{
                 label: 'Vitesse (chunks/s)',
                 data: [],
-                borderColor: '#0061a4',
-                backgroundColor: 'rgba(0, 97, 164, 0.1)',
+                borderColor: '#41a890',
+                backgroundColor: 'rgba(65, 168, 144, 0.1)',
                 fill: true,
                 tension: 0.4,
+                pointRadius: 2,
+                pointBackgroundColor: '#41a890',
+                borderWidth: 2,
             }]
         },
         options: {
@@ -32,10 +31,14 @@ export function initChart(canvasElement) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Vitesse' }
+                    title: { display: true, text: 'Vitesse', color: '#666680', font: { size: 10 } },
+                    ticks: { color: '#666680', font: { size: 10 } },
+                    grid: { color: 'rgba(42,42,72,0.5)' }
                 },
                 x: {
-                    title: { display: true, text: 'Temps (s)' }
+                    title: { display: true, text: 'Temps (s)', color: '#666680', font: { size: 10 } },
+                    ticks: { color: '#666680', font: { size: 10 } },
+                    grid: { color: 'rgba(42,42,72,0.3)' }
                 }
             },
             plugins: {
@@ -45,11 +48,6 @@ export function initChart(canvasElement) {
     });
 }
 
-/**
- * Ajoute un point de donnée au graphique.
- * @param {string} label - L'étiquette pour l'axe X (ex: temps).
- * @param {number} data - La valeur pour l'axe Y (ex: vitesse).
- */
 export function addChartData(label, data) {
     if (!performanceChart) return;
     performanceChart.data.labels.push(label);
@@ -57,10 +55,6 @@ export function addChartData(label, data) {
     performanceChart.update();
 }
 
-/**
- * Met à jour l'étiquette du dataset du graphique.
- * @param {string} newLabel 
- */
 export function updateChartLabel(newLabel) {
     if (!performanceChart) return;
     performanceChart.data.datasets[0].label = newLabel;
@@ -68,9 +62,6 @@ export function updateChartLabel(newLabel) {
     performanceChart.update();
 }
 
-/**
- * Réinitialise les données du graphique.
- */
 export function resetChart() {
     if (!performanceChart) return;
     performanceChart.data.labels = [];

@@ -1,6 +1,7 @@
 /**
  * @file analysisProcessor.js
  * @description Gère le découpage du texte et son analyse par lots.
+ * Transkryptor v5 — Cloud Temple SecNumCloud uniquement.
  */
 
 import * as api from './apiService.js';
@@ -8,20 +9,12 @@ import * as api from './apiService.js';
 const TOKEN_LIMIT = 500;
 const BATCH_SIZE = 10;
 
-/**
- * Estime le nombre de tokens dans un texte.
- * NOTE : Il s'agit d'une approximation grossière basée sur les mots.
- * Pour un comptage précis, une librairie de tokenization spécifique au modèle serait nécessaire.
- * @param {string} text Le texte à évaluer.
- * @returns {number} Le nombre approximatif de tokens.
- */
 function countTokens(text) {
     return text.split(/\s+/).length;
 }
 
 function splitTextIntoChunks(text) {
     let sentences = text.match(/[^.!?]+[.!?]+/g);
-    // Si aucune phrase avec ponctuation n'est trouvée, on traite le texte comme une seule grande phrase.
     if (!sentences) {
         sentences = [text];
     }
@@ -44,7 +37,7 @@ function splitTextIntoChunks(text) {
     return chunks;
 }
 
-async function analyzeChunk({ chunk, provider, model, apiKey, chunkIndex, totalChunks, onProgress }, retries = 5) {
+async function analyzeChunk({ chunk, model, chunkIndex, totalChunks, onProgress }, retries = 5) {
     try {
         const prompt = `Tu es un expert en correction de transcriptions audio. Tu dois nettoyer et corriger ce texte issu d'une reconnaissance vocale en :
 
@@ -90,8 +83,8 @@ Voici la transcription à corriger :
 
 ${chunk}`;
         const metadata = { chunkIndex, totalChunks, textPreview: chunk };
-        const result = await api.analyze(prompt, provider, model, apiKey, metadata);
-        const analyzedText = result.content ? result.content[0].text : result.choices[0].message.content;
+        const result = await api.analyze(prompt, model, metadata);
+        const analyzedText = result.choices[0].message.content;
         const inputTokens = countTokens(chunk);
         const outputTokens = countTokens(analyzedText);
         if (inputTokens > 50 && (outputTokens / inputTokens) < 0.5) {
@@ -102,19 +95,17 @@ ${chunk}`;
         if (retries > 0) {
             onProgress({ type: 'chunk_retrying', chunkIndex });
             const waitTime = 2000 * (6 - retries);
-            console.warn(`Échec de l'analyse du chunk ${chunkIndex + 1}, nouvelle tentative dans ${waitTime / 1000}s... (${retries - 1} restantes)`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
-            return analyzeChunk({ chunk, provider, model, apiKey, chunkIndex, totalChunks, onProgress }, retries - 1);
+            return analyzeChunk({ chunk, model, chunkIndex, totalChunks, onProgress }, retries - 1);
         }
-        console.error(`Échec final de l'analyse du chunk ${chunkIndex + 1} après plusieurs tentatives.`);
         throw error;
     }
 }
 
-export async function processAndAnalyzeInBatches({ text, provider, model, apiKey, onProgress, totalFileSize }) {
+export async function processAndAnalyzeInBatches({ text, model, onProgress, totalFileSize }) {
     const chunks = splitTextIntoChunks(text);
     const totalChunks = chunks.length;
-    const totalTokens = countTokens(text); // Calcul du total de tokens
+    const totalTokens = countTokens(text);
     onProgress({ total: totalChunks, completed: 0, processedTokens: 0, totalTokens });
 
     let completedChunks = 0;
@@ -132,9 +123,7 @@ export async function processAndAnalyzeInBatches({ text, provider, model, apiKey
                 try {
                     const analyzedText = await analyzeChunk({
                         chunk: chunkText,
-                        provider,
                         model,
-                        apiKey,
                         chunkIndex: i,
                         totalChunks,
                         onProgress
@@ -143,10 +132,7 @@ export async function processAndAnalyzeInBatches({ text, provider, model, apiKey
                     processedTokens += countTokens(chunkText);
                     completedChunks++;
 
-                    // Si c'est le dernier chunk, on force le compte de tokens à être égal au total pour éviter les écarts.
                     const finalProcessedTokens = (completedChunks === totalChunks) ? totalTokens : processedTokens;
-
-                    // On n'utilise plus processedSize pour l'UI, mais on le garde au cas où
                     const processedSize = (completedChunks / totalChunks) * totalFileSize;
                     onProgress({
                         type: 'chunk_completed',

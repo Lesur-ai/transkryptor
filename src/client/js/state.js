@@ -1,26 +1,21 @@
 /**
  * @file state.js
  * @description Gestion de l'état global de l'application.
- * Ce module centralise les données de l'application pour qu'elles soient accessibles
- * et modifiables de manière cohérente par les autres modules.
+ * Transkryptor v5 — Cloud Temple SecNumCloud uniquement.
  */
 
-// État initial de l'application
 const appState = {
-    // Workflow sélectionné: 'cloud-temple' ou 'openai-anthropic'
-    currentWorkflow: 'cloud-temple',
-    
     // Modèle d'analyse sélectionné
     selectedModel: null,
     
     // Fichier audio sélectionné par l'utilisateur
     selectedFile: null,
-    
-    // Clés API entrées par l'utilisateur
-    apiKeys: {
-        openai: null,
-        anthropic: null,
-    },
+
+    // Identifiant unique de la session client
+    clientId: null,
+
+    // Version de l'application (chargée depuis le serveur)
+    appVersion: '5.0.0',
 
     // Résultats du traitement
     results: {
@@ -47,5 +42,4 @@ export function getState() {
  */
 export function updateState(newState) {
     Object.assign(appState, newState);
-    // Le log a été supprimé pour nettoyer la console.
 }

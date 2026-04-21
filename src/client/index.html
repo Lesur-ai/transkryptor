@@ -3,128 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transkryptor v4.0.14</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Cloud Temple — Transkryptor</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <div class="app-layout">
-        <aside class="sidebar">
-            <h1>Transkryptor v4.0.14</h1>
-            <div class="step">
-                <div class="step-header"><span class="step-number">1</span><span class="step-title">Écosystème</span></div>
-                <div class="workflow-selector">
-                    <div class="workflow-option active" data-workflow="cloud-temple">Cloud Temple SecNumCloud</div>
-                    <div class="workflow-option" data-workflow="openai-anthropic">OpenAI + Anthropic</div>
-                </div>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="header">
+    <div class="header-brand">
+        <img src="/img/logo-cloudtemple.svg" alt="Cloud Temple" class="header-logo">
+        <span class="header-sep">|</span>
+        <h1>Transkryptor</h1>
+    </div>
+    <div class="header-right">
+        <span class="badge badge-info">SecNumCloud</span>
+        <span id="header-version" class="header-version">v5.0.0</span>
+    </div>
+</div>
+
+<!-- ═══════════════ APP LAYOUT ═══════════════ -->
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-title">Configuration</div>
+        <div class="sidebar-content">
+
+            <!-- Modèle -->
+            <div class="config-section">
+                <div class="config-label">🤖 Modèle d'analyse</div>
+                <select id="model-select">
+                    <option>Chargement...</option>
+                </select>
             </div>
-            <div class="step" id="config-cloud-temple">
-                <div class="step-header"><span class="step-number">2</span><span class="step-title">Configuration</span></div>
-                <div class="form-group">
-                    <label for="model-select">Modèle d'analyse</label>
-                    <select id="model-select"><option>Chargement...</option></select>
-                </div>
-            </div>
-            <div class="step" id="config-openai-anthropic" style="display: none;">
-                <div class="step-header"><span class="step-number">2</span><span class="step-title">Clés API</span></div>
-                <div class="form-group">
-                    <label for="openai-key">Clé OpenAI (Whisper)</label>
-                    <input type="password" id="openai-key" placeholder="sk-...">
-                </div>
-                <div class="form-group">
-                    <label for="anthropic-key">Clé Anthropic (Analyse)</label>
-                    <input type="password" id="anthropic-key" placeholder="sk-...">
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-header"><span class="step-number">3</span><span class="step-title">Fichier Audio</span></div>
-                <label for="audio-file" class="file-input-wrapper">
+
+            <!-- Fichier Audio -->
+            <div class="config-section">
+                <div class="config-label">🎙️ Fichier Audio</div>
+                <label for="audio-file" class="file-drop-zone" id="file-drop-zone">
+                    <div class="file-drop-icon">📁</div>
                     <span id="file-name">Cliquez ou glissez-déposez</span>
+                    <span class="file-drop-hint">MP3, WAV, M4A</span>
                 </label>
                 <input type="file" id="audio-file" accept=".mp3,.wav,.m4a">
             </div>
-            <div class="sidebar-footer">
-                <button id="process-btn" class="btn btn-primary">Lancer le Traitement</button>
-                <button id="about-btn" class="btn btn-secondary">À propos</button>
-                <p class="copyright">© Christophe Lesur - Cloud Temple - Ete 2025</p>
+
+            <!-- Actions -->
+            <div class="sidebar-actions">
+                <button id="process-btn" class="btn btn-primary btn-block">🚀 Lancer le Traitement</button>
+                <button id="synthesize-btn" class="btn btn-accent btn-block" disabled>📝 Synthèse</button>
+                <button id="download-btn" class="btn btn-ghost btn-block" disabled>💾 Télécharger</button>
             </div>
-        </aside>
-        <div class="content-wrapper">
-            <main class="main-content">
-                <div class="stats-area" id="stats-card">
-                    <div class="stats-grid" id="main-stats-grid">
-                        <div class="stat-card"><div class="stat-card-title">Progression</div><div class="stat-card-value" id="stat-progress">N/A</div></div>
-                        <div class="stat-card"><div class="stat-card-title">Vitesse</div><div class="stat-card-value" id="stat-speed">N/A</div></div>
-                        <div class="stat-card"><div class="stat-card-title">Taille Traitée</div><div class="stat-card-value" id="stat-size">N/A</div></div>
-                        <div class="stat-card"><div class="stat-card-title">Temps Écoulé</div><div class="stat-card-value" id="stat-time">0s</div></div>
-                        <div class="stat-card"><div class="stat-card-title">Tps. Moyen / Chunk</div><div class="stat-card-value" id="stat-avg-time">N/A</div></div>
-                    </div>
-                    <div class="card" id="file-info-card"></div>
-                    <div class="card chart-card">
-                        <canvas id="performance-chart"></canvas>
-                    </div>
-                </div>
-                <div class="progress-visualization" id="progress-visualization">
-                    <!-- La visualisation des chunks (LEDs) apparaîtra ici -->
-                </div>
-                <div class="card results-card">
-                    <div class="results-header">
-                        <div class="results-tabs">
-                            <div class="tab active" data-tab="transcription">Transcription</div>
-                            <div class="tab" data-tab="analysis">Analyse</div>
-                            <div class="tab" data-tab="synthesis">Synthèse</div>
-                        </div>
-                        <div class="results-actions">
-                            <button id="synthesize-btn" class="btn btn-tonal" disabled>Lancer la Synthèse</button>
-                            <button id="download-btn" class="btn btn-tonal" disabled>Télécharger</button>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-text">
+                © Christophe Lesur — Cloud Temple
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <div class="main-content">
+
+            <!-- Dashboard Stats -->
+            <div class="dashboard" id="dashboard">
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Progression</div>
+                            <div class="stat-value" id="stat-progress">—</div>
                         </div>
                     </div>
-                    <div class="tab-content" id="tab-content-container">
-                        <div class="placeholder">Sélectionnez un fichier pour commencer.</div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Vitesse</div>
+                            <div class="stat-value" id="stat-speed">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-info">
+                            <div class="stat-label" id="stat-size-label">Taille Traitée</div>
+                            <div class="stat-value" id="stat-size">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Temps Écoulé</div>
+                            <div class="stat-value" id="stat-time">0s</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Tps. Moyen</div>
+                            <div class="stat-value" id="stat-avg-time">—</div>
+                        </div>
                     </div>
                 </div>
-            </main>
-            <div class="card server-logs-card">
-                <div class="server-logs-header">Logs du Serveur</div>
-                <div class="server-logs-content" id="server-logs-content">
-                    <!-- Les logs du serveur en temps réel apparaîtront ici -->
+
+                <!-- File Info -->
+                <div class="file-info-row" id="file-info-row"></div>
+
+                <!-- Chart -->
+                <div class="chart-container">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Progress Visualization -->
+            <div class="progress-visualization" id="progress-visualization"></div>
+
+            <!-- Results -->
+            <div class="card results-card">
+                <div class="results-header">
+                    <div class="results-tabs">
+                        <div class="tab active" data-tab="transcription">🎙️ Transcription</div>
+                        <div class="tab" data-tab="analysis">🔍 Analyse</div>
+                        <div class="tab" data-tab="synthesis">📝 Synthèse</div>
+                    </div>
+                </div>
+                <div class="tab-content" id="tab-content-container">
+                    <div class="placeholder">Sélectionnez un fichier audio pour commencer.</div>
                 </div>
             </div>
         </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script type="module" src="/js/main.js"></script>
 
-    <!-- Modale "À propos" -->
-    <div id="about-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>À propos de Transkryptor v4.0.0</h2>
-                <button id="close-modal-btn" class="close-btn">&times;</button>
+        <!-- Server Logs -->
+        <div class="logs-panel">
+            <div class="logs-header">
+                <span>📡 Logs du Serveur</span>
+                <span class="badge badge-ok">Live</span>
             </div>
-            <div class="modal-body">
-                <p><strong>Transkryptor est un démonstrateur technologique conçu pour illustrer la puissance et la simplicité d'intégration de l'offre <a href="https://www.cloud-temple.com/large-language-model-as-a-service-llmaas/" target="_blank">LLMaaS de Cloud Temple</a>, une plateforme souveraine et qualifiée SecNumCloud.</strong></p>
-                
-                <h3>Comment ça marche ?</h3>
-                <p>Cette application orchestre plusieurs services d'IA pour transformer un fichier audio en une synthèse exploitable :</p>
-                <ol>
-                    <li><strong>Transcription :</strong> Votre fichier audio est découpé en morceaux et envoyé à un modèle de reconnaissance vocale (Whisper) pour le convertir en texte.</li>
-                    <li><strong>Analyse :</strong> Le texte brut est ensuite corrigé, nettoyé et structuré par un grand modèle de langage (LLM) pour en améliorer la lisibilité.</li>
-                    <li><strong>Synthèse :</strong> Enfin, un LLM génère un résumé exécutif, identifie les points clés et propose des actions, vous offrant une vue d'ensemble rapide et efficace.</li>
-                </ol>
-
-                <h3>Ce que vous voyez à l'écran :</h3>
-                <ul>
-                    <li><strong>Statistiques :</strong> Suivez en temps réel la vitesse de traitement, la progression et le temps écoulé.</li>
-                    <li><strong>Visualisation :</strong> La grille colorée représente chaque morceau de votre fichier, changeant de couleur selon son état (en attente, en cours, terminé, erreur).</li>
-                    <li><strong>Logs du Serveur :</strong> Observez en direct les communications entre l'application et les API, démontrant la transparence du processus.</li>
-                </ul>
-                <p>Ce démonstrateur met en lumière la facilité avec laquelle des applications complexes et à haute valeur ajoutée peuvent être construites sur une infrastructure de confiance. Pour en savoir plus, consultez notre <a href="https://docs.cloud-temple.com/llmaas" target="_blank">documentation technique</a>.</p>
-            </div>
+            <div class="logs-content" id="server-logs-content"></div>
         </div>
     </div>
+</div>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script type="module" src="/js/main.js"></script>
 </body>
 </html>

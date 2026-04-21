@@ -1,43 +1,34 @@
 /**
  * @file results.js
- * @description Module pour gérer l'affichage des résultats dans l'interface.
+ * @description Module pour gérer l'affichage des résultats.
+ * Transkryptor v5 — Design Cloud Temple dark theme.
  */
 
 import { getState } from '../state.js';
 import { downloadActiveResult } from '../download.js';
 
-// --- DOM Elements ---
 const tabs = document.querySelectorAll('.tab');
 const contentContainer = document.getElementById('tab-content-container');
 const downloadBtn = document.getElementById('download-btn');
 
-let activeTab = 'transcription'; // Onglet actif par défaut
+let activeTab = 'transcription';
 
-/**
- * Met à jour le contenu affiché en fonction de l'onglet actif et de l'état global.
- */
 function renderActiveTabContent() {
     const state = getState();
     const content = state.results[activeTab];
 
     if (content) {
-        // La transcription simple n'a pas besoin de Markdown
         if (activeTab === 'transcription') {
             contentContainer.innerHTML = `<p>${content.replace(/\n/g, '<br>')}</p>`;
         } else {
-            // On utilise marked.parse() pour l'analyse et la synthèse
             contentContainer.innerHTML = marked.parse(content);
         }
-        downloadBtn.disabled = false;
+        if (downloadBtn) downloadBtn.disabled = false;
     } else {
         showPlaceholder(`Aucun contenu pour l'onglet "${activeTab}".`);
     }
 }
 
-/**
- * Active un onglet spécifique et met à jour le contenu.
- * @param {string} tabName - Le nom de l'onglet à activer ('transcription', 'analysis', 'synthesis').
- */
 export function setActiveTab(tabName) {
     activeTab = tabName;
     tabs.forEach(tab => {
@@ -50,53 +41,30 @@ export function setActiveTab(tabName) {
     renderActiveTabContent();
 }
 
-/**
- * Affiche un message de chargement ou d'attente.
- * @param {string} message - Le message à afficher.
- */
 export function showPlaceholder(message) {
     contentContainer.innerHTML = `<div class="placeholder">${message}</div>`;
 }
 
-/**
- * Met à jour la vue lorsqu'une nouvelle transcription est disponible.
- */
 export function updateTranscriptionView() {
-    // Affiche la transcription dans l'onglet 'transcription'
     setActiveTab('transcription');
 }
 
-/**
- * Met à jour la vue lorsqu'une nouvelle analyse est disponible.
- */
 export function updateAnalysisView() {
-    // Passe à l'onglet 'analysis' et l'affiche
     setActiveTab('analysis');
 }
 
-/**
- * Met à jour la vue lorsqu'une nouvelle synthèse est disponible.
- */
 export function updateSynthesisView() {
-    // Passe à l'onglet 'synthesis' et l'affiche
     setActiveTab('synthesis');
 }
 
-/**
- * Gère le clic sur un onglet.
- * @param {Event} event 
- */
 function handleTabClick(event) {
     const newTab = event.currentTarget.dataset.tab;
     setActiveTab(newTab);
 }
 
-/**
- * Initialise le module des résultats.
- */
 export function initResults() {
     tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
-    downloadBtn.addEventListener('click', downloadActiveResult);
-    showPlaceholder('Sélectionnez un fichier pour commencer.');
-    downloadBtn.disabled = true;
+    if (downloadBtn) downloadBtn.addEventListener('click', downloadActiveResult);
+    showPlaceholder('Sélectionnez un fichier audio pour commencer.');
+    if (downloadBtn) downloadBtn.disabled = true;
 }

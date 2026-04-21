@@ -1,36 +1,32 @@
 /**
  * @file audioProcessor.js
  * @description Gère le découpage des fichiers audio en morceaux (chunks) et leur transcription.
+ * Transkryptor v5 — Cloud Temple SecNumCloud uniquement.
  */
 
 import * as api from './apiService.js';
 import { audioBufferToWav } from './audioUtils.js';
 
-// Configuration du découpage
 const CHUNK_DURATION = 30;
 const CHUNK_OVERLAP = 0.03;
 const BATCH_SIZE = 10;
 
-async function transcribeChunk(chunkBlob, provider, apiKey, metadata, onProgress, retries = 5) {
+async function transcribeChunk(chunkBlob, metadata, onProgress, retries = 5) {
     try {
-        const result = await api.transcribe(chunkBlob, provider, apiKey, metadata);
+        const result = await api.transcribe(chunkBlob, metadata);
         return { text: result.text || '', duration: result._serverDuration || 0 };
     } catch (error) {
-        console.error(`Caught error in transcribeChunk for chunk ${metadata.chunkIndex}:`, error);
         if (retries > 0) {
             onProgress({ type: 'chunk_retrying', chunkIndex: metadata.chunkIndex });
             const waitTime = 2000 * (6 - retries);
-            console.warn(`Échec de la transcription du chunk ${metadata.chunkIndex + 1}, nouvelle tentative dans ${waitTime / 1000}s... (${retries - 1} restantes)`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
-            return transcribeChunk(chunkBlob, provider, apiKey, metadata, onProgress, retries - 1);
+            return transcribeChunk(chunkBlob, metadata, onProgress, retries - 1);
         }
-        console.error(`Échec final de la transcription du chunk ${metadata.chunkIndex + 1} après plusieurs tentatives.`);
         throw error;
     }
 }
 
 function resampleAudioBuffer(audioBuffer, targetSampleRate) {
-    // On force la conversion en mono (1 canal), un standard pour la transcription vocale.
     const numberOfChannels = 1;
     const duration = audioBuffer.duration;
     const offlineContext = new OfflineAudioContext(numberOfChannels, duration * targetSampleRate, targetSampleRate);
@@ -41,15 +37,13 @@ function resampleAudioBuffer(audioBuffer, targetSampleRate) {
     return offlineContext.startRendering();
 }
 
-export async function processAndTranscribeInChunks(audioFile, provider, apiKey, onProgress) {
+export async function processAndTranscribeInChunks(audioFile, onProgress) {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const arrayBuffer = await audioFile.arrayBuffer();
     let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
     const targetSampleRate = 24000;
-    // Forcer le rééchantillonnage si la fréquence n'est pas correcte OU si l'audio n'est pas mono.
     if (audioBuffer.sampleRate !== targetSampleRate || audioBuffer.numberOfChannels !== 1) {
-        console.log(`Rééchantillonnage de ${audioBuffer.sampleRate}Hz/${audioBuffer.numberOfChannels}ch vers ${targetSampleRate}Hz/1ch...`);
         audioBuffer = await resampleAudioBuffer(audioBuffer, targetSampleRate);
     }
 
@@ -79,9 +73,8 @@ export async function processAndTranscribeInChunks(audioFile, provider, apiKey, 
                 const end = Math.min(start + CHUNK_DURATION, totalDuration);
                 const chunkDuration = end - start;
 
-                // Vérification de la durée minimale du chunk
                 if (chunkDuration < 0.1) {
-                    allTranscriptions[i] = ''; // Considérer comme du silence
+                    allTranscriptions[i] = '';
                     processedDuration += chunkDuration;
                     onProgress({
                         type: 'chunk_completed',
@@ -92,41 +85,39 @@ export async function processAndTranscribeInChunks(audioFile, provider, apiKey, 
                         chunkDuration: 0,
                         currentText: allTranscriptions.filter(Boolean).join(' ')
                     });
-                    return; // Ne pas traiter ce chunk
+                    return;
                 }
 
-            // Logique de découpage sécurisée, identique à la V3
-            const chunkLength = Math.floor((end - start) * audioBuffer.sampleRate);
-            const chunkAudioBuffer = audioContext.createBuffer(
-                audioBuffer.numberOfChannels,
-                chunkLength,
-                audioBuffer.sampleRate
-            );
+                const chunkLength = Math.floor((end - start) * audioBuffer.sampleRate);
+                const chunkAudioBuffer = audioContext.createBuffer(
+                    audioBuffer.numberOfChannels,
+                    chunkLength,
+                    audioBuffer.sampleRate
+                );
 
-            for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-                const sourceData = audioBuffer.getChannelData(channel);
-                const chunkData = chunkAudioBuffer.getChannelData(channel);
-                const startSample = Math.floor(start * audioBuffer.sampleRate);
-                for (let i = 0; i < chunkLength; i++) {
-                    // Vérification de sécurité pour éviter le "out of bounds"
-                    if (startSample + i < sourceData.length) {
-                        chunkData[i] = sourceData[startSample + i];
+                for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                    const sourceData = audioBuffer.getChannelData(channel);
+                    const chunkData = chunkAudioBuffer.getChannelData(channel);
+                    const startSample = Math.floor(start * audioBuffer.sampleRate);
+                    for (let j = 0; j < chunkLength; j++) {
+                        if (startSample + j < sourceData.length) {
+                            chunkData[j] = sourceData[startSample + j];
+                        }
                     }
                 }
-            }
-                
+                    
                 const chunkBlob = await audioBufferToWav(chunkAudioBuffer);
                 const metadata = { 
                     chunkIndex: i, 
                     totalChunks: numChunks,
-                    originalFileName: audioFile.name, // Ajout du nom de fichier original
-                    originalFileType: audioFile.type, // Ajout du type de fichier original
-                    originalFileSize: audioFile.size // Ajout de la taille du fichier original
+                    originalFileName: audioFile.name,
+                    originalFileType: audioFile.type,
+                    originalFileSize: audioFile.size
                 };
                 
                 onProgress({ type: 'chunk_processing', chunkIndex: i });
                 try {
-                    const { text, duration } = await transcribeChunk(chunkBlob, provider, apiKey, metadata, onProgress);
+                    const { text, duration } = await transcribeChunk(chunkBlob, metadata, onProgress);
                     allTranscriptions[i] = text;
                     processedDuration += chunkDuration;
                     onProgress({
