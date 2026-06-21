@@ -11,36 +11,56 @@ const Logger = require('./logger');
 const app = express();
 
 // --- Lecture de la version depuis le fichier VERSION ---
-let APP_VERSION = '5.0.0';
+let APP_VERSION = '5.1.0';
 try {
     APP_VERSION = fs.readFileSync(path.join(__dirname, '../../VERSION'), 'utf-8').trim();
 } catch (e) {
     console.warn('Fichier VERSION non trouvé, utilisation de la version par défaut.');
 }
 
-// --- Whitelist des modèles autorisés (ordre = priorité d'affichage) ---
-const ALLOWED_MODELS = [
-    'qwen3.5:35b',
-    'qwen3.5:27b',
-    'qwen3.6',
-    'gemma4',
-    'gpt-oss:120b',
-    'qwen3-2507-gptq:235b',
-    'nemotron-3-super',
-    'mistral-small3.2',
-];
+// --- Whitelist exacte des modèles autorisés depuis .env (ordre = priorité d'affichage) ---
+function parseAllowedModels(value) {
+    const seen = new Set();
 
-function isAllowedModel(modelId) {
-    const lower = modelId.toLowerCase();
-    return ALLOWED_MODELS.some(allowed => lower.includes(allowed.toLowerCase()));
+    return (value || '')
+        .split(',')
+        .map(model => model.trim())
+        .filter(Boolean)
+        .filter(model => {
+            const key = normalizeModelId(model);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
 }
 
-function getAllowedScore(modelId) {
-    const lower = modelId.toLowerCase();
-    for (let i = 0; i < ALLOWED_MODELS.length; i++) {
-        if (lower.includes(ALLOWED_MODELS[i].toLowerCase())) return i;
-    }
-    return ALLOWED_MODELS.length;
+function normalizeModelId(modelId) {
+    return String(modelId || '').trim().toLowerCase();
+}
+
+const ALLOWED_MODELS = parseAllowedModels(process.env.CLOUD_TEMPLE_ALLOWED_MODELS);
+const ALLOWED_MODEL_INDEX = new Map(ALLOWED_MODELS.map((model, index) => [normalizeModelId(model), index]));
+
+if (ALLOWED_MODELS.length === 0) {
+    console.warn('CLOUD_TEMPLE_ALLOWED_MODELS non défini : aucun modèle ne sera proposé.');
+}
+
+function hasConfiguredModelAllowlist() {
+    return ALLOWED_MODELS.length > 0;
+}
+
+function isAllowedModel(modelId) {
+    return ALLOWED_MODEL_INDEX.has(normalizeModelId(modelId));
+}
+
+function hasModelIdentifier(model, modelId) {
+    const expected = normalizeModelId(modelId);
+    const identifiers = [model.id, ...(model.aliases || [])].map(normalizeModelId);
+    return identifiers.includes(expected);
+}
+
+function findPublishedModel(allowedModelId, allModels) {
+    return allModels.find(model => hasModelIdentifier(model, allowedModelId));
 }
 
 // --- Logique pour le streaming des logs (Server-Sent Events) ---
@@ -112,6 +132,10 @@ app.get('/api/models', async (req, res) => {
         return res.status(400).json({ error: 'Le paramètre "clientId" est requis' });
     }
 
+    if (!hasConfiguredModelAllowlist()) {
+        return res.status(500).json({ error: 'CLOUD_TEMPLE_ALLOWED_MODELS doit être défini dans .env' });
+    }
+
     try {
         Logger.info(clientId, 'Récupération des modèles depuis Cloud Temple SecNumCloud...');
         const response = await axios.get('https://api.ai.cloud-temple.com/v1/models', {
@@ -126,13 +150,20 @@ app.get('/api/models', async (req, res) => {
             aliases: model.aliases
         }));
 
-        // Whitelist stricte : ne garder que les modèles autorisés
-        const allowedModels = allModels.filter(m => isAllowedModel(m.id));
+        // Whitelist stricte : respecter l'ordre .env et accepter les alias publiés par l'API
+        const allowedModels = ALLOWED_MODELS
+            .map(allowedModelId => {
+                const publishedModel = findPublishedModel(allowedModelId, allModels);
+                if (!publishedModel) return null;
 
-        // Trier dans l'ordre de la whitelist
-        allowedModels.sort((a, b) => {
-            return getAllowedScore(a.id) - getAllowedScore(b.id);
-        });
+                return {
+                    id: allowedModelId,
+                    name: allowedModelId,
+                    aliases: publishedModel.aliases,
+                    sourceId: publishedModel.id,
+                };
+            })
+            .filter(Boolean);
 
         Logger.success(clientId, `${allowedModels.length} modèles autorisés (${allModels.length} total sur Cloud Temple)`);
         res.json(allowedModels);
@@ -210,6 +241,14 @@ app.post('/api/analyze', async (req, res) => {
         return res.status(400).json({ error: 'Les paramètres "model", "text" et "clientId" sont requis' });
     }
 
+    if (!hasConfiguredModelAllowlist()) {
+        return res.status(500).json({ error: 'CLOUD_TEMPLE_ALLOWED_MODELS doit être défini dans .env' });
+    }
+
+    if (!isAllowedModel(model)) {
+        return res.status(400).json({ error: `Le modèle "${model}" n'est pas autorisé par Transkryptor.` });
+    }
+
     try {
         Logger.info(clientId, `Analyse avec Cloud Temple (modèle: ${model})...`);
         const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
@@ -261,6 +300,14 @@ app.post('/api/synthesize', async (req, res) => {
 
     if (!model || !text || !clientId) {
         return res.status(400).json({ error: 'Les paramètres "model", "text" et "clientId" sont requis' });
+    }
+
+    if (!hasConfiguredModelAllowlist()) {
+        return res.status(500).json({ error: 'CLOUD_TEMPLE_ALLOWED_MODELS doit être défini dans .env' });
+    }
+
+    if (!isAllowedModel(model)) {
+        return res.status(400).json({ error: `Le modèle "${model}" n'est pas autorisé par Transkryptor.` });
     }
 
     const fullPrompt = `${SYNTHESIS_PROMPT}\n\n${text}`;

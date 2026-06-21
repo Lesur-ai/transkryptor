@@ -13,12 +13,6 @@ import * as statsUI from './ui/stats.js';
 import * as progressUI from './ui/progress.js';
 import * as chartUI from './ui/chart.js';
 
-// --- Modèles préférés (ordre de priorité pour le défaut) ---
-const PREFERRED_MODELS = [
-    'qwen3.5:35b', 'qwen3.5:27b', 'qwen3.6', 'gemma4',
-    'gpt-oss:120b', 'qwen3-2507-gptq:235b', 'nemotron-3-super', 'mistral-small3.2',
-];
-
 // --- DOM Elements ---
 const modelSelect = document.getElementById('model-select');
 const processBtn = document.getElementById('process-btn');
@@ -36,13 +30,6 @@ let chunkDurations = [];
 // --- Functions ---
 
 function findPreferredModel(models) {
-    for (const preferred of PREFERRED_MODELS) {
-        const found = models.find(m => 
-            m.id.toLowerCase().includes(preferred.toLowerCase()) ||
-            (m.aliases && m.aliases.some(a => a.toLowerCase().includes(preferred.toLowerCase())))
-        );
-        if (found) return found.id;
-    }
     return models.length > 0 ? models[0].id : null;
 }
 

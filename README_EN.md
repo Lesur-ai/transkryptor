@@ -70,18 +70,16 @@ v4 adopts a modern and secure client-server architecture:
 
 ## Configuration
 
-1.  **Create a `.env` file** in the project root by copying the `env.example` template.
-2.  **Fill in the API keys** in this `.env` file. These keys will be used by the server and will never be exposed to the client.
+1.  **Create a `.env` file** in the project root by copying the `.env.example` template.
+2.  **Fill in the API key** in this `.env` file. This key is used by the server and is never exposed to the client.
     -   `CLOUD_TEMPLE_API_KEY`: Your API key for the Cloud Temple API.
-    -   `OPENAI_API_KEY` (Optional): A default OpenAI key.
-    -   `ANTHROPIC_API_KEY` (Optional): A default Anthropic key.
+    -   `CLOUD_TEMPLE_ALLOWED_MODELS`: Exact comma-separated list of models exposed in the interface. The order also defines the default selected model.
 
 ## Usage
 
-1.  **Choose your ecosystem**: "Cloud Temple SecNumCloud" or "OpenAI + Anthropic".
+1.  **Choose the Cloud Temple SecNumCloud model** exposed by the server.
 2.  **Configure**:
     -   For Cloud Temple, select the desired analysis model from the dynamic list.
-    -   For OpenAI/Anthropic, enter your personal API keys (they will be tested and saved in your browser).
 3.  **Select an audio file** (.mp3, .wav, .m4a).
 4.  **Click "Start Processing"**.
 5.  **Follow the progress** in real time.
