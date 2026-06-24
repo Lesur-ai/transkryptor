@@ -228,11 +228,17 @@ async function handleProcess() {
             }
         };
 
+        // L'analyse suit la même langue que la synthèse (cohérence UX).
+        // resolveSynthesisTargetLanguage retourne undefined en mode 'auto'
+        // → l'analyse reste alors dans la langue source (comportement par défaut).
+        const analysisTargetLanguage = resolveSynthesisTargetLanguage(getState());
+
         await processAndAnalyzeInBatches({
             text: state.results.transcription,
             model: state.selectedModel,
             onProgress: onAnalysisProgress,
-            totalFileSize: state.selectedFile.size
+            totalFileSize: state.selectedFile.size,
+            targetLanguage: analysisTargetLanguage
         });
 
         resultsUI.updateAnalysisView();

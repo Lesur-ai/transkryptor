@@ -260,7 +260,7 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
 
 // Analyse de texte (Cloud Temple uniquement)
 app.post('/api/analyze', async (req, res) => {
-    const { model, text, chunkIndex, totalChunks, textPreview, clientId } = req.body;
+    const { model, text, chunkIndex, totalChunks, textPreview, clientId, targetLanguage } = req.body;
     const startTime = Date.now();
 
     if (!model || !text || !clientId) {
@@ -275,11 +275,24 @@ app.post('/api/analyze', async (req, res) => {
         return res.status(400).json({ error: `Le modèle "${model}" n'est pas autorisé par Transkryptor.` });
     }
 
+    // Si targetLanguage est demandé (et différent de FR par défaut), on préfixe
+    // une instruction de langue. Le prompt d'analyse (en FR) reste tel quel —
+    // le LLM comprend les règles en FR et produit la sortie corrigée dans la
+    // langue cible. Cohérence UX : tout l'output (transcription/analyse/synthèse)
+    // est dans la même langue choisie par l'utilisateur.
+    let userContent = text;
+    const code = (targetLanguage || '').trim().toLowerCase();
+    if (code && code !== 'fr') {
+        const langName = LANGUAGE_NAMES_EN[code] || code;
+        const instruction = `IMPORTANT: Reply entirely in ${langName} (ISO code: ${code}). Do not use any other language. The instructions below are in French, but your output MUST be in ${langName}.\n\n`;
+        userContent = `${instruction}${text}`;
+    }
+
     try {
-        Logger.info(clientId, `Analyse avec Cloud Temple (modèle: ${model})...`);
+        Logger.info(clientId, `Analyse avec Cloud Temple (modèle: ${model}${code ? `, langue: ${code}` : ''})...`);
         const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
             model: model,
-            messages: [{ role: 'user', content: text }],
+            messages: [{ role: 'user', content: userContent }],
             max_tokens: 16384,
             // Désactive le mode "thinking" sur les modèles reasoning type qwen3.6 :
             // sans ça, la réponse arrive dans message.reasoning (pas .content) et

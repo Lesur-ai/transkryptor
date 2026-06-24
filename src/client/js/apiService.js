@@ -89,10 +89,15 @@ export async function transcribe(file, metadata = {}) {
  * @param {string} text - Le texte à analyser.
  * @param {string} model - L'identifiant du modèle.
  * @param {object} [metadata={}] - Métadonnées additionnelles.
+ *   Peut contenir `targetLanguage` (ISO 639-1) pour que la sortie soit dans
+ *   cette langue. Sans, l'analyse reste dans la langue source.
  * @returns {Promise<object>} Le résultat de l'analyse.
  */
 export async function analyze(text, model, metadata = {}) {
     const { clientId } = getState();
+    // `metadata` est spread dans le body : si elle contient `targetLanguage`,
+    // il est automatiquement transmis au backend qui préfixera une instruction
+    // de langue dans le prompt.
     const body = { text, model, ...metadata, clientId };
 
     try {
