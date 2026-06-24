@@ -106,6 +106,20 @@ function renderMarkdownView(content) {
 }
 
 function renderSpeakersView(state) {
+    // Cas particulier : streaming en cours. On NE veut PAS afficher le mode
+    // final (avec inputs de renommage + bouton download actif) tant que la
+    // diarization n'est pas terminée. On reset l'état interne du streaming
+    // pour que le prochain tick recrée la structure progressive avec les tours
+    // déjà arrivés ; en attendant, on affiche un placeholder minimal.
+    if (state.processingState === 'diarizing') {
+        streamingState.statusEl = null;
+        streamingState.cardsContainer = null;
+        streamingState.renderedTurnsCount = 0;
+        showPlaceholderKey('diarization.processing');
+        if (downloadBtn) downloadBtn.disabled = true;
+        return;
+    }
+
     const turns = state.results.diarization;
     if (!Array.isArray(turns) || turns.length === 0) {
         showPlaceholderKey('diarization.disabled.message');
@@ -278,6 +292,14 @@ function buildSpeakerCard(turn, idx, speakerNames) {
  * fois par carte (à son arrivée), pas à chaque seconde.
  */
 export function showDiarizationStreamingProgress(elapsedSec, turnsSoFar, speakerNames) {
+    // Guard : ne JAMAIS muter contentContainer si l'utilisateur a basculé vers
+    // un autre onglet (Transcription / Analyse / Synthèse) — sinon le tick
+    // suivant écraserait le contenu de l'onglet actif. À son retour sur
+    // 'speakers', setActiveTab → renderActiveTabContent → renderSpeakersView
+    // affichera l'état courant (state.results.diarization, qui est tenu à jour
+    // par main.js via accumulatedTurns à chaque event 'turn').
+    if (activeTab !== 'speakers') return;
+
     const timeStr = formatElapsed(elapsedSec);
     const turns = Array.isArray(turnsSoFar) ? turnsSoFar : [];
     const turnsCount = turns.length;

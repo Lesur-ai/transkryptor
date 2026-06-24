@@ -679,13 +679,14 @@ async function runDiarizationIfEnabled() {
                 const finalTurns = (data && Array.isArray(data.diarization))
                     ? data.diarization
                     : accumulatedTurns;
+                // processingState quitte 'diarizing' avant updateSpeakersView pour
+                // que renderSpeakersView passe en mode "final" (vue éditable +
+                // bouton download actif) et non en mode "streaming en cours".
                 updateState({
                     results: { ...getState().results, diarization: finalTurns },
+                    processingState: 'idle',
                 });
                 clearInterval(diarizationTimer);
-                // Bascule sur la vue finale (cartes éditables + bouton download actif).
-                // Le reset du state streaming évite de réutiliser des refs DOM obsolètes
-                // au prochain run.
                 if (typeof resultsUI.resetDiarizationStreamingState === 'function') {
                     resultsUI.resetDiarizationStreamingState();
                 }
@@ -701,7 +702,10 @@ async function runDiarizationIfEnabled() {
     } catch (error) {
         const message = error && error.message ? error.message : String(error);
         resultsUI.showPlaceholder(tDiar('diarization.error', { errorMessage: message }));
-        updateState({ results: { ...getState().results, diarization: null } });
+        updateState({
+            results: { ...getState().results, diarization: null },
+            processingState: 'idle',
+        });
     } finally {
         clearInterval(diarizationTimer);
     }

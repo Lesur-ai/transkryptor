@@ -693,29 +693,75 @@ app.post('/api/diarize', async (req, res) => {
         });
 
         llmRes.data.on('end', () => {
-            // Si aucun tour n'a été capté en streaming (LLM a renvoyé un format
-            // inattendu malgré la consigne), tentative de parsing global de l'accumulateur.
-            if (emitted.length === 0) {
+            const totalSegments = (segments || []).length;
+
+            // Helper : nombre de segments uniques couverts par les tours collectés
+            const computeCoveredCount = () => {
+                const covered = new Set();
+                emitted.forEach(t => (t.segmentIds || []).forEach(id => {
+                    const n = Number(id);
+                    if (!Number.isNaN(n)) covered.add(n);
+                }));
+                return covered.size;
+            };
+
+            // Étape 1 : si aucun tour n'a été capté en streaming OU si la
+            // couverture est insuffisante (<90%), tenter une réconciliation
+            // via un parsing global de l'accumulateur LLM. La regex de
+            // streaming peut rater des tours dont les segmentIds contiennent
+            // des espaces atypiques ou des formats inattendus ; le parser
+            // global est plus permissif.
+            const RECONCILE_THRESHOLD = 0.9;
+            const needsReconcile = totalSegments > 0
+                && (emitted.length === 0 || (computeCoveredCount() / totalSegments) < RECONCILE_THRESHOLD);
+
+            if (needsReconcile) {
                 const parsed = extractJsonFromLlmContent(llmAccum);
                 if (parsed && Array.isArray(parsed.turns)) {
-                    const final = buildTurnsWithTimestamps(parsed.turns, segments || []);
-                    final.forEach(t => { emitted.push(t); sendEvent('turn', t); });
+                    const finalAll = buildTurnsWithTimestamps(parsed.turns, segments || []);
+                    // Émettre uniquement les tours qui n'ont PAS déjà été streamés.
+                    // Identifiant déduplicateur : speaker + segmentIds triés en CSV.
+                    const seenKey = new Set(emitted.map(t =>
+                        `${t.speaker}::${[...(t.segmentIds || [])].map(Number).sort((a, b) => a - b).join(',')}`
+                    ));
+                    finalAll.forEach(t => {
+                        const key = `${t.speaker}::${[...(t.segmentIds || [])].map(Number).sort((a, b) => a - b).join(',')}`;
+                        if (!seenKey.has(key)) {
+                            emitted.push(t);
+                            sendEvent('turn', t);
+                            seenKey.add(key);
+                        }
+                    });
                 }
             }
 
             const duration = Date.now() - startTime;
-            if (emitted.length > 0) {
-                sendEvent('complete', { diarization: emitted, turns: emitted.length, durationMs: duration });
-                Logger.logOperation(clientId, 'DIARIZATION', { model, turns: emitted.length }, 'SUCCESS', duration);
-                Logger.success(clientId, `Diarization OK (${emitted.length} tours, ${(duration / 1000).toFixed(1)}s).`);
-            } else {
+            const coveredCount = computeCoveredCount();
+            const coveragePct = totalSegments > 0 ? Math.round((coveredCount / totalSegments) * 100) : 100;
+            const coverage = { coveredSegments: coveredCount, totalSegments, percentage: coveragePct };
+
+            const HARD_FAIL_THRESHOLD = 50; // pourcentage en dessous duquel on considère l'échec
+            if (emitted.length === 0 || (totalSegments > 0 && coveragePct < HARD_FAIL_THRESHOLD)) {
                 const raw = llmAccum;
                 const preview = raw.length > 700
                     ? `${raw.slice(0, 300)}\n...[TRONQUÉ ${raw.length} chars]...\n${raw.slice(-300)}`
                     : raw;
-                Logger.error(clientId, `Diarization : aucun tour extrait (modèle: ${model}, ${raw.length} chars). Aperçu :\n${preview}`, null);
-                Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
-                sendEvent('error', { message: 'La diarization a échoué : aucun tour identifiable. Essayez un modèle plus puissant (qwen3.5:397b ou mistral-small4:119b).' });
+                Logger.error(clientId, `Diarization : couverture insuffisante (${emitted.length} tours, ${coveragePct}% des ${totalSegments} segments couverts, modèle: ${model}, ${raw.length} chars). Aperçu :\n${preview}`, null);
+                Logger.logOperation(clientId, 'DIARIZATION', { model, coverage: coveragePct }, 'ERROR', duration);
+                sendEvent('error', {
+                    message: emitted.length === 0
+                        ? 'La diarization a échoué : aucun tour identifiable. Essayez un modèle plus puissant.'
+                        : `Diarization incomplète : seuls ${coveragePct}% des ${totalSegments} segments ont été identifiés. Essayez un modèle plus puissant ou un audio plus court.`,
+                    coverage
+                });
+            } else {
+                sendEvent('complete', { diarization: emitted, turns: emitted.length, durationMs: duration, coverage });
+                Logger.logOperation(clientId, 'DIARIZATION', { model, turns: emitted.length, coverage: coveragePct }, 'SUCCESS', duration);
+                if (coveragePct < 100) {
+                    Logger.info(clientId, `[DIARIZATION] Diarization OK mais partielle : ${emitted.length} tours, ${coveragePct}% des ${totalSegments} segments couverts (${(duration / 1000).toFixed(1)}s).`);
+                } else {
+                    Logger.success(clientId, `Diarization OK (${emitted.length} tours, 100% des ${totalSegments} segments, ${(duration / 1000).toFixed(1)}s).`);
+                }
             }
             cleanup();
         });
