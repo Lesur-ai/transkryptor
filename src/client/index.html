@@ -18,7 +18,7 @@
     </div>
     <div class="header-right">
         <span class="badge badge-info">SecNumCloud</span>
-        <span id="header-version" class="header-version">v5.4.0</span>
+        <span id="header-version" class="header-version">v6.0.0</span>
     </div>
 </div>
 
@@ -94,6 +94,20 @@
                     <option value="ar" data-i18n="language.ar.name">Arabe</option>
                 </select>
                 <div id="detected-language-badge" class="detected-language-badge" hidden></div>
+            </div>
+
+            <!-- Détection des participants (diarization LLM-based, AXE 4) -->
+            <div class="config-section">
+                <div class="config-label">
+                    <input type="checkbox" id="diarization-toggle">
+                    <label for="diarization-toggle" data-i18n="diarization.toggle.label">Détecter les participants</label>
+                </div>
+                <input type="number" id="diarization-speaker-count" min="0" max="20"
+                       data-i18n-attr-placeholder="diarization.speakerCount.placeholder"
+                       placeholder="Vide = détection automatique" disabled>
+                <div class="config-hint" data-i18n="diarization.notice">
+                    Détection par analyse textuelle. Qualité variable selon le contenu.
+                </div>
             </div>
 
             <!-- Actions -->
@@ -203,6 +217,7 @@
                         <div class="tab active" data-tab="transcription"><span class="icon">🎙️</span><span data-i18n="tabs.transcription.label">Transcription</span></div>
                         <div class="tab" data-tab="analysis"><span class="icon">🔍</span><span data-i18n="tabs.analysis.label">Analyse</span></div>
                         <div class="tab" data-tab="synthesis"><span class="icon">📝</span><span data-i18n="tabs.synthesis.label">Synthèse</span></div>
+                        <div class="tab" data-tab="speakers"><span class="icon">🗣️</span><span data-i18n="tabs.speakers.label">Locuteurs</span></div>
                     </div>
                 </div>
                 <div class="tab-content" id="tab-content-container">

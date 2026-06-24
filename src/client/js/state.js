@@ -15,17 +15,21 @@ const appState = {
     clientId: null,
 
     // Version de l'application (chargée depuis le serveur)
-    appVersion: '5.4.0',
+    appVersion: '6.0.0',
 
     // Résultats du traitement
     results: {
         transcription: null,
         analysis: null,
         synthesis: null,
+        // AXE 4 — Diarization
+        diarization: null,        // Array | null — [{speaker, segmentIds, text, startTime, endTime}]
+        speakerNames: {},         // { "Speaker 1": "Alice", ... } — overrides UI
+        whisperSegments: null,    // segments bruts retournés par Whisper (référence pour la diarization)
     },
 
     // État du processus en cours
-    processingState: 'idle', // 'idle', 'transcribing', 'analyzing', 'synthesizing', 'done', 'error'
+    processingState: 'idle', // 'idle', 'transcribing', 'analyzing', 'synthesizing', 'diarizing', 'done', 'error'
 
     // Preset de synthèse sélectionné (executive, meeting, actions, verbatim, thematic, custom)
     synthesisPreset: 'executive',
@@ -41,6 +45,11 @@ const appState = {
 
     // Langue détectée par Whisper sur le premier chunk (ISO 639-1), si différente du hint.
     detectedAudioLanguage: null,
+
+    // AXE 4 — Diarization LLM-based (v6.0)
+    diarizationEnabled: false,
+    diarizationSpeakerCount: null,
+    currentFileHash: null,
 };
 
 /**

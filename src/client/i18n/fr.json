@@ -56,6 +56,9 @@
     },
     "synthesis": {
       "label": "Synthèse"
+    },
+    "speakers": {
+      "label": "Locuteurs"
     }
   },
   "logs": {
@@ -206,5 +209,26 @@
     "different": {
       "warning": "La synthèse sera rédigée en {targetLang} (différente de la langue source)."
     }
+  },
+  "diarization": {
+    "toggle": {
+      "label": "Détecter les participants"
+    },
+    "speakerCount": {
+      "label": "Nombre attendu de locuteurs",
+      "placeholder": "Vide = détection automatique"
+    },
+    "notice": "Détection par analyse textuelle. Qualité variable selon le contenu.",
+    "processing": "Identification des locuteurs en cours...",
+    "error": "Échec de la détection des locuteurs : {errorMessage}",
+    "disabled": {
+      "message": "Activez la détection des participants pour voir cette vue."
+    }
+  },
+  "speakers": {
+    "rename": {
+      "placeholder": "Renommer ce locuteur"
+    },
+    "timestamp": "[{start} - {end}]"
   }
 }

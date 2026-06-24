@@ -4,6 +4,25 @@ All notable changes to Transkryptor are documented in this file.
 
 This changelog was introduced in version 5.1.0 and backfills earlier releases from the Git tag history, project documentation, and the local project memory bank. Older entries are therefore less detailed than entries maintained from 5.1.0 onward.
 
+## [6.0.0] - 2026-06-24
+### Ajouté
+- Détection de participants OPTIONNELLE basée sur analyse textuelle LLM via Cloud Temple (100% SecNumCloud, sans Docker ni Python)
+- Nouveau toggle "Détecter les participants" + champ optionnel "Nombre attendu" dans la sidebar
+- Nouvel onglet "Locuteurs" avec affichage par tour de parole, timestamps approximatifs (mappés sur segments Whisper), et renommage inline persisté par fichier (localStorage)
+- Vue diarisée inline dans l'onglet Transcription quand la détection est activée
+- Nouvel endpoint POST /api/diarize (retry 1x sur parse JSON échoué)
+- Nouveaux namespaces i18n `diarization` et `speakers` + clé `tabs.speakers.label` (FR + EN)
+- Capture des segments Whisper par chunk avec offset sur la timeline globale (envoyés au LLM de diarization)
+- Persistance localStorage du toggle (`transkryptor.diarization.enabled`) et des noms renommés par fichier (`transkryptor.speakers.<fileHash>`)
+### Modifié
+- audioProcessor.processAndTranscribeInChunks retourne désormais {text, segments} au lieu d'un string brut
+- main.handleProcess stocke state.results.whisperSegments puis appelle la diarization si activée
+- ui/results.js : nouveau case 'speakers' dans renderActiveTabContent + vue diarisée inline pour transcription + helper renameSpeaker
+### Notes
+- La détection de participants utilise une analyse TEXTUELLE par LLM (pas vraie diarization audio). Qualité variable selon le contenu — excellente sur Q&A et interviews, moyenne sur discussions fluides.
+- Backward-compatible : quand le toggle est OFF le pipeline est byte-identique à v5.4.0.
+- Aucune nouvelle dépendance npm ; vanilla JS + axios/express existants.
+
 ## [5.4.0] - 2026-06-24
 ### Ajouté
 - Sélecteur "Langue audio" dans la sidebar (Auto + 15 langues principales en ISO 639-1)

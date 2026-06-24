@@ -18,6 +18,7 @@ async function transcribeChunk(chunkBlob, metadata, onProgress, retries = 5) {
             text: result.text || '',
             duration: result._serverDuration || 0,
             language: result.language || null,
+            segments: Array.isArray(result.segments) ? result.segments : [],
         };
     } catch (error) {
         if (retries > 0) {
@@ -67,6 +68,7 @@ export async function processAndTranscribeInChunks(audioFile, onProgress, option
     let completedChunks = 0;
     let processedDuration = 0;
     const allTranscriptions = new Array(numChunks);
+    const allSegmentsByChunk = new Array(numChunks);
 
     for (let batchStart = 0; batchStart < numChunks; batchStart += BATCH_SIZE) {
         const batchEnd = Math.min(batchStart + BATCH_SIZE, numChunks);
@@ -80,6 +82,7 @@ export async function processAndTranscribeInChunks(audioFile, onProgress, option
 
                 if (chunkDuration < 0.1) {
                     allTranscriptions[i] = '';
+                    allSegmentsByChunk[i] = [];
                     processedDuration += chunkDuration;
                     onProgress({
                         type: 'chunk_completed',
@@ -123,8 +126,17 @@ export async function processAndTranscribeInChunks(audioFile, onProgress, option
 
                 onProgress({ type: 'chunk_processing', chunkIndex: i });
                 try {
-                    const { text, duration, language: detectedLang } = await transcribeChunk(chunkBlob, metadata, onProgress);
+                    const { text, duration, language: detectedLang, segments } = await transcribeChunk(chunkBlob, metadata, onProgress);
                     allTranscriptions[i] = text;
+                    // AXE 4 — Décale les timestamps locaux du chunk vers la timeline globale
+                    const chunkStartOffset = i * effectiveChunkDuration;
+                    allSegmentsByChunk[i] = (segments || []).map((seg, segIdx) => ({
+                        id: `${i}-${seg && seg.id !== undefined ? seg.id : segIdx}`,
+                        chunkIndex: i,
+                        start: (typeof seg.start === 'number' ? seg.start : 0) + chunkStartOffset,
+                        end: (typeof seg.end === 'number' ? seg.end : 0) + chunkStartOffset,
+                        text: typeof seg.text === 'string' ? seg.text : '',
+                    }));
                     processedDuration += chunkDuration;
                     onProgress({
                         type: 'chunk_completed',
@@ -145,5 +157,11 @@ export async function processAndTranscribeInChunks(audioFile, onProgress, option
         await Promise.all(batchPromises);
     }
 
-    return allTranscriptions.filter(Boolean).join(' ');
+    const finalText = allTranscriptions.filter(Boolean).join(' ');
+    const finalSegments = allSegmentsByChunk
+        .filter(Array.isArray)
+        .reduce((acc, arr) => acc.concat(arr), [])
+        .sort((a, b) => a.start - b.start);
+    // AXE 4 — Retourne {text, segments} pour permettre la diarization LLM-based
+    return { text: finalText, segments: finalSegments };
 }

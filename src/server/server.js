@@ -11,7 +11,7 @@ const Logger = require('./logger');
 const app = express();
 
 // --- Lecture de la version depuis le fichier VERSION ---
-let APP_VERSION = '5.4.0';
+let APP_VERSION = '6.0.0';
 try {
     APP_VERSION = fs.readFileSync(path.join(__dirname, '../../VERSION'), 'utf-8').trim();
 } catch (e) {
@@ -403,6 +403,163 @@ app.post('/api/synthesize', async (req, res) => {
         Logger.error(clientId, `Erreur lors de la synthèse`, error);
         res.status(500).json({
             error: 'Erreur interne du serveur lors de la synthèse',
+            details: error.response ? error.response.data : error.message
+        });
+    }
+});
+
+// --- Diarization LLM-based (AXE 4 — v6.0) ---
+//
+// Note importante : cette diarization NE LIT PAS l'audio.
+// Elle envoie le texte transcrit + ses segments Whisper à un LLM Cloud Temple
+// qui infère qui parle quand par analyse purement textuelle. Qualité variable.
+function buildDiarizationPrompt(text, segments, speakerCount) {
+    const safeSegments = Array.isArray(segments) ? segments : [];
+    const segmentsBlock = safeSegments.length > 0
+        ? safeSegments.map((s, idx) => {
+            const id = (s && s.id !== undefined) ? s.id : idx;
+            const content = (s && typeof s.text === 'string') ? s.text.trim() : '';
+            return `[${id}] ${content}`;
+        }).join('\n')
+        : `[0] ${String(text || '').trim()}`;
+
+    const speakerLine = (speakerCount && speakerCount > 0)
+        ? `Nombre de locuteurs attendu : ${speakerCount}.`
+        : `Nombre de locuteurs attendu : inconnu (à déterminer).`;
+
+    return [
+        "Tu es un expert en analyse de conversations.",
+        "Voici la transcription d'un échange audio découpée en segments numérotés.",
+        "Identifie qui parle dans chaque segment et regroupe les tours de parole consécutifs d'un même locuteur.",
+        speakerLine,
+        "",
+        "Réponds UNIQUEMENT avec un JSON valide STRICT, sans texte autour, sans bloc Markdown, sans commentaire :",
+        '{"turns": [{"speaker": "Speaker 1", "segmentIds": [0,1,2], "text": "..."}, ...]}',
+        "",
+        "Règles :",
+        "- Les noms de locuteurs doivent être de la forme \"Speaker 1\", \"Speaker 2\", etc.",
+        "- segmentIds doit lister les identifiants des segments du tour, dans l'ordre.",
+        "- text doit reproduire fidèlement le texte de ce tour (concaténation des segments).",
+        "- Conserve l'ordre chronologique des tours.",
+        "",
+        "Segments :",
+        segmentsBlock,
+    ].join('\n');
+}
+
+function extractJsonFromLlmContent(content) {
+    if (typeof content !== 'string') return null;
+    const trimmed = content.trim();
+    // Strip markdown fences if present
+    const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = fenceMatch ? fenceMatch[1].trim() : trimmed;
+    try {
+        return JSON.parse(candidate);
+    } catch (_) {
+        // Try to grab the first {...} block
+        const braceStart = candidate.indexOf('{');
+        const braceEnd = candidate.lastIndexOf('}');
+        if (braceStart !== -1 && braceEnd > braceStart) {
+            try {
+                return JSON.parse(candidate.slice(braceStart, braceEnd + 1));
+            } catch (_) {
+                return null;
+            }
+        }
+        return null;
+    }
+}
+
+async function callLlmForDiarization(model, prompt) {
+    const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
+        model: model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 8192,
+    }, {
+        headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
+    });
+    return response.data.choices[0].message.content;
+}
+
+function buildTurnsWithTimestamps(turns, segments) {
+    const segMap = new Map();
+    (segments || []).forEach((s, idx) => {
+        const id = (s && s.id !== undefined) ? s.id : idx;
+        segMap.set(id, s);
+    });
+
+    return (turns || []).map((turn, turnIdx) => {
+        const segIds = Array.isArray(turn.segmentIds) ? turn.segmentIds : [];
+        let startTime = null;
+        let endTime = null;
+
+        segIds.forEach(sid => {
+            const seg = segMap.get(sid);
+            if (!seg) return;
+            const segStart = (typeof seg.start === 'number') ? seg.start : null;
+            const segEnd = (typeof seg.end === 'number') ? seg.end : null;
+            if (segStart !== null && (startTime === null || segStart < startTime)) startTime = segStart;
+            if (segEnd !== null && (endTime === null || segEnd > endTime)) endTime = segEnd;
+        });
+
+        return {
+            speaker: turn.speaker || `Speaker ${turnIdx + 1}`,
+            segmentIds: segIds,
+            text: typeof turn.text === 'string' ? turn.text : '',
+            startTime,
+            endTime,
+        };
+    });
+}
+
+app.post('/api/diarize', async (req, res) => {
+    const { model, text, segments, speakerCount, clientId } = req.body;
+    const startTime = Date.now();
+
+    if (!model || !clientId || (typeof text !== 'string' && !Array.isArray(segments))) {
+        return res.status(400).json({ error: 'Les paramètres "model", "text" (ou "segments") et "clientId" sont requis' });
+    }
+    if (!hasConfiguredModelAllowlist()) {
+        return res.status(500).json({ error: 'CLOUD_TEMPLE_ALLOWED_MODELS doit être défini dans .env' });
+    }
+    if (!isAllowedModel(model)) {
+        return res.status(400).json({ error: `Le modèle "${model}" n'est pas autorisé par Transkryptor.` });
+    }
+
+    const safeSpeakerCount = (typeof speakerCount === 'number' && speakerCount > 0) ? speakerCount : null;
+    const basePrompt = buildDiarizationPrompt(text || '', segments || [], safeSpeakerCount);
+
+    try {
+        Logger.info(clientId, `Diarization LLM-based avec Cloud Temple (modèle: ${model})...`);
+
+        let llmContent = await callLlmForDiarization(model, basePrompt);
+        let parsed = extractJsonFromLlmContent(llmContent);
+
+        if (!parsed || !Array.isArray(parsed.turns)) {
+            // Retry 1x avec instruction renforcée
+            const retryPrompt = `${basePrompt}\n\nIMPORTANT : ta dernière réponse n'était pas un JSON valide. Renvoie UNIQUEMENT le JSON, sans aucun autre texte, sans bloc Markdown.`;
+            llmContent = await callLlmForDiarization(model, retryPrompt);
+            parsed = extractJsonFromLlmContent(llmContent);
+        }
+
+        if (!parsed || !Array.isArray(parsed.turns)) {
+            const duration = Date.now() - startTime;
+            Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
+            Logger.error(clientId, 'Diarization : JSON LLM invalide après retry', null);
+            return res.status(500).json({ error: 'La diarization a échoué : réponse LLM invalide.' });
+        }
+
+        const diarization = buildTurnsWithTimestamps(parsed.turns, segments || []);
+        const duration = Date.now() - startTime;
+        Logger.logOperation(clientId, 'DIARIZATION', { model, turns: diarization.length }, 'SUCCESS', duration);
+        Logger.success(clientId, `Diarization Cloud Temple réussie (${diarization.length} tours)`);
+        res.json({ diarization });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
+        Logger.error(clientId, `Erreur lors de la diarization`, error);
+        res.status(500).json({
+            error: 'Erreur interne du serveur lors de la diarization',
             details: error.response ? error.response.data : error.message
         });
     }

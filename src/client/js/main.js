@@ -162,9 +162,22 @@ async function handleProcess() {
             }
         };
 
-        await processAndTranscribeInChunks(state.selectedFile, onTranscriptionProgress, {
+        const transcriptionResult = await processAndTranscribeInChunks(state.selectedFile, onTranscriptionProgress, {
             language: state.audioLanguage || ''
         });
+        // AXE 4 — Conserve les segments Whisper bruts dans le state pour la diarization
+        if (transcriptionResult && Array.isArray(transcriptionResult.segments)) {
+            updateState({
+                results: {
+                    ...getState().results,
+                    transcription: transcriptionResult.text || getState().results.transcription,
+                    whisperSegments: transcriptionResult.segments,
+                },
+            });
+        }
+
+        // AXE 4 — Diarization optionnelle (v6.0)
+        await runDiarizationIfEnabled();
 
         resultsUI.setActiveTab('analysis');
         resultsUI.showPlaceholderKey('status.analysis.inProgress', null, '🔍');
@@ -352,6 +365,9 @@ async function initialize() {
 
     // Init multilingue (langues audio + synthèse)
     initLanguageSelectors();
+
+    // Init diarization (AXE 4 — v6.0)
+    initDiarizationControls();
 
     // Charger les modèles
     updateModelList();
@@ -541,3 +557,133 @@ function resolveSynthesisTargetLanguage(state) {
 }
 
 document.addEventListener('DOMContentLoaded', initialize);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AXE 4 — Diarization LLM-based (v6.0)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DIARIZATION_TOGGLE_STORAGE_KEY = 'transkryptor.diarization.enabled';
+const DIARIZATION_SPEAKER_NAMES_PREFIX = 'transkryptor.speakers.';
+
+function tDiar(key, vars) {
+    if (typeof window !== 'undefined' && window.i18n && typeof window.i18n.t === 'function') {
+        return window.i18n.t(key, vars);
+    }
+    const fallback = {
+        'diarization.processing': 'Identification des locuteurs en cours...',
+        'diarization.error': `Échec de la détection des locuteurs : ${vars ? vars.errorMessage : ''}`,
+    };
+    return fallback[key] || key;
+}
+
+function computeFileHash(file) {
+    if (!file) return null;
+    const name = file.name || 'unknown';
+    const size = typeof file.size === 'number' ? file.size : 0;
+    const lastModified = typeof file.lastModified === 'number' ? file.lastModified : 0;
+    return `${name}::${size}::${lastModified}`;
+}
+
+function loadSpeakerNames(fileHash) {
+    if (!fileHash) return {};
+    try {
+        const raw = localStorage.getItem(`${DIARIZATION_SPEAKER_NAMES_PREFIX}${fileHash}`);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function saveSpeakerNames(fileHash, names) {
+    if (!fileHash) return;
+    try {
+        localStorage.setItem(`${DIARIZATION_SPEAKER_NAMES_PREFIX}${fileHash}`, JSON.stringify(names || {}));
+    } catch (_) {
+        // Quota / private mode : silencieux
+    }
+}
+
+async function runDiarizationIfEnabled() {
+    const state = getState();
+    if (!state.diarizationEnabled) return;
+
+    const text = state.results.transcription;
+    const segments = state.results.whisperSegments || [];
+    if (!text) return;
+
+    const fileHash = computeFileHash(state.selectedFile);
+    const speakerNames = loadSpeakerNames(fileHash);
+    updateState({
+        currentFileHash: fileHash,
+        results: { ...getState().results, speakerNames },
+        processingState: 'diarizing',
+    });
+
+    resultsUI.setActiveTab('speakers');
+    resultsUI.showPlaceholder(tDiar('diarization.processing'));
+
+    try {
+        const result = await api.diarize(text, segments, state.selectedModel, state.diarizationSpeakerCount);
+        const turns = (result && Array.isArray(result.diarization)) ? result.diarization : [];
+        updateState({
+            results: { ...getState().results, diarization: turns },
+        });
+        if (typeof resultsUI.updateSpeakersView === 'function') {
+            resultsUI.updateSpeakersView();
+        }
+    } catch (error) {
+        const message = error && error.message ? error.message : String(error);
+        resultsUI.showPlaceholder(tDiar('diarization.error', { errorMessage: message }));
+        updateState({ results: { ...getState().results, diarization: null } });
+    }
+}
+
+function initDiarizationControls() {
+    const toggle = document.getElementById('diarization-toggle');
+    const speakerCount = document.getElementById('diarization-speaker-count');
+    if (!toggle || !speakerCount) return;
+
+    // Restore from localStorage
+    try {
+        const stored = localStorage.getItem(DIARIZATION_TOGGLE_STORAGE_KEY);
+        if (stored === 'true') {
+            toggle.checked = true;
+            speakerCount.disabled = false;
+            updateState({ diarizationEnabled: true });
+        }
+    } catch (_) { /* noop */ }
+
+    toggle.addEventListener('change', (e) => {
+        const enabled = !!e.target.checked;
+        speakerCount.disabled = !enabled;
+        updateState({ diarizationEnabled: enabled });
+        try { localStorage.setItem(DIARIZATION_TOGGLE_STORAGE_KEY, enabled ? 'true' : 'false'); } catch (_) { /* noop */ }
+    });
+
+    speakerCount.addEventListener('change', (e) => {
+        const raw = parseInt(e.target.value, 10);
+        const value = (Number.isFinite(raw) && raw > 0) ? raw : null;
+        updateState({ diarizationSpeakerCount: value });
+    });
+}
+
+// Expose un helper pour le renommage des speakers depuis l'UI
+window.transkryptorRenameSpeaker = function renameSpeaker(oldName, newName) {
+    const state = getState();
+    const fileHash = state.currentFileHash || computeFileHash(state.selectedFile);
+    if (!fileHash) return;
+    const current = { ...(state.results.speakerNames || {}) };
+    const trimmed = (newName || '').trim();
+    if (trimmed) {
+        current[oldName] = trimmed;
+    } else {
+        delete current[oldName];
+    }
+    updateState({ results: { ...state.results, speakerNames: current } });
+    saveSpeakerNames(fileHash, current);
+    if (typeof resultsUI.updateSpeakersView === 'function') {
+        resultsUI.updateSpeakersView();
+    }
+};

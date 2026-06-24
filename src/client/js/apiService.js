@@ -19,7 +19,7 @@ export async function getVersion() {
         return data.version;
     } catch (error) {
         console.error('Erreur lors de la récupération de la version.');
-        return '5.4.0';
+        return '6.0.0';
     }
 }
 
@@ -143,6 +143,44 @@ export async function synthesize(analysisText, model, customPrompt, targetLangua
         return await response.json();
     } catch (error) {
         console.error('Erreur lors de la synthèse.');
+        throw error;
+    }
+}
+
+/**
+ * Demande au backend d'effectuer une diarization LLM-based sur la transcription.
+ * AXE 4 — v6.0
+ * @param {string} transcriptionText - Texte intégral de la transcription.
+ * @param {Array<object>} segments - Segments Whisper [{id, start, end, text}].
+ * @param {string} model - Modèle Cloud Temple à utiliser.
+ * @param {number|null} [speakerCount=null] - Nombre attendu de locuteurs (null = auto).
+ * @returns {Promise<object>} { diarization: [{speaker, segmentIds, text, startTime, endTime}, ...] }
+ */
+export async function diarize(transcriptionText, segments, model, speakerCount = null) {
+    const { clientId } = getState();
+    const body = {
+        text: transcriptionText,
+        segments: segments || [],
+        model,
+        clientId,
+    };
+    if (speakerCount !== null && speakerCount !== undefined && speakerCount > 0) {
+        body.speakerCount = speakerCount;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/diarize`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Erreur lors de la diarization.');
         throw error;
     }
 }

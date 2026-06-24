@@ -56,6 +56,9 @@
     },
     "synthesis": {
       "label": "Synthesis"
+    },
+    "speakers": {
+      "label": "Speakers"
     }
   },
   "logs": {
@@ -206,5 +209,26 @@
     "different": {
       "warning": "The synthesis will be written in {targetLang} (different from the source language)."
     }
+  },
+  "diarization": {
+    "toggle": {
+      "label": "Detect participants"
+    },
+    "speakerCount": {
+      "label": "Expected number of speakers",
+      "placeholder": "Empty = auto-detect"
+    },
+    "notice": "Detection via text analysis. Quality varies with content.",
+    "processing": "Identifying speakers...",
+    "error": "Speaker detection failed: {errorMessage}",
+    "disabled": {
+      "message": "Enable participant detection to display this view."
+    }
+  },
+  "speakers": {
+    "rename": {
+      "placeholder": "Rename this speaker"
+    },
+    "timestamp": "[{start} - {end}]"
   }
 }

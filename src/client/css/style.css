@@ -614,3 +614,70 @@ input[type="file"] { display: none; }
 
 /* ═══ UTILS ═══ */
 .hidden { display: none !important; }
+
+/* ═══ DIARIZATION / SPEAKERS (AXE 4 — v6.0) ═══ */
+.config-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    margin-top: 0.4rem;
+    line-height: 1.35;
+}
+#diarization-speaker-count {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255,255,255,0.04);
+    color: inherit;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+#diarization-speaker-count:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.speakers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+.speaker-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+}
+.speaker-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.speaker-name-input {
+    flex: 1;
+    background: transparent;
+    color: inherit;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 0.25rem 0.4rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    min-width: 0;
+}
+.speaker-name-input:hover,
+.speaker-name-input:focus {
+    border-color: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.05);
+    outline: none;
+}
+.speaker-card-time {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+}
+.speaker-card-body {
+    line-height: 1.55;
+}
