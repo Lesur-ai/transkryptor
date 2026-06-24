@@ -196,16 +196,17 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
         return res.status(400).json({ error: 'Les paramètres "file" et "clientId" sont requis' });
     }
 
-    try {
-        const fileStream = fs.createReadStream(file.path);
+    // Helper : appelle Whisper Cloud Temple. Le stream est recréé à chaque appel
+    // pour permettre un fallback de response_format (verbose_json → json) sans
+    // "stream consumed" error sur le 2e essai.
+    const callWhisper = (format) => {
         const formData = new FormData();
-        formData.append('file', fileStream, file.originalname);
-        formData.append('response_format', 'json');
+        formData.append('file', fs.createReadStream(file.path), file.originalname);
+        formData.append('response_format', format);
         if (language && typeof language === 'string' && language.trim()) {
             formData.append('language', language.trim());
         }
-
-        const response = await axios.post('https://api.ai.cloud-temple.com/v1/audio/transcriptions', formData, {
+        return axios.post('https://api.ai.cloud-temple.com/v1/audio/transcriptions', formData, {
             headers: {
                 ...formData.getHeaders(),
                 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}`
@@ -213,6 +214,28 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
             maxContentLength: Infinity,
             maxBodyLength: Infinity
         });
+    };
+
+    try {
+        // verbose_json est le format OpenAI/Whisper standard qui inclut segments + language.
+        // La doc Cloud Temple ne le mentionne pas explicitement mais ne l'interdit pas
+        // (seuls text/srt/vtt sont marqués comme non supportés). Fallback gracieux sur json.
+        let response;
+        try {
+            response = await callWhisper('verbose_json');
+        } catch (firstErr) {
+            const status = firstErr.response ? firstErr.response.status : null;
+            if (status && status >= 400 && status < 500) {
+                Logger.info(clientId, `[WARN] Whisper verbose_json rejeté (HTTP ${status}), fallback sur json`);
+                response = await callWhisper('json');
+            } else {
+                throw firstErr;
+            }
+        }
+
+        if (!response.data || !Array.isArray(response.data.segments) || response.data.segments.length === 0) {
+            Logger.info(clientId, `[WARN] Whisper a renvoyé une réponse SANS segments — la diarization (si activée) n'aura pas de timestamps.`);
+        }
 
         const duration = Date.now() - startTime;
         Logger.logOperation(clientId, 'TRANSCRIPTION', { chunkIndex, totalChunks }, 'SUCCESS', duration);
@@ -368,15 +391,27 @@ app.post('/api/synthesize', async (req, res) => {
         return res.status(400).json({ error: `Le modèle "${model}" n'est pas autorisé par Transkryptor.` });
     }
 
-    // Priorité : customPrompt (AXE 3) > buildSynthesisPrompt(targetLanguage) (AXE 2)
+    // Priorité d'application :
+    //   - customPrompt (AXE 3) si fourni → prime sur les prompts par défaut serveur
+    //   - sinon buildSynthesisPrompt(targetLanguage) (AXE 2) → FR/EN traduits
+    // Quand customPrompt ET targetLanguage sont fournis, on préfixe une instruction
+    // de langue pour ne pas court-circuiter l'AXE 2 (les presets côté client sont en FR).
     let fullPrompt;
-    if (typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
+    const hasCustomPrompt = typeof customPrompt === 'string' && customPrompt.trim().length > 0;
+    if (hasCustomPrompt) {
         if (customPrompt.trim().length > MAX_CUSTOM_PROMPT_LENGTH) {
             return res.status(400).json({
                 error: `Le prompt personnalisé dépasse la limite de ${MAX_CUSTOM_PROMPT_LENGTH} caractères.`
             });
         }
-        fullPrompt = `${customPrompt}\n\n${text}`;
+        const code = (targetLanguage || '').trim().toLowerCase();
+        if (code && code !== 'fr') {
+            const langName = LANGUAGE_NAMES_EN[code] || code;
+            const instruction = `IMPORTANT: Reply entirely in ${langName} (ISO code: ${code}). Do not use any other language.\n\n`;
+            fullPrompt = `${instruction}${customPrompt}\n\n${text}`;
+        } else {
+            fullPrompt = `${customPrompt}\n\n${text}`;
+        }
     } else {
         fullPrompt = buildSynthesisPrompt(targetLanguage, text);
     }
@@ -482,10 +517,13 @@ async function callLlmForDiarization(model, prompt) {
 }
 
 function buildTurnsWithTimestamps(turns, segments) {
+    // Stocke chaque segment sous son ID NUMÉRIQUE (le LLM peut renvoyer 0 ou "0",
+    // on uniformise) pour rendre buildTurnsWithTimestamps robuste aux deux formats.
     const segMap = new Map();
     (segments || []).forEach((s, idx) => {
-        const id = (s && s.id !== undefined) ? s.id : idx;
-        segMap.set(id, s);
+        const rawId = (s && s.id !== undefined) ? s.id : idx;
+        const numericId = Number(rawId);
+        if (!Number.isNaN(numericId)) segMap.set(numericId, s);
     });
 
     return (turns || []).map((turn, turnIdx) => {
@@ -494,7 +532,9 @@ function buildTurnsWithTimestamps(turns, segments) {
         let endTime = null;
 
         segIds.forEach(sid => {
-            const seg = segMap.get(sid);
+            const numericSid = typeof sid === 'number' ? sid : Number(sid);
+            if (Number.isNaN(numericSid)) return;
+            const seg = segMap.get(numericSid);
             if (!seg) return;
             const segStart = (typeof seg.start === 'number') ? seg.start : null;
             const segEnd = (typeof seg.end === 'number') ? seg.end : null;

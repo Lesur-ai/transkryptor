@@ -221,6 +221,7 @@
     "notice": "Détection par analyse textuelle. Qualité variable selon le contenu.",
     "processing": "Identification des locuteurs en cours...",
     "error": "Échec de la détection des locuteurs : {errorMessage}",
+    "noSegments": "Aucun segment temporel n'a été retourné par la transcription. La détection des locuteurs nécessite des timestamps Whisper.",
     "disabled": {
       "message": "Activez la détection des participants pour voir cette vue."
     }

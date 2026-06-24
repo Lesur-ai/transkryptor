@@ -128,10 +128,10 @@ export async function processAndTranscribeInChunks(audioFile, onProgress, option
                 try {
                     const { text, duration, language: detectedLang, segments } = await transcribeChunk(chunkBlob, metadata, onProgress);
                     allTranscriptions[i] = text;
-                    // AXE 4 — Décale les timestamps locaux du chunk vers la timeline globale
+                    // AXE 4 — Décale les timestamps locaux du chunk vers la timeline globale.
+                    // Les IDs sont attribués globalement APRÈS tri par start (voir fin de la fonction).
                     const chunkStartOffset = i * effectiveChunkDuration;
-                    allSegmentsByChunk[i] = (segments || []).map((seg, segIdx) => ({
-                        id: `${i}-${seg && seg.id !== undefined ? seg.id : segIdx}`,
+                    allSegmentsByChunk[i] = (segments || []).map((seg) => ({
                         chunkIndex: i,
                         start: (typeof seg.start === 'number' ? seg.start : 0) + chunkStartOffset,
                         end: (typeof seg.end === 'number' ? seg.end : 0) + chunkStartOffset,
@@ -158,10 +158,13 @@ export async function processAndTranscribeInChunks(audioFile, onProgress, option
     }
 
     const finalText = allTranscriptions.filter(Boolean).join(' ');
+    // AXE 4 — IDs numériques globaux séquentiels après tri par timestamp.
+    // Indispensable pour que le LLM (qui répond `segmentIds: [0,1,2]`) puisse
+    // mapper sur les segments côté serveur via Map.get(<number>).
     const finalSegments = allSegmentsByChunk
         .filter(Array.isArray)
         .reduce((acc, arr) => acc.concat(arr), [])
-        .sort((a, b) => a.start - b.start);
-    // AXE 4 — Retourne {text, segments} pour permettre la diarization LLM-based
+        .sort((a, b) => a.start - b.start)
+        .map((seg, idx) => ({ id: idx, ...seg }));
     return { text: finalText, segments: finalSegments };
 }

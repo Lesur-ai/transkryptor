@@ -416,10 +416,12 @@ function applyPresetToTextarea(textarea, preset, customPrompt) {
 
 function getEffectiveSynthesisPrompt() {
     const { synthesisPreset, customSynthesisPrompt } = getState();
+    // Preset par défaut : on laisse le serveur appliquer SYNTHESIS_PROMPT_FR/EN selon targetLanguage.
+    // Sans ça, on enverrait toujours le prompt FR du module client → court-circuite AXE 2.
+    if (synthesisPreset === DEFAULT_PRESET) return null;
     if (synthesisPreset === 'custom') {
         const trimmed = (customSynthesisPrompt || '').trim();
-        if (trimmed.length > 0) return customSynthesisPrompt;
-        return SYNTHESIS_PROMPTS[DEFAULT_PRESET];
+        return trimmed.length > 0 ? customSynthesisPrompt : null;
     }
     return getPresetPrompt(synthesisPreset);
 }
@@ -572,6 +574,7 @@ function tDiar(key, vars) {
     const fallback = {
         'diarization.processing': 'Identification des locuteurs en cours...',
         'diarization.error': `Échec de la détection des locuteurs : ${vars ? vars.errorMessage : ''}`,
+        'diarization.noSegments': "Aucun segment temporel n'a été retourné par la transcription. La détection des locuteurs nécessite des timestamps Whisper.",
     };
     return fallback[key] || key;
 }
@@ -612,6 +615,16 @@ async function runDiarizationIfEnabled() {
     const text = state.results.transcription;
     const segments = state.results.whisperSegments || [];
     if (!text) return;
+
+    // Sans segments Whisper, la diarization n'aura aucun timestamp à mapper.
+    // On affiche un message clair plutôt que d'envoyer un appel inutile au LLM.
+    if (!Array.isArray(segments) || segments.length === 0) {
+        resultsUI.setActiveTab('speakers');
+        resultsUI.showPlaceholder(tDiar('diarization.error', {
+            errorMessage: tDiar('diarization.noSegments')
+        }));
+        return;
+    }
 
     const fileHash = computeFileHash(state.selectedFile);
     const speakerNames = loadSpeakerNames(fileHash);

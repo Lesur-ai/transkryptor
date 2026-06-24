@@ -97,6 +97,7 @@ function renderSpeakersView(state) {
     const turns = state.results.diarization;
     if (!Array.isArray(turns) || turns.length === 0) {
         showPlaceholderKey('diarization.disabled.message');
+        if (downloadBtn) downloadBtn.disabled = true;
         return;
     }
     const names = state.results.speakerNames || {};

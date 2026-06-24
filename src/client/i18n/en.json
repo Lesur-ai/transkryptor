@@ -221,6 +221,7 @@
     "notice": "Detection via text analysis. Quality varies with content.",
     "processing": "Identifying speakers...",
     "error": "Speaker detection failed: {errorMessage}",
+    "noSegments": "Transcription returned no time segments. Speaker detection requires Whisper timestamps.",
     "disabled": {
       "message": "Enable participant detection to display this view."
     }
