@@ -148,15 +148,22 @@ export async function synthesize(analysisText, model, customPrompt, targetLangua
 }
 
 /**
- * Demande au backend d'effectuer une diarization LLM-based sur la transcription.
- * AXE 4 — v6.0
- * @param {string} transcriptionText - Texte intégral de la transcription.
- * @param {Array<object>} segments - Segments Whisper [{id, start, end, text}].
- * @param {string} model - Modèle Cloud Temple à utiliser.
- * @param {number|null} [speakerCount=null] - Nombre attendu de locuteurs (null = auto).
- * @returns {Promise<object>} { diarization: [{speaker, segmentIds, text, startTime, endTime}, ...] }
+ * Diarization LLM-based en STREAMING (AXE 4 — v6.0).
+ *
+ * Le backend renvoie un flux Server-Sent Events ; chaque événement "turn"
+ * porte un tour de parole parsé en temps réel pendant que le LLM le génère.
+ * Les callbacks permettent de mettre à jour l'UI à mesure que les tours
+ * arrivent — pas d'attente de la réponse complète.
+ *
+ * @param {string} transcriptionText
+ * @param {Array<object>} segments
+ * @param {string} model
+ * @param {number|null} speakerCount
+ * @param {object} callbacks - {onStart, onTurn, onComplete, onError}
+ * @returns {Promise<object>} payload de l'event "complete" si réussi, sinon throw.
  */
-export async function diarize(transcriptionText, segments, model, speakerCount = null) {
+export async function diarizeStream(transcriptionText, segments, model, speakerCount, callbacks) {
+    const cb = callbacks || {};
     const { clientId } = getState();
     const body = {
         text: transcriptionText,
@@ -168,19 +175,62 @@ export async function diarize(transcriptionText, segments, model, speakerCount =
         body.speakerCount = speakerCount;
     }
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/diarize`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-        if (!response.ok) {
+    const response = await fetch(`${API_BASE_URL}/api/diarize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok || !response.body) {
+        let errMsg = `Erreur HTTP: ${response.status}`;
+        try {
             const errorData = await response.json();
-            throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error('Erreur lors de la diarization.');
-        throw error;
+            if (errorData && errorData.error) errMsg = errorData.error;
+        } catch (_) {}
+        throw new Error(errMsg);
     }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let lastComplete = null;
+    let lastErrorMessage = null;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let nlIdx;
+        while ((nlIdx = buffer.indexOf('\n\n')) !== -1) {
+            const rawEvent = buffer.slice(0, nlIdx);
+            buffer = buffer.slice(nlIdx + 2);
+
+            const lines = rawEvent.split('\n');
+            let eventName = 'message';
+            let dataStr = '';
+            for (const line of lines) {
+                if (line.startsWith('event: ')) eventName = line.slice(7).trim();
+                else if (line.startsWith('data: ')) dataStr += line.slice(6);
+            }
+            if (!dataStr) continue;
+
+            let data;
+            try { data = JSON.parse(dataStr); } catch (_) { continue; }
+
+            if (eventName === 'start' && cb.onStart) cb.onStart(data);
+            else if (eventName === 'turn' && cb.onTurn) cb.onTurn(data);
+            else if (eventName === 'complete') {
+                lastComplete = data;
+                if (cb.onComplete) cb.onComplete(data);
+            } else if (eventName === 'error') {
+                lastErrorMessage = (data && data.message) || 'Erreur diarization';
+                if (cb.onError) cb.onError(data);
+            }
+        }
+    }
+
+    if (lastErrorMessage) throw new Error(lastErrorMessage);
+    if (!lastComplete) throw new Error('Diarization terminée sans événement complete.');
+    return lastComplete;
 }

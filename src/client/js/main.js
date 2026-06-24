@@ -636,15 +636,20 @@ async function runDiarizationIfEnabled() {
 
     resultsUI.setActiveTab('speakers');
 
-    // Feedback animé pendant l'appel LLM (qui peut prendre 30s à 2min).
-    // Sans ça, l'utilisateur croit que l'app est figée.
+    // Diarization STREAMING : les tours sont poussés via SSE au fur et à mesure
+    // que le LLM les génère. L'UI affiche un compteur en live + les cartes
+    // déjà identifiées sous le placeholder de progression.
     const diarizationStart = Date.now();
+    const accumulatedTurns = [];
+
     const renderProgress = () => {
         const elapsed = Math.floor((Date.now() - diarizationStart) / 1000);
-        if (typeof resultsUI.showDiarizationProgress === 'function') {
+        const currentNames = getState().results.speakerNames || {};
+        if (typeof resultsUI.showDiarizationStreamingProgress === 'function') {
+            resultsUI.showDiarizationStreamingProgress(elapsed, accumulatedTurns, currentNames);
+        } else if (typeof resultsUI.showDiarizationProgress === 'function') {
             resultsUI.showDiarizationProgress(elapsed);
         } else {
-            // Fallback si la méthode n'existe pas (ancien build)
             resultsUI.showPlaceholder(tDiar('diarization.processing'));
         }
     };
@@ -652,14 +657,32 @@ async function runDiarizationIfEnabled() {
     const diarizationTimer = setInterval(renderProgress, 1000);
 
     try {
-        const result = await api.diarize(text, segments, state.selectedModel, state.diarizationSpeakerCount);
-        const turns = (result && Array.isArray(result.diarization)) ? result.diarization : [];
-        updateState({
-            results: { ...getState().results, diarization: turns },
+        await api.diarizeStream(text, segments, state.selectedModel, state.diarizationSpeakerCount, {
+            onStart: (_data) => { renderProgress(); },
+            onTurn: (turn) => {
+                accumulatedTurns.push(turn);
+                updateState({
+                    results: { ...getState().results, diarization: [...accumulatedTurns] },
+                });
+                renderProgress();
+            },
+            onComplete: (data) => {
+                const finalTurns = (data && Array.isArray(data.diarization))
+                    ? data.diarization
+                    : accumulatedTurns;
+                updateState({
+                    results: { ...getState().results, diarization: finalTurns },
+                });
+                clearInterval(diarizationTimer);
+                if (typeof resultsUI.updateSpeakersView === 'function') {
+                    resultsUI.updateSpeakersView();
+                }
+            },
+            onError: (_data) => {
+                // L'erreur sera relancée comme exception par diarizeStream
+                // et traitée dans le catch ci-dessous.
+            },
         });
-        if (typeof resultsUI.updateSpeakersView === 'function') {
-            resultsUI.updateSpeakersView();
-        }
     } catch (error) {
         const message = error && error.message ? error.message : String(error);
         resultsUI.showPlaceholder(tDiar('diarization.error', { errorMessage: message }));

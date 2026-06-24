@@ -36,6 +36,7 @@ function tr(key, vars) {
     const fallback = {
         'diarization.disabled.message': 'Activez la détection des participants pour voir cette vue.',
         'diarization.processingWithTimer': `Identification des locuteurs en cours… (${vars ? vars.time : ''})`,
+        'diarization.streamingProgress': `${vars ? vars.count : 0} tour(s) identifié(s) — ${vars ? vars.time : ''} écoulées`,
         'diarization.processingHint': 'Cela peut prendre 30 secondes à 2 minutes selon la longueur de la transcription.',
         'speakers.rename.placeholder': 'Renommer ce locuteur',
         'speakers.timestamp': `[${vars ? vars.start : '?'} - ${vars ? vars.end : '?'}]`,
@@ -206,17 +207,20 @@ export function refreshPlaceholder() {
     }
 }
 
+function formatElapsed(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const mins = Math.floor(s / 60);
+    const remSec = s % 60;
+    return mins > 0 ? `${mins}m ${String(remSec).padStart(2, '0')}s` : `${remSec}s`;
+}
+
 /**
  * Rend un placeholder animé pour la diarization avec timer + hint sur la durée.
  * Appelé à chaque tick (1s) pour mettre à jour le compteur. Désactive le bouton
  * de téléchargement pendant l'opération.
  */
 export function showDiarizationProgress(elapsedSec) {
-    const sec = Math.max(0, Math.floor(elapsedSec || 0));
-    const mins = Math.floor(sec / 60);
-    const remSec = sec % 60;
-    const timeStr = mins > 0 ? `${mins}m ${String(remSec).padStart(2, '0')}s` : `${remSec}s`;
-    const processing = tr('diarization.processingWithTimer', { time: timeStr });
+    const processing = tr('diarization.processingWithTimer', { time: formatElapsed(elapsedSec) });
     const hint = tr('diarization.processingHint');
     contentContainer.innerHTML = `
         <div class="placeholder diarization-progress">
@@ -227,6 +231,59 @@ export function showDiarizationProgress(elapsedSec) {
             </div>
         </div>
     `;
+    lastPlaceholderKey = null;
+    lastPlaceholderVars = null;
+    lastPlaceholderIcon = null;
+    lastPlaceholderRaw = null;
+    if (downloadBtn) downloadBtn.disabled = true;
+}
+
+/**
+ * Variante streaming : affiche le placeholder de progression EN HAUT avec un
+ * compteur de tours identifiés en temps réel, et la liste des tours déjà parsés
+ * EN DESSOUS au fur et à mesure qu'ils arrivent du serveur SSE.
+ */
+export function showDiarizationStreamingProgress(elapsedSec, turnsSoFar, speakerNames) {
+    const timeStr = formatElapsed(elapsedSec);
+    const turnsCount = Array.isArray(turnsSoFar) ? turnsSoFar.length : 0;
+    const processing = tr('diarization.streamingProgress', { time: timeStr, count: turnsCount });
+    const hint = tr('diarization.processingHint');
+
+    const headerHtml = `
+        <div class="placeholder diarization-progress diarization-streaming">
+            <span class="diarization-spinner" aria-hidden="true">🔍</span>
+            <div class="diarization-progress-text">
+                <strong>${escapeHtml(processing)}</strong>
+                <p class="diarization-progress-hint">${escapeHtml(hint)}</p>
+            </div>
+        </div>
+    `;
+
+    let cardsHtml = '';
+    if (turnsCount > 0) {
+        const names = speakerNames || {};
+        const cards = turnsSoFar.map((turn, idx) => {
+            const start = formatTimestamp(turn.startTime);
+            const end = formatTimestamp(turn.endTime);
+            const speakerId = turn.speaker || `Speaker ${idx + 1}`;
+            const displayName = resolveSpeakerName(speakerId, names);
+            const safeText = escapeHtml(turn.text || '').replace(/\n/g, '<br>');
+            const safeDisplay = escapeHtml(displayName);
+            const timestamp = tr('speakers.timestamp', { start, end });
+            return `
+                <div class="speaker-card speaker-card-streaming">
+                    <div class="speaker-card-header">
+                        <strong class="speaker-card-name">${safeDisplay}</strong>
+                        <span class="speaker-card-time">${escapeHtml(timestamp)}</span>
+                    </div>
+                    <div class="speaker-card-body">${safeText}</div>
+                </div>
+            `;
+        }).join('');
+        cardsHtml = `<div class="speakers-list speakers-list-streaming">${cards}</div>`;
+    }
+
+    contentContainer.innerHTML = `${headerHtml}${cardsHtml}`;
     lastPlaceholderKey = null;
     lastPlaceholderVars = null;
     lastPlaceholderIcon = null;

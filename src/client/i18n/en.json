@@ -221,7 +221,8 @@
     "notice": "Detection via text analysis. Quality varies with content.",
     "processing": "Identifying speakers...",
     "processingWithTimer": "Identifying speakers ({time})",
-    "processingHint": "This can take 30 seconds to 2 minutes depending on transcript length. Watch the server logs at the bottom of the page for progress.",
+    "streamingProgress": "{count} turn(s) identified — {time} elapsed",
+    "processingHint": "Turns are identified in real time and appear below as they arrive. This can take 30 seconds to 2 minutes depending on transcript length.",
     "error": "Speaker detection failed: {errorMessage}",
     "noSegments": "Transcription returned no time segments. Speaker detection requires Whisper timestamps.",
     "disabled": {

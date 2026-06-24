@@ -567,6 +567,20 @@ function buildTurnsWithTimestamps(turns, segments) {
     });
 }
 
+/**
+ * POST /api/diarize — endpoint Server-Sent Events.
+ *
+ * Streame les tours de parole au fur et à mesure que le LLM Cloud Temple les
+ * génère, plutôt que d'attendre la réponse complète. L'utilisateur voit
+ * apparaître les locuteurs un par un (latence perçue réduite, retour visuel
+ * continu — comme ChatGPT).
+ *
+ * Events émis vers le client (format SSE) :
+ *   - "start"    : {segments, model}                 — début du traitement
+ *   - "turn"     : {speaker, segmentIds, text, startTime, endTime} — un tour parsé
+ *   - "complete" : {diarization, turns, durationMs}  — tout est terminé
+ *   - "error"    : {message, details?}               — échec
+ */
 app.post('/api/diarize', async (req, res) => {
     const { model, text, segments, speakerCount, clientId } = req.body;
     const startTime = Date.now();
@@ -584,54 +598,145 @@ app.post('/api/diarize', async (req, res) => {
     const safeSpeakerCount = (typeof speakerCount === 'number' && speakerCount > 0) ? speakerCount : null;
     const basePrompt = buildDiarizationPrompt(text || '', segments || [], safeSpeakerCount);
 
-    // Heartbeat SSE pendant l'appel LLM (qui peut durer 30s-2min) — sans ça,
-    // l'utilisateur n'a aucun feedback dans le panneau de logs en bas de page.
+    // Ouvre une connexion SSE vers le client
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+    });
+
+    const sendEvent = (eventName, data) => {
+        try {
+            res.write(`event: ${eventName}\n`);
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+        } catch (_) { /* socket fermé côté client */ }
+    };
+
+    // Heartbeat dans les logs serveur (panneau visible en bas de la page client)
     const heartbeat = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        Logger.info(clientId, `[DIARIZATION] LLM toujours en cours... ${elapsed}s écoulés (les longs textes peuvent prendre jusqu'à 2 minutes).`);
+        Logger.info(clientId, `[DIARIZATION] Stream en cours... ${elapsed}s écoulés.`);
     }, 10000);
 
-    try {
-        Logger.info(clientId, `Diarization LLM-based avec Cloud Temple (modèle: ${model})... ${(segments || []).length} segments à analyser.`);
-
-        let llmContent = await callLlmForDiarization(model, basePrompt);
-        let parsed = extractJsonFromLlmContent(llmContent);
-
-        if (!parsed || !Array.isArray(parsed.turns)) {
-            // Retry 1x avec instruction renforcée
-            const retryPrompt = `${basePrompt}\n\nIMPORTANT : ta dernière réponse n'était pas un JSON valide. Renvoie UNIQUEMENT le JSON, sans aucun autre texte, sans bloc Markdown.`;
-            llmContent = await callLlmForDiarization(model, retryPrompt);
-            parsed = extractJsonFromLlmContent(llmContent);
-        }
-
-        if (!parsed || !Array.isArray(parsed.turns)) {
-            const duration = Date.now() - startTime;
-            Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
-            // Preview de la réponse LLM (300 premiers + 300 derniers chars) pour debug
-            const raw = typeof llmContent === 'string' ? llmContent : String(llmContent || '');
-            const preview = raw.length > 700
-                ? `${raw.slice(0, 300)}\n...[TRONQUÉ ${raw.length} chars]...\n${raw.slice(-300)}`
-                : raw;
-            Logger.error(clientId, `Diarization : JSON LLM invalide après retry (modèle: ${model}, ${raw.length} chars renvoyés). Aperçu :\n${preview}`, null);
-            clearInterval(heartbeat);
-            return res.status(500).json({ error: 'La diarization a échoué : réponse LLM invalide. Essayez un modèle plus puissant (qwen3.5:397b ou mistral-small4:119b) ou un audio plus court.' });
-        }
-
-        const diarization = buildTurnsWithTimestamps(parsed.turns, segments || []);
-        const duration = Date.now() - startTime;
-        Logger.logOperation(clientId, 'DIARIZATION', { model, turns: diarization.length }, 'SUCCESS', duration);
-        Logger.success(clientId, `Diarization Cloud Temple réussie (${diarization.length} tours, ${(duration / 1000).toFixed(1)}s).`);
-        res.json({ diarization });
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
-        Logger.error(clientId, `Erreur lors de la diarization`, error);
-        res.status(500).json({
-            error: 'Erreur interne du serveur lors de la diarization',
-            details: error.response ? error.response.data : error.message
-        });
-    } finally {
+    let cleanedUp = false;
+    const cleanup = () => {
+        if (cleanedUp) return;
+        cleanedUp = true;
         clearInterval(heartbeat);
+        try { res.end(); } catch (_) {}
+    };
+
+    sendEvent('start', { segments: (segments || []).length, model });
+    Logger.info(clientId, `Diarization LLM-based en streaming (modèle: ${model})... ${(segments || []).length} segments.`);
+
+    try {
+        const llmRes = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
+            model,
+            messages: [{ role: 'user', content: basePrompt }],
+            max_tokens: 16384,
+            stream: true,
+        }, {
+            headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` },
+            responseType: 'stream',
+        });
+
+        let sseBuffer = '';      // buffer des events SSE entrants ("data: {...}\n\n")
+        let llmAccum = '';       // accumulateur du contenu LLM (concat des delta.content)
+        // Notre prompt impose ce format strict — la regex reconstruit les tours au fil de l'eau.
+        const TURN_RE = /\{\s*"speaker"\s*:\s*"([^"]+)"\s*,\s*"segmentIds"\s*:\s*\[([\d,\s]+)\]\s*\}/g;
+        let regexLastIndex = 0;
+        const emitted = [];
+
+        const tryExtractTurns = () => {
+            TURN_RE.lastIndex = regexLastIndex;
+            let m;
+            while ((m = TURN_RE.exec(llmAccum)) !== null) {
+                const speaker = m[1];
+                const segmentIds = m[2].split(',')
+                    .map(s => parseInt(s.trim(), 10))
+                    .filter(n => !isNaN(n));
+                const enriched = buildTurnsWithTimestamps([{ speaker, segmentIds }], segments || [])[0];
+                emitted.push(enriched);
+                sendEvent('turn', enriched);
+                regexLastIndex = TURN_RE.lastIndex;
+            }
+        };
+
+        llmRes.data.on('data', (chunk) => {
+            sseBuffer += chunk.toString('utf-8');
+            let nlIdx;
+            while ((nlIdx = sseBuffer.indexOf('\n\n')) !== -1) {
+                const event = sseBuffer.slice(0, nlIdx);
+                sseBuffer = sseBuffer.slice(nlIdx + 2);
+                const dataLines = event.split('\n').filter(l => l.startsWith('data: '));
+                for (const dl of dataLines) {
+                    const payload = dl.slice(6).trim();
+                    if (!payload || payload === '[DONE]') continue;
+                    try {
+                        const obj = JSON.parse(payload);
+                        const delta = obj.choices && obj.choices[0] && obj.choices[0].delta;
+                        if (delta && typeof delta.content === 'string') {
+                            llmAccum += delta.content;
+                        }
+                    } catch (_) { /* skip chunk SSE malformé */ }
+                }
+            }
+            tryExtractTurns();
+        });
+
+        llmRes.data.on('end', () => {
+            // Si aucun tour n'a été capté en streaming (LLM a renvoyé un format
+            // inattendu malgré la consigne), tentative de parsing global de l'accumulateur.
+            if (emitted.length === 0) {
+                const parsed = extractJsonFromLlmContent(llmAccum);
+                if (parsed && Array.isArray(parsed.turns)) {
+                    const final = buildTurnsWithTimestamps(parsed.turns, segments || []);
+                    final.forEach(t => { emitted.push(t); sendEvent('turn', t); });
+                }
+            }
+
+            const duration = Date.now() - startTime;
+            if (emitted.length > 0) {
+                sendEvent('complete', { diarization: emitted, turns: emitted.length, durationMs: duration });
+                Logger.logOperation(clientId, 'DIARIZATION', { model, turns: emitted.length }, 'SUCCESS', duration);
+                Logger.success(clientId, `Diarization OK (${emitted.length} tours, ${(duration / 1000).toFixed(1)}s).`);
+            } else {
+                const raw = llmAccum;
+                const preview = raw.length > 700
+                    ? `${raw.slice(0, 300)}\n...[TRONQUÉ ${raw.length} chars]...\n${raw.slice(-300)}`
+                    : raw;
+                Logger.error(clientId, `Diarization : aucun tour extrait (modèle: ${model}, ${raw.length} chars). Aperçu :\n${preview}`, null);
+                Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
+                sendEvent('error', { message: 'La diarization a échoué : aucun tour identifiable. Essayez un modèle plus puissant (qwen3.5:397b ou mistral-small4:119b).' });
+            }
+            cleanup();
+        });
+
+        llmRes.data.on('error', (err) => {
+            Logger.error(clientId, `Erreur stream LLM diarization`, err);
+            Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', Date.now() - startTime);
+            sendEvent('error', { message: err.message || 'Erreur stream LLM' });
+            cleanup();
+        });
+
+        // Coupure côté client : on relâche le stream Cloud Temple
+        req.on('close', () => {
+            if (!cleanedUp) {
+                Logger.info(clientId, '[DIARIZATION] Client a coupé la connexion, abandon.');
+                try { llmRes.data.destroy(); } catch (_) {}
+                cleanup();
+            }
+        });
+
+    } catch (error) {
+        Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', Date.now() - startTime);
+        Logger.error(clientId, `Erreur diarization (init stream)`, error);
+        sendEvent('error', {
+            message: 'Erreur interne lors du démarrage de la diarization.',
+            details: error.response ? JSON.stringify(error.response.data || {}) : error.message
+        });
+        cleanup();
     }
 });
 
