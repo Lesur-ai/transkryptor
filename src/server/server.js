@@ -569,8 +569,15 @@ app.post('/api/diarize', async (req, res) => {
     const safeSpeakerCount = (typeof speakerCount === 'number' && speakerCount > 0) ? speakerCount : null;
     const basePrompt = buildDiarizationPrompt(text || '', segments || [], safeSpeakerCount);
 
+    // Heartbeat SSE pendant l'appel LLM (qui peut durer 30s-2min) — sans ça,
+    // l'utilisateur n'a aucun feedback dans le panneau de logs en bas de page.
+    const heartbeat = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        Logger.info(clientId, `[DIARIZATION] LLM toujours en cours... ${elapsed}s écoulés (les longs textes peuvent prendre jusqu'à 2 minutes).`);
+    }, 10000);
+
     try {
-        Logger.info(clientId, `Diarization LLM-based avec Cloud Temple (modèle: ${model})...`);
+        Logger.info(clientId, `Diarization LLM-based avec Cloud Temple (modèle: ${model})... ${(segments || []).length} segments à analyser.`);
 
         let llmContent = await callLlmForDiarization(model, basePrompt);
         let parsed = extractJsonFromLlmContent(llmContent);
@@ -586,13 +593,14 @@ app.post('/api/diarize', async (req, res) => {
             const duration = Date.now() - startTime;
             Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
             Logger.error(clientId, 'Diarization : JSON LLM invalide après retry', null);
+            clearInterval(heartbeat);
             return res.status(500).json({ error: 'La diarization a échoué : réponse LLM invalide.' });
         }
 
         const diarization = buildTurnsWithTimestamps(parsed.turns, segments || []);
         const duration = Date.now() - startTime;
         Logger.logOperation(clientId, 'DIARIZATION', { model, turns: diarization.length }, 'SUCCESS', duration);
-        Logger.success(clientId, `Diarization Cloud Temple réussie (${diarization.length} tours)`);
+        Logger.success(clientId, `Diarization Cloud Temple réussie (${diarization.length} tours, ${(duration / 1000).toFixed(1)}s).`);
         res.json({ diarization });
     } catch (error) {
         const duration = Date.now() - startTime;
@@ -602,6 +610,8 @@ app.post('/api/diarize', async (req, res) => {
             error: 'Erreur interne du serveur lors de la diarization',
             details: error.response ? error.response.data : error.message
         });
+    } finally {
+        clearInterval(heartbeat);
     }
 });
 

@@ -35,6 +35,8 @@ function tr(key, vars) {
     }
     const fallback = {
         'diarization.disabled.message': 'Activez la détection des participants pour voir cette vue.',
+        'diarization.processingWithTimer': `Identification des locuteurs en cours… (${vars ? vars.time : ''})`,
+        'diarization.processingHint': 'Cela peut prendre 30 secondes à 2 minutes selon la longueur de la transcription.',
         'speakers.rename.placeholder': 'Renommer ce locuteur',
         'speakers.timestamp': `[${vars ? vars.start : '?'} - ${vars ? vars.end : '?'}]`,
     };
@@ -202,6 +204,34 @@ export function refreshPlaceholder() {
     if (lastPlaceholderKey) {
         renderPlaceholder(window.i18n.t(lastPlaceholderKey, lastPlaceholderVars), lastPlaceholderIcon);
     }
+}
+
+/**
+ * Rend un placeholder animé pour la diarization avec timer + hint sur la durée.
+ * Appelé à chaque tick (1s) pour mettre à jour le compteur. Désactive le bouton
+ * de téléchargement pendant l'opération.
+ */
+export function showDiarizationProgress(elapsedSec) {
+    const sec = Math.max(0, Math.floor(elapsedSec || 0));
+    const mins = Math.floor(sec / 60);
+    const remSec = sec % 60;
+    const timeStr = mins > 0 ? `${mins}m ${String(remSec).padStart(2, '0')}s` : `${remSec}s`;
+    const processing = tr('diarization.processingWithTimer', { time: timeStr });
+    const hint = tr('diarization.processingHint');
+    contentContainer.innerHTML = `
+        <div class="placeholder diarization-progress">
+            <span class="diarization-spinner" aria-hidden="true">🔍</span>
+            <div class="diarization-progress-text">
+                <strong>${escapeHtml(processing)}</strong>
+                <p class="diarization-progress-hint">${escapeHtml(hint)}</p>
+            </div>
+        </div>
+    `;
+    lastPlaceholderKey = null;
+    lastPlaceholderVars = null;
+    lastPlaceholderIcon = null;
+    lastPlaceholderRaw = null;
+    if (downloadBtn) downloadBtn.disabled = true;
 }
 
 export function updateTranscriptionView() {

@@ -220,6 +220,8 @@
     },
     "notice": "Détection par analyse textuelle. Qualité variable selon le contenu.",
     "processing": "Identification des locuteurs en cours...",
+    "processingWithTimer": "Identification des locuteurs en cours ({time})",
+    "processingHint": "Cela peut prendre 30 secondes à 2 minutes selon la longueur de la transcription. Suivez la progression dans les logs du serveur en bas de page.",
     "error": "Échec de la détection des locuteurs : {errorMessage}",
     "noSegments": "Aucun segment temporel n'a été retourné par la transcription. La détection des locuteurs nécessite des timestamps Whisper.",
     "disabled": {

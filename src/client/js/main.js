@@ -635,7 +635,21 @@ async function runDiarizationIfEnabled() {
     });
 
     resultsUI.setActiveTab('speakers');
-    resultsUI.showPlaceholder(tDiar('diarization.processing'));
+
+    // Feedback animé pendant l'appel LLM (qui peut prendre 30s à 2min).
+    // Sans ça, l'utilisateur croit que l'app est figée.
+    const diarizationStart = Date.now();
+    const renderProgress = () => {
+        const elapsed = Math.floor((Date.now() - diarizationStart) / 1000);
+        if (typeof resultsUI.showDiarizationProgress === 'function') {
+            resultsUI.showDiarizationProgress(elapsed);
+        } else {
+            // Fallback si la méthode n'existe pas (ancien build)
+            resultsUI.showPlaceholder(tDiar('diarization.processing'));
+        }
+    };
+    renderProgress();
+    const diarizationTimer = setInterval(renderProgress, 1000);
 
     try {
         const result = await api.diarize(text, segments, state.selectedModel, state.diarizationSpeakerCount);
@@ -650,6 +664,8 @@ async function runDiarizationIfEnabled() {
         const message = error && error.message ? error.message : String(error);
         resultsUI.showPlaceholder(tDiar('diarization.error', { errorMessage: message }));
         updateState({ results: { ...getState().results, diarization: null } });
+    } finally {
+        clearInterval(diarizationTimer);
     }
 }
 
