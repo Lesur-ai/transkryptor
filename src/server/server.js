@@ -280,7 +280,12 @@ app.post('/api/analyze', async (req, res) => {
         const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
             model: model,
             messages: [{ role: 'user', content: text }],
-            max_tokens: 16384
+            max_tokens: 16384,
+            // Désactive le mode "thinking" sur les modèles reasoning type qwen3.6 :
+            // sans ça, la réponse arrive dans message.reasoning (pas .content) et
+            // notre code ne la lit pas. Paramètre ignoré silencieusement par les
+            // autres modèles (Mistral, Gemma, Qwen non-thinking).
+            enable_thinking: false
         }, {
             headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
         });
@@ -421,7 +426,8 @@ app.post('/api/synthesize', async (req, res) => {
         const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
             model: model,
             messages: [{ role: 'user', content: fullPrompt }],
-            max_tokens: 8192
+            max_tokens: 8192,
+            enable_thinking: false
         }, {
             headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
         });
@@ -504,19 +510,6 @@ function extractJsonFromLlmContent(content) {
         }
         return null;
     }
-}
-
-async function callLlmForDiarization(model, prompt) {
-    const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
-        model: model,
-        messages: [{ role: 'user', content: prompt }],
-        // 16384 pour absorber les longues conversations même si le texte n'est plus
-        // demandé dans la réponse (la liste des segmentIds peut être longue elle aussi).
-        max_tokens: 16384,
-    }, {
-        headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
-    });
-    return response.data.choices[0].message.content;
 }
 
 function buildTurnsWithTimestamps(turns, segments) {
@@ -636,6 +629,7 @@ app.post('/api/diarize', async (req, res) => {
             messages: [{ role: 'user', content: basePrompt }],
             max_tokens: 16384,
             stream: true,
+            enable_thinking: false,
         }, {
             headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` },
             responseType: 'stream',
