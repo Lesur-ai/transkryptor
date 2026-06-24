@@ -26,6 +26,7 @@ const appState = {
         diarization: null,        // Array | null — [{speaker, segmentIds, text, startTime, endTime}]
         speakerNames: {},         // { "Speaker 1": "Alice", ... } — overrides UI
         whisperSegments: null,    // segments bruts retournés par Whisper (référence pour la diarization)
+        diarizationCoverage: null, // {coveredSegments, totalSegments, percentage} | null — couverture LLM
     },
 
     // État du processus en cours

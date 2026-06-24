@@ -99,6 +99,19 @@ async function handleProcess() {
 
     chunkDurations = [];
     updateState({ detectedAudioLanguage: null });
+    // Reset diarizationCoverage + diarization au lancement d'un nouveau
+    // traitement. Sinon le bandeau "couverture partielle" d'un fichier
+    // précédent pourrait apparaître brièvement sur le nouveau fichier.
+    updateState({
+        results: {
+            ...getState().results,
+            diarization: null,
+            diarizationCoverage: null,
+        },
+    });
+    if (typeof resultsUI.updateSpeakersTabBadge === 'function') {
+        resultsUI.updateSpeakersTabBadge(null);
+    }
     if (detectedLanguageBadge) {
         detectedLanguageBadge.hidden = true;
         detectedLanguageBadge.textContent = '';
@@ -634,9 +647,11 @@ async function runDiarizationIfEnabled() {
 
     const fileHash = computeFileHash(state.selectedFile);
     const speakerNames = loadSpeakerNames(fileHash);
+    // Reset diarizationCoverage : on repart de zéro, sinon un bandeau warning
+    // d'une précédente session afficherait pendant le streaming.
     updateState({
         currentFileHash: fileHash,
-        results: { ...getState().results, speakerNames },
+        results: { ...getState().results, speakerNames, diarizationCoverage: null },
         processingState: 'diarizing',
     });
 
@@ -679,16 +694,32 @@ async function runDiarizationIfEnabled() {
                 const finalTurns = (data && Array.isArray(data.diarization))
                     ? data.diarization
                     : accumulatedTurns;
+                // Le serveur émet 'complete' même en cas de couverture partielle
+                // (>= HARD_FAIL_THRESHOLD = 50%). On stocke coverage dans le
+                // state pour que renderSpeakersView puisse afficher un bandeau
+                // warning si percentage < 100. La coverage survit aux switch
+                // d'onglet (stockée dans state.results).
+                const coverage = (data && data.coverage) ? data.coverage : null;
                 // processingState quitte 'diarizing' avant updateSpeakersView pour
                 // que renderSpeakersView passe en mode "final" (vue éditable +
                 // bouton download actif) et non en mode "streaming en cours".
                 updateState({
-                    results: { ...getState().results, diarization: finalTurns },
+                    results: {
+                        ...getState().results,
+                        diarization: finalTurns,
+                        diarizationCoverage: coverage,
+                    },
                     processingState: 'idle',
                 });
                 clearInterval(diarizationTimer);
                 if (typeof resultsUI.resetDiarizationStreamingState === 'function') {
                     resultsUI.resetDiarizationStreamingState();
+                }
+                // Badge visible sur l'onglet "Locuteurs" si couverture partielle,
+                // pour que l'utilisateur voie le warning même s'il est resté sur
+                // un autre onglet (Transcription/Analyse) pendant la diarization.
+                if (typeof resultsUI.updateSpeakersTabBadge === 'function') {
+                    resultsUI.updateSpeakersTabBadge(coverage);
                 }
                 if (typeof resultsUI.updateSpeakersView === 'function') {
                     resultsUI.updateSpeakersView();
@@ -703,9 +734,12 @@ async function runDiarizationIfEnabled() {
         const message = error && error.message ? error.message : String(error);
         resultsUI.showPlaceholder(tDiar('diarization.error', { errorMessage: message }));
         updateState({
-            results: { ...getState().results, diarization: null },
+            results: { ...getState().results, diarization: null, diarizationCoverage: null },
             processingState: 'idle',
         });
+        if (typeof resultsUI.updateSpeakersTabBadge === 'function') {
+            resultsUI.updateSpeakersTabBadge(null);
+        }
     } finally {
         clearInterval(diarizationTimer);
     }

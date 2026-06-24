@@ -233,6 +233,8 @@
     "rename": {
       "placeholder": "Renommer ce locuteur"
     },
-    "timestamp": "[{start} - {end}]"
+    "timestamp": "[{start} - {end}]",
+    "coverageWarning": "Couverture partielle : {covered} / {total} segments identifiés ({percentage}%)",
+    "coverageWarningHint": "Certains segments audio n'ont pas été attribués à un locuteur — vérifiez que vous n'avez pas manqué un passage important."
   }
 }

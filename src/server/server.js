@@ -536,16 +536,22 @@ function buildTurnsWithTimestamps(turns, segments) {
     });
 
     return (turns || []).map((turn, turnIdx) => {
-        const segIds = Array.isArray(turn.segmentIds) ? turn.segmentIds : [];
+        const rawSegIds = Array.isArray(turn.segmentIds) ? turn.segmentIds : [];
         let startTime = null;
         let endTime = null;
         const textParts = [];
+        // On collecte UNIQUEMENT les segmentIds réellement valides (présents dans
+        // segMap). Cela garantit la cohérence avec computeCoveredCount du
+        // handler /api/diarize : ce qui est dans tour.segmentIds est ce qui est
+        // compté en couverture. Les IDs hallucinés/invalides sont ignorés des deux côtés.
+        const validSegIds = [];
 
-        segIds.forEach(sid => {
+        rawSegIds.forEach(sid => {
             const numericSid = typeof sid === 'number' ? sid : Number(sid);
             if (Number.isNaN(numericSid)) return;
             const seg = segMap.get(numericSid);
             if (!seg) return;
+            validSegIds.push(numericSid);
             const segStart = (typeof seg.start === 'number') ? seg.start : null;
             const segEnd = (typeof seg.end === 'number') ? seg.end : null;
             if (segStart !== null && (startTime === null || segStart < startTime)) startTime = segStart;
@@ -565,7 +571,7 @@ function buildTurnsWithTimestamps(turns, segments) {
 
         return {
             speaker: turn.speaker || `Speaker ${turnIdx + 1}`,
-            segmentIds: segIds,
+            segmentIds: validSegIds,
             text: turnText,
             startTime,
             endTime,
@@ -603,6 +609,19 @@ app.post('/api/diarize', async (req, res) => {
 
     const safeSpeakerCount = (typeof speakerCount === 'number' && speakerCount > 0) ? speakerCount : null;
     const basePrompt = buildDiarizationPrompt(text || '', segments || [], safeSpeakerCount);
+
+    // Set des IDs numériques de segments RÉELLEMENT envoyés à Whisper (miroir
+    // exact de la logique de buildTurnsWithTimestamps). Sert de filtre anti-
+    // hallucination : un LLM qui inventerait des IDs hors-corpus (ex. [42, 999,
+    // 1234] alors qu'on a 100 segments) ne pourra pas gonfler artificiellement
+    // la couverture. Les NaN (id non parsable) sont exclus.
+    const safeSegments = Array.isArray(segments) ? segments : [];
+    const expectedIds = new Set();
+    safeSegments.forEach((s, idx) => {
+        const rawId = (s && s.id !== undefined) ? s.id : idx;
+        const numericId = Number(rawId);
+        if (!Number.isNaN(numericId)) expectedIds.add(numericId);
+    });
 
     // Ouvre une connexion SSE vers le client
     res.writeHead(200, {
@@ -695,12 +714,17 @@ app.post('/api/diarize', async (req, res) => {
         llmRes.data.on('end', () => {
             const totalSegments = (segments || []).length;
 
-            // Helper : nombre de segments uniques couverts par les tours collectés
+            // Helper : nombre de segments uniques couverts par les tours
+            // collectés. On INTERSECTE avec expectedIds : un ID renvoyé par
+            // le LLM n'est compté que s'il existe dans les segments Whisper
+            // réellement envoyés. Cela neutralise les hallucinations
+            // (LLM qui renvoie des IDs absurdes hors corpus) qui sinon
+            // gonfleraient artificiellement le ratio de couverture.
             const computeCoveredCount = () => {
                 const covered = new Set();
                 emitted.forEach(t => (t.segmentIds || []).forEach(id => {
                     const n = Number(id);
-                    if (!Number.isNaN(n)) covered.add(n);
+                    if (!Number.isNaN(n) && expectedIds.has(n)) covered.add(n);
                 }));
                 return covered.size;
             };
@@ -755,10 +779,14 @@ app.post('/api/diarize', async (req, res) => {
                     coverage
                 });
             } else {
+                // 50% ≤ couverture ≤ 100% : on émet 'complete' avec coverage{}.
+                // Le client peut afficher un bandeau warning si percentage < 100
+                // (cas 50%-99%) mais on ne bloque pas le résultat car il reste
+                // exploitable.
                 sendEvent('complete', { diarization: emitted, turns: emitted.length, durationMs: duration, coverage });
                 Logger.logOperation(clientId, 'DIARIZATION', { model, turns: emitted.length, coverage: coveragePct }, 'SUCCESS', duration);
                 if (coveragePct < 100) {
-                    Logger.info(clientId, `[DIARIZATION] Diarization OK mais partielle : ${emitted.length} tours, ${coveragePct}% des ${totalSegments} segments couverts (${(duration / 1000).toFixed(1)}s).`);
+                    Logger.info(clientId, `[DIARIZATION] [PARTIAL] Couverture incomplète : ${emitted.length} tours, ${coveredCount}/${totalSegments} segments couverts (${coveragePct}%) en ${(duration / 1000).toFixed(1)}s. Résultat tout de même renvoyé (>= ${HARD_FAIL_THRESHOLD}% du seuil dur).`);
                 } else {
                     Logger.success(clientId, `Diarization OK (${emitted.length} tours, 100% des ${totalSegments} segments, ${(duration / 1000).toFixed(1)}s).`);
                 }

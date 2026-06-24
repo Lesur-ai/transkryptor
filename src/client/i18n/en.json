@@ -233,6 +233,8 @@
     "rename": {
       "placeholder": "Rename this speaker"
     },
-    "timestamp": "[{start} - {end}]"
+    "timestamp": "[{start} - {end}]",
+    "coverageWarning": "Partial coverage: {covered} / {total} segments identified ({percentage}%)",
+    "coverageWarningHint": "Some audio segments were not attributed to a speaker — make sure you didn't miss an important passage."
   }
 }

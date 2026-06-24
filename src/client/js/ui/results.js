@@ -49,6 +49,8 @@ function tr(key, vars) {
         'diarization.processingHint': 'Cela peut prendre 30 secondes à 2 minutes selon la longueur de la transcription.',
         'speakers.rename.placeholder': 'Renommer ce locuteur',
         'speakers.timestamp': `[${vars ? vars.start : '?'} - ${vars ? vars.end : '?'}]`,
+        'speakers.coverageWarning': `Couverture partielle : ${vars ? vars.covered : '?'} / ${vars ? vars.total : '?'} segments identifiés (${vars ? vars.percentage : '?'}%)`,
+        'speakers.coverageWarningHint': "Certains segments audio n'ont pas été attribués à un locuteur — vérifiez que vous n'avez pas manqué un passage important.",
     };
     return fallback[key] || key;
 }
@@ -153,7 +155,35 @@ function renderSpeakersView(state) {
         `;
     }).join('');
 
-    contentContainer.innerHTML = `<div class="speakers-list">${html}</div>`;
+    // Bandeau warning si le LLM n'a couvert qu'une partie des segments
+    // (50% ≤ couverture < 100% côté serveur). Le résultat est exploitable
+    // mais incomplet : on alerte explicitement l'utilisateur pour qu'il
+    // sache qu'un passage de l'audio n'a pas été attribué.
+    const coverage = state.results.diarizationCoverage;
+    let coverageBannerHtml = '';
+    if (coverage
+        && typeof coverage.percentage === 'number'
+        && coverage.percentage < 100
+        && typeof coverage.totalSegments === 'number'
+        && coverage.totalSegments > 0) {
+        const warningText = tr('speakers.coverageWarning', {
+            covered: coverage.coveredSegments,
+            total: coverage.totalSegments,
+            percentage: coverage.percentage,
+        });
+        const hintText = tr('speakers.coverageWarningHint');
+        coverageBannerHtml = `
+            <div class="diarization-coverage-warning" role="alert">
+                <span class="icon" aria-hidden="true">⚠️</span>
+                <div class="diarization-coverage-warning-text">
+                    <strong>${escapeHtml(warningText)}</strong>
+                    <p class="diarization-coverage-warning-hint">${escapeHtml(hintText)}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    contentContainer.innerHTML = `${coverageBannerHtml}<div class="speakers-list">${html}</div>`;
     if (downloadBtn) downloadBtn.disabled = false;
 
     // Wire les inputs de renommage
@@ -205,6 +235,46 @@ export function setActiveTab(tabName) {
         }
     });
     renderActiveTabContent();
+}
+
+/**
+ * Injecte (ou retire) un pastille de warning sur l'onglet "Locuteurs" quand
+ * la couverture de diarization est partielle (<100%). Permet à l'utilisateur
+ * de voir le signal même s'il est resté sur un autre onglet pendant la
+ * diarization. Appelé depuis main.js onComplete et au reset (handleProcess, catch).
+ */
+export function updateSpeakersTabBadge(coverage) {
+    const speakersTab = document.querySelector('.tab[data-tab="speakers"]');
+    if (!speakersTab) return;
+    const existing = speakersTab.querySelector('.coverage-badge');
+    const showBadge = coverage
+        && typeof coverage.percentage === 'number'
+        && coverage.percentage < 100
+        && typeof coverage.totalSegments === 'number'
+        && coverage.totalSegments > 0;
+
+    if (!showBadge) {
+        if (existing) existing.remove();
+        return;
+    }
+
+    const titleText = tr('speakers.coverageWarning', {
+        covered: coverage.coveredSegments,
+        total: coverage.totalSegments,
+        percentage: coverage.percentage,
+    });
+    if (existing) {
+        existing.setAttribute('title', titleText);
+        existing.setAttribute('aria-label', titleText);
+        existing.textContent = `${coverage.percentage}%`;
+        return;
+    }
+    const badge = document.createElement('span');
+    badge.className = 'coverage-badge';
+    badge.setAttribute('title', titleText);
+    badge.setAttribute('aria-label', titleText);
+    badge.textContent = `${coverage.percentage}%`;
+    speakersTab.appendChild(badge);
 }
 
 export function showPlaceholder(message) {
