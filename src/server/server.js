@@ -469,13 +469,14 @@ function buildDiarizationPrompt(text, segments, speakerCount) {
         speakerLine,
         "",
         "Réponds UNIQUEMENT avec un JSON valide STRICT, sans texte autour, sans bloc Markdown, sans commentaire :",
-        '{"turns": [{"speaker": "Speaker 1", "segmentIds": [0,1,2], "text": "..."}, ...]}',
+        '{"turns": [{"speaker": "Speaker 1", "segmentIds": [0,1,2]}, ...]}',
         "",
         "Règles :",
         "- Les noms de locuteurs doivent être de la forme \"Speaker 1\", \"Speaker 2\", etc.",
-        "- segmentIds doit lister les identifiants des segments du tour, dans l'ordre.",
-        "- text doit reproduire fidèlement le texte de ce tour (concaténation des segments).",
+        "- segmentIds liste les IDs numériques des segments du tour, dans l'ordre.",
+        "- Chaque segment doit être assigné à un (et un seul) tour de parole.",
         "- Conserve l'ordre chronologique des tours.",
+        "- N'inclus PAS le texte des segments dans ta réponse — le serveur le reconstruit à partir des IDs.",
         "",
         "Segments :",
         segmentsBlock,
@@ -509,7 +510,9 @@ async function callLlmForDiarization(model, prompt) {
     const response = await axios.post('https://api.ai.cloud-temple.com/v1/chat/completions', {
         model: model,
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 8192,
+        // 16384 pour absorber les longues conversations même si le texte n'est plus
+        // demandé dans la réponse (la liste des segmentIds peut être longue elle aussi).
+        max_tokens: 16384,
     }, {
         headers: { 'Authorization': `Bearer ${process.env.CLOUD_TEMPLE_API_KEY}` }
     });
@@ -530,6 +533,7 @@ function buildTurnsWithTimestamps(turns, segments) {
         const segIds = Array.isArray(turn.segmentIds) ? turn.segmentIds : [];
         let startTime = null;
         let endTime = null;
+        const textParts = [];
 
         segIds.forEach(sid => {
             const numericSid = typeof sid === 'number' ? sid : Number(sid);
@@ -540,12 +544,23 @@ function buildTurnsWithTimestamps(turns, segments) {
             const segEnd = (typeof seg.end === 'number') ? seg.end : null;
             if (segStart !== null && (startTime === null || segStart < startTime)) startTime = segStart;
             if (segEnd !== null && (endTime === null || segEnd > endTime)) endTime = segEnd;
+            if (typeof seg.text === 'string' && seg.text.trim()) {
+                textParts.push(seg.text.trim());
+            }
         });
+
+        // Reconstruction du texte côté serveur depuis les segments Whisper.
+        // Évite de demander au LLM de réécrire le texte — économise ~10× sur l'output.
+        // Backward-compat : si le LLM renvoie quand même turn.text non vide, on le respecte.
+        const reconstructedText = textParts.join(' ');
+        const turnText = (typeof turn.text === 'string' && turn.text.trim())
+            ? turn.text
+            : reconstructedText;
 
         return {
             speaker: turn.speaker || `Speaker ${turnIdx + 1}`,
             segmentIds: segIds,
-            text: typeof turn.text === 'string' ? turn.text : '',
+            text: turnText,
             startTime,
             endTime,
         };
@@ -592,9 +607,14 @@ app.post('/api/diarize', async (req, res) => {
         if (!parsed || !Array.isArray(parsed.turns)) {
             const duration = Date.now() - startTime;
             Logger.logOperation(clientId, 'DIARIZATION', { model }, 'ERROR', duration);
-            Logger.error(clientId, 'Diarization : JSON LLM invalide après retry', null);
+            // Preview de la réponse LLM (300 premiers + 300 derniers chars) pour debug
+            const raw = typeof llmContent === 'string' ? llmContent : String(llmContent || '');
+            const preview = raw.length > 700
+                ? `${raw.slice(0, 300)}\n...[TRONQUÉ ${raw.length} chars]...\n${raw.slice(-300)}`
+                : raw;
+            Logger.error(clientId, `Diarization : JSON LLM invalide après retry (modèle: ${model}, ${raw.length} chars renvoyés). Aperçu :\n${preview}`, null);
             clearInterval(heartbeat);
-            return res.status(500).json({ error: 'La diarization a échoué : réponse LLM invalide.' });
+            return res.status(500).json({ error: 'La diarization a échoué : réponse LLM invalide. Essayez un modèle plus puissant (qwen3.5:397b ou mistral-small4:119b) ou un audio plus court.' });
         }
 
         const diarization = buildTurnsWithTimestamps(parsed.turns, segments || []);
