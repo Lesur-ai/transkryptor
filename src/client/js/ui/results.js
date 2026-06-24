@@ -20,6 +20,15 @@ let lastPlaceholderVars = null;
 let lastPlaceholderIcon = null;
 let lastPlaceholderRaw = null;
 
+// État interne pour le rendu incrémental du streaming de diarization.
+// Évite de reconstruire tout le DOM à chaque tick (sinon les cartes refont
+// leur animation fade-in à chaque seconde → effet de clignotement).
+let streamingState = {
+    statusEl: null,        // <strong> contenant le texte "X tours identifié(s) — Ys écoulées"
+    cardsContainer: null,  // <div class="speakers-list-streaming"> où sont appendées les cartes
+    renderedTurnsCount: 0, // nombre de cartes déjà appendées
+};
+
 function escapeHtml(str) {
     return String(str || '')
         .replace(/&/g, '&amp;')
@@ -238,57 +247,102 @@ export function showDiarizationProgress(elapsedSec) {
     if (downloadBtn) downloadBtn.disabled = true;
 }
 
+function buildSpeakerCard(turn, idx, speakerNames) {
+    const start = formatTimestamp(turn.startTime);
+    const end = formatTimestamp(turn.endTime);
+    const speakerId = turn.speaker || `Speaker ${idx + 1}`;
+    const displayName = resolveSpeakerName(speakerId, speakerNames || {});
+    const timestamp = tr('speakers.timestamp', { start, end });
+
+    const card = document.createElement('div');
+    card.className = 'speaker-card speaker-card-streaming';
+    card.innerHTML = `
+        <div class="speaker-card-header">
+            <strong class="speaker-card-name">${escapeHtml(displayName)}</strong>
+            <span class="speaker-card-time">${escapeHtml(timestamp)}</span>
+        </div>
+        <div class="speaker-card-body">${escapeHtml(turn.text || '').replace(/\n/g, '<br>')}</div>
+    `;
+    return card;
+}
+
 /**
  * Variante streaming : affiche le placeholder de progression EN HAUT avec un
  * compteur de tours identifiés en temps réel, et la liste des tours déjà parsés
  * EN DESSOUS au fur et à mesure qu'ils arrivent du serveur SSE.
+ *
+ * IMPORTANT : rendu INCRÉMENTAL pour éviter le clignotement à chaque tick.
+ * On reconstruit la structure DOM uniquement si elle n'existe pas (1er appel
+ * ou retour sur l'onglet après navigation), sinon on update juste le compteur
+ * et on append les nouvelles cartes. L'animation fade-in joue ainsi une seule
+ * fois par carte (à son arrivée), pas à chaque seconde.
  */
 export function showDiarizationStreamingProgress(elapsedSec, turnsSoFar, speakerNames) {
     const timeStr = formatElapsed(elapsedSec);
-    const turnsCount = Array.isArray(turnsSoFar) ? turnsSoFar.length : 0;
-    const processing = tr('diarization.streamingProgress', { time: timeStr, count: turnsCount });
-    const hint = tr('diarization.processingHint');
+    const turns = Array.isArray(turnsSoFar) ? turnsSoFar : [];
+    const turnsCount = turns.length;
+    const statusText = tr('diarization.streamingProgress', { time: timeStr, count: turnsCount });
 
-    const headerHtml = `
-        <div class="placeholder diarization-progress diarization-streaming">
-            <span class="diarization-spinner" aria-hidden="true">🔍</span>
-            <div class="diarization-progress-text">
-                <strong>${escapeHtml(processing)}</strong>
-                <p class="diarization-progress-hint">${escapeHtml(hint)}</p>
-            </div>
-        </div>
-    `;
+    // Vérifie si la structure DOM streaming est toujours en place.
+    // Si le contentContainer a été remplacé (switch d'onglet, etc.), on recrée.
+    const structureAlive = streamingState.statusEl
+        && streamingState.cardsContainer
+        && contentContainer.contains(streamingState.statusEl)
+        && contentContainer.contains(streamingState.cardsContainer);
 
-    let cardsHtml = '';
-    if (turnsCount > 0) {
-        const names = speakerNames || {};
-        const cards = turnsSoFar.map((turn, idx) => {
-            const start = formatTimestamp(turn.startTime);
-            const end = formatTimestamp(turn.endTime);
-            const speakerId = turn.speaker || `Speaker ${idx + 1}`;
-            const displayName = resolveSpeakerName(speakerId, names);
-            const safeText = escapeHtml(turn.text || '').replace(/\n/g, '<br>');
-            const safeDisplay = escapeHtml(displayName);
-            const timestamp = tr('speakers.timestamp', { start, end });
-            return `
-                <div class="speaker-card speaker-card-streaming">
-                    <div class="speaker-card-header">
-                        <strong class="speaker-card-name">${safeDisplay}</strong>
-                        <span class="speaker-card-time">${escapeHtml(timestamp)}</span>
-                    </div>
-                    <div class="speaker-card-body">${safeText}</div>
+    if (!structureAlive) {
+        const hint = tr('diarization.processingHint');
+        contentContainer.innerHTML = `
+            <div class="placeholder diarization-progress diarization-streaming">
+                <span class="diarization-spinner" aria-hidden="true">🔍</span>
+                <div class="diarization-progress-text">
+                    <strong class="diarization-progress-status">${escapeHtml(statusText)}</strong>
+                    <p class="diarization-progress-hint">${escapeHtml(hint)}</p>
                 </div>
-            `;
-        }).join('');
-        cardsHtml = `<div class="speakers-list speakers-list-streaming">${cards}</div>`;
+            </div>
+            <div class="speakers-list speakers-list-streaming"></div>
+        `;
+        streamingState.statusEl = contentContainer.querySelector('.diarization-progress-status');
+        streamingState.cardsContainer = contentContainer.querySelector('.speakers-list-streaming');
+        streamingState.renderedTurnsCount = 0;
+
+        lastPlaceholderKey = null;
+        lastPlaceholderVars = null;
+        lastPlaceholderIcon = null;
+        lastPlaceholderRaw = null;
+        if (downloadBtn) downloadBtn.disabled = true;
+
+        // Append toutes les cartes déjà connues (cas du retour sur l'onglet)
+        const names = speakerNames || {};
+        turns.forEach((turn, idx) => {
+            streamingState.cardsContainer.appendChild(buildSpeakerCard(turn, idx, names));
+        });
+        streamingState.renderedTurnsCount = turnsCount;
+        return;
     }
 
-    contentContainer.innerHTML = `${headerHtml}${cardsHtml}`;
-    lastPlaceholderKey = null;
-    lastPlaceholderVars = null;
-    lastPlaceholderIcon = null;
-    lastPlaceholderRaw = null;
-    if (downloadBtn) downloadBtn.disabled = true;
+    // Structure intacte : update minimal en place
+    streamingState.statusEl.textContent = statusText;
+
+    // Append uniquement les nouvelles cartes (au-delà de ce qui est déjà rendu)
+    if (turnsCount > streamingState.renderedTurnsCount) {
+        const names = speakerNames || {};
+        for (let idx = streamingState.renderedTurnsCount; idx < turnsCount; idx++) {
+            streamingState.cardsContainer.appendChild(buildSpeakerCard(turns[idx], idx, names));
+        }
+        streamingState.renderedTurnsCount = turnsCount;
+    }
+}
+
+/**
+ * Réinitialise l'état du rendu streaming. À appeler quand on bascule
+ * définitivement sur la vue speakers finale (fin du stream) ou en cas
+ * de nouvelle session de diarization.
+ */
+export function resetDiarizationStreamingState() {
+    streamingState.statusEl = null;
+    streamingState.cardsContainer = null;
+    streamingState.renderedTurnsCount = 0;
 }
 
 export function updateTranscriptionView() {

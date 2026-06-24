@@ -639,6 +639,9 @@ async function runDiarizationIfEnabled() {
     // Diarization STREAMING : les tours sont poussés via SSE au fur et à mesure
     // que le LLM les génère. L'UI affiche un compteur en live + les cartes
     // déjà identifiées sous le placeholder de progression.
+    if (typeof resultsUI.resetDiarizationStreamingState === 'function') {
+        resultsUI.resetDiarizationStreamingState();
+    }
     const diarizationStart = Date.now();
     const accumulatedTurns = [];
 
@@ -674,6 +677,12 @@ async function runDiarizationIfEnabled() {
                     results: { ...getState().results, diarization: finalTurns },
                 });
                 clearInterval(diarizationTimer);
+                // Bascule sur la vue finale (cartes éditables + bouton download actif).
+                // Le reset du state streaming évite de réutiliser des refs DOM obsolètes
+                // au prochain run.
+                if (typeof resultsUI.resetDiarizationStreamingState === 'function') {
+                    resultsUI.resetDiarizationStreamingState();
+                }
                 if (typeof resultsUI.updateSpeakersView === 'function') {
                     resultsUI.updateSpeakersView();
                 }
