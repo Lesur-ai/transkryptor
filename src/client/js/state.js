@@ -15,7 +15,7 @@ const appState = {
     clientId: null,
 
     // Version de l'application (chargée depuis le serveur)
-    appVersion: '5.3.0',
+    appVersion: '5.4.0',
 
     // Résultats du traitement
     results: {
@@ -32,6 +32,15 @@ const appState = {
 
     // Prompt personnalisé saisi par l'utilisateur (utilisé uniquement quand synthesisPreset === 'custom')
     customSynthesisPrompt: '',
+
+    // Langue audio (ISO 639-1) pour le hint Whisper. '' = auto-détection.
+    audioLanguage: '',
+
+    // Langue cible de la synthèse. 'auto' = identique à la langue source détectée.
+    synthesisLanguage: 'auto',
+
+    // Langue détectée par Whisper sur le premier chunk (ISO 639-1), si différente du hint.
+    detectedAudioLanguage: null,
 };
 
 /**

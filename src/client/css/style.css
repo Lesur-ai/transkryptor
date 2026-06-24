@@ -160,6 +160,34 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.config-sublabel {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text2);
+    margin: 0.6rem 0 0.3rem;
+    opacity: 0.85;
+}
+
+.config-sublabel:first-of-type {
+    margin-top: 0;
+}
+
+.detected-language-badge {
+    display: inline-block;
+    margin-top: 0.6rem;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(65, 168, 144, 0.18);
+    color: var(--accent);
+    border: 1px solid rgba(65, 168, 144, 0.35);
+    border-radius: var(--radius);
+}
+
+.detected-language-badge[hidden] {
+    display: none;
+}
+
 /* ═══ FORMS ═══ */
 select, input[type="text"], input[type="password"] {
     background: var(--bg);

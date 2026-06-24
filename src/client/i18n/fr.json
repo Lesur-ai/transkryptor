@@ -170,5 +170,41 @@
       "button": "Réinitialiser",
       "confirm": "Réinitialiser le prompt de synthèse à la valeur par défaut ?"
     }
+  },
+  "language": {
+    "section": {
+      "label": "Langues"
+    },
+    "audio": {
+      "label": "Langue audio",
+      "auto": "Auto-détection"
+    },
+    "synthesis": {
+      "label": "Langue de synthèse",
+      "auto": "Identique à la transcription"
+    },
+    "fr": { "name": "Français" },
+    "en": { "name": "Anglais" },
+    "es": { "name": "Espagnol" },
+    "de": { "name": "Allemand" },
+    "it": { "name": "Italien" },
+    "pt": { "name": "Portugais" },
+    "nl": { "name": "Néerlandais" },
+    "pl": { "name": "Polonais" },
+    "ru": { "name": "Russe" },
+    "ja": { "name": "Japonais" },
+    "zh": { "name": "Chinois" },
+    "ko": { "name": "Coréen" },
+    "ar": { "name": "Arabe" },
+    "hi": { "name": "Hindi" },
+    "tr": { "name": "Turc" }
+  },
+  "transcriptionLang": {
+    "detectedBadge": "Langue détectée : {lang}"
+  },
+  "synthesisTarget": {
+    "different": {
+      "warning": "La synthèse sera rédigée en {targetLang} (différente de la langue source)."
+    }
   }
 }

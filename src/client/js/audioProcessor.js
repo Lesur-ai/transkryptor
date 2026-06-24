@@ -14,7 +14,11 @@ const BATCH_SIZE = 10;
 async function transcribeChunk(chunkBlob, metadata, onProgress, retries = 5) {
     try {
         const result = await api.transcribe(chunkBlob, metadata);
-        return { text: result.text || '', duration: result._serverDuration || 0 };
+        return {
+            text: result.text || '',
+            duration: result._serverDuration || 0,
+            language: result.language || null,
+        };
     } catch (error) {
         if (retries > 0) {
             onProgress({ type: 'chunk_retrying', chunkIndex: metadata.chunkIndex });
@@ -37,7 +41,8 @@ function resampleAudioBuffer(audioBuffer, targetSampleRate) {
     return offlineContext.startRendering();
 }
 
-export async function processAndTranscribeInChunks(audioFile, onProgress) {
+export async function processAndTranscribeInChunks(audioFile, onProgress, options = {}) {
+    const { language } = options;
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const arrayBuffer = await audioFile.arrayBuffer();
     let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
@@ -107,17 +112,18 @@ export async function processAndTranscribeInChunks(audioFile, onProgress) {
                 }
                     
                 const chunkBlob = await audioBufferToWav(chunkAudioBuffer);
-                const metadata = { 
-                    chunkIndex: i, 
+                const metadata = {
+                    chunkIndex: i,
                     totalChunks: numChunks,
                     originalFileName: audioFile.name,
                     originalFileType: audioFile.type,
-                    originalFileSize: audioFile.size
+                    originalFileSize: audioFile.size,
+                    language: language || undefined,
                 };
-                
+
                 onProgress({ type: 'chunk_processing', chunkIndex: i });
                 try {
-                    const { text, duration } = await transcribeChunk(chunkBlob, metadata, onProgress);
+                    const { text, duration, language: detectedLang } = await transcribeChunk(chunkBlob, metadata, onProgress);
                     allTranscriptions[i] = text;
                     processedDuration += chunkDuration;
                     onProgress({
@@ -127,6 +133,7 @@ export async function processAndTranscribeInChunks(audioFile, onProgress) {
                         chunkIndex: i,
                         processedDuration: processedDuration,
                         chunkDuration: duration,
+                        detectedLanguage: detectedLang,
                         currentText: allTranscriptions.filter(Boolean).join(' ')
                     });
                 } catch (error) {

@@ -17,6 +17,8 @@ import { SYNTHESIS_PROMPTS, DEFAULT_PRESET, PRESET_IDS, getPresetPrompt } from '
 // --- localStorage keys ---
 const LS_PRESET = 'transkryptor.synthesis.preset';
 const LS_CUSTOM_PROMPT = 'transkryptor.synthesis.customPrompt';
+const STORAGE_KEY_AUDIO_LANGUAGE = 'transkryptor.transcription.language';
+const STORAGE_KEY_SYNTHESIS_LANGUAGE = 'transkryptor.synthesis.language';
 
 // --- DOM Elements ---
 const modelSelect = document.getElementById('model-select');
@@ -29,6 +31,9 @@ const statTime = document.getElementById('stat-time');
 const headerVersion = document.getElementById('header-version');
 const serverLogsContent = document.getElementById('server-logs-content');
 const langSelector = document.getElementById('ui-language-selector');
+const audioLanguageSelector = document.getElementById('audio-language-selector');
+const synthesisLanguageSelector = document.getElementById('synthesis-language-selector');
+const detectedLanguageBadge = document.getElementById('detected-language-badge');
 
 let timerInterval = null;
 let chunkDurations = [];
@@ -93,6 +98,11 @@ async function handleProcess() {
     setButtonContent(processBtn, '⏳', 'ui.process.inProgress');
 
     chunkDurations = [];
+    updateState({ detectedAudioLanguage: null });
+    if (detectedLanguageBadge) {
+        detectedLanguageBadge.hidden = true;
+        detectedLanguageBadge.textContent = '';
+    }
     const startTime = Date.now();
     timerInterval = setInterval(() => {
         statTime.textContent = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
@@ -136,6 +146,11 @@ async function handleProcess() {
                     progressUI.updateChunkStatus(progress.chunkIndex, 'completed');
                     chartUI.addChartData(elapsedTime.toFixed(1), speedRatio);
 
+                    if (progress.detectedLanguage && !getState().detectedAudioLanguage) {
+                        updateState({ detectedAudioLanguage: progress.detectedLanguage });
+                        renderDetectedLanguageBadge();
+                    }
+
                     if (progress.currentText) {
                         updateState({ results: { ...getState().results, transcription: progress.currentText } });
                         resultsUI.updateTranscriptionView();
@@ -147,7 +162,9 @@ async function handleProcess() {
             }
         };
 
-        await processAndTranscribeInChunks(state.selectedFile, onTranscriptionProgress);
+        await processAndTranscribeInChunks(state.selectedFile, onTranscriptionProgress, {
+            language: state.audioLanguage || ''
+        });
 
         resultsUI.setActiveTab('analysis');
         resultsUI.showPlaceholderKey('status.analysis.inProgress', null, '🔍');
@@ -241,7 +258,8 @@ async function handleSynthesize() {
         resultsUI.showPlaceholderKey('status.synthesis.generating', null, '📝');
 
         const effectivePrompt = getEffectiveSynthesisPrompt();
-        const synthesisResult = await api.synthesize(state.results.analysis, state.selectedModel, effectivePrompt);
+        const targetLanguage = resolveSynthesisTargetLanguage(state);
+        const synthesisResult = await api.synthesize(state.results.analysis, state.selectedModel, effectivePrompt, targetLanguage);
 
         updateState({
             results: { ...state.results, synthesis: synthesisResult.synthesis },
@@ -331,6 +349,9 @@ async function initialize() {
 
     // Init prompts avancés (presets + custom)
     initAdvancedPrompts();
+
+    // Init multilingue (langues audio + synthèse)
+    initLanguageSelectors();
 
     // Charger les modèles
     updateModelList();
@@ -424,6 +445,99 @@ function initAdvancedPrompts() {
         applyPresetToTextarea(promptTextarea, DEFAULT_PRESET, '');
         persistPresetState(DEFAULT_PRESET, '');
     });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AXE 2 — Multilingue transcription/synthèse
+// ─────────────────────────────────────────────────────────────────────────────
+
+function readStoredLanguage(key, fallback) {
+    try {
+        const value = localStorage.getItem(key);
+        return value === null ? fallback : value;
+    } catch (_) {
+        return fallback;
+    }
+}
+
+function writeStoredLanguage(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (_) { /* ignore quota / private mode */ }
+}
+
+function initLanguageSelectors() {
+    if (!audioLanguageSelector || !synthesisLanguageSelector) return;
+
+    const storedAudio = readStoredLanguage(STORAGE_KEY_AUDIO_LANGUAGE, '');
+    const storedSynthesis = readStoredLanguage(STORAGE_KEY_SYNTHESIS_LANGUAGE, 'auto');
+
+    if ([...audioLanguageSelector.options].some(o => o.value === storedAudio)) {
+        audioLanguageSelector.value = storedAudio;
+    }
+    if ([...synthesisLanguageSelector.options].some(o => o.value === storedSynthesis)) {
+        synthesisLanguageSelector.value = storedSynthesis;
+    }
+
+    updateState({
+        audioLanguage: audioLanguageSelector.value,
+        synthesisLanguage: synthesisLanguageSelector.value,
+    });
+
+    audioLanguageSelector.addEventListener('change', (e) => {
+        const value = e.target.value;
+        updateState({ audioLanguage: value });
+        writeStoredLanguage(STORAGE_KEY_AUDIO_LANGUAGE, value);
+    });
+
+    synthesisLanguageSelector.addEventListener('change', (e) => {
+        const value = e.target.value;
+        updateState({ synthesisLanguage: value });
+        writeStoredLanguage(STORAGE_KEY_SYNTHESIS_LANGUAGE, value);
+    });
+
+    // Re-render badge si l'utilisateur change la langue d'interface
+    window.addEventListener('i18nchange', renderDetectedLanguageBadge);
+}
+
+function getLocalizedLanguageName(code) {
+    if (!code) return '';
+    const lower = code.toLowerCase();
+    const key = `language.${lower}.name`;
+    const translated = window.i18n ? window.i18n.t(key) : null;
+    if (translated && translated !== key) return translated;
+    return lower.toUpperCase();
+}
+
+function renderDetectedLanguageBadge() {
+    if (!detectedLanguageBadge) return;
+    const { detectedAudioLanguage, audioLanguage } = getState();
+    if (!detectedAudioLanguage) {
+        detectedLanguageBadge.hidden = true;
+        detectedLanguageBadge.textContent = '';
+        return;
+    }
+    // N'afficher le badge que si la langue détectée diffère du hint utilisateur
+    // (ou si l'utilisateur n'a pas spécifié de hint = auto-détection).
+    const hint = (audioLanguage || '').toLowerCase();
+    const detected = detectedAudioLanguage.toLowerCase();
+    if (hint && hint === detected) {
+        detectedLanguageBadge.hidden = true;
+        detectedLanguageBadge.textContent = '';
+        return;
+    }
+    const langName = getLocalizedLanguageName(detected);
+    detectedLanguageBadge.textContent = window.i18n.t('transcriptionLang.detectedBadge', { lang: langName });
+    detectedLanguageBadge.hidden = false;
+}
+
+function resolveSynthesisTargetLanguage(state) {
+    const synthesis = state.synthesisLanguage || 'auto';
+    if (synthesis !== 'auto') return synthesis;
+    // auto = identique à la langue source. Priorité : hint utilisateur > langue détectée Whisper.
+    if (state.audioLanguage) return state.audioLanguage;
+    if (state.detectedAudioLanguage) return state.detectedAudioLanguage;
+    return undefined; // serveur retombe sur le prompt FR par défaut
 }
 
 document.addEventListener('DOMContentLoaded', initialize);

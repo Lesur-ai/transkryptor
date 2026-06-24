@@ -19,7 +19,7 @@ export async function getVersion() {
         return data.version;
     } catch (error) {
         console.error('Erreur lors de la récupération de la version.');
-        return '5.3.0';
+        return '5.4.0';
     }
 }
 
@@ -59,6 +59,7 @@ export async function transcribe(file, metadata = {}) {
     if (metadata.originalFileName) formData.append('originalFileName', metadata.originalFileName);
     if (metadata.originalFileType) formData.append('originalFileType', metadata.originalFileType);
     if (metadata.originalFileSize) formData.append('originalFileSize', metadata.originalFileSize);
+    if (metadata.language) formData.append('language', metadata.language);
 
     try {
         const controller = new AbortController();
@@ -117,14 +118,17 @@ export async function analyze(text, model, metadata = {}) {
  * @param {string} model - L'identifiant du modèle.
  * @param {string} [customPrompt] - Prompt système personnalisé (optionnel).
  *   Si vide ou absent, le serveur applique le prompt de synthèse par défaut.
+ * @param {string} [targetLanguage] - Code ISO 639-1 de la langue de synthèse souhaitée.
+ *   Ignoré côté serveur si customPrompt est fourni.
  * @returns {Promise<object>} Le résultat de la synthèse.
  */
-export async function synthesize(analysisText, model, customPrompt) {
+export async function synthesize(analysisText, model, customPrompt, targetLanguage) {
     const { clientId } = getState();
     const body = { text: analysisText, model, clientId };
     if (typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
         body.customPrompt = customPrompt;
     }
+    if (targetLanguage) body.targetLanguage = targetLanguage;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/synthesize`, {

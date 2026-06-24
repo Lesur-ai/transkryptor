@@ -11,7 +11,7 @@ const Logger = require('./logger');
 const app = express();
 
 // --- Lecture de la version depuis le fichier VERSION ---
-let APP_VERSION = '5.3.0';
+let APP_VERSION = '5.4.0';
 try {
     APP_VERSION = fs.readFileSync(path.join(__dirname, '../../VERSION'), 'utf-8').trim();
 } catch (e) {
@@ -175,7 +175,7 @@ app.get('/api/models', async (req, res) => {
 
 // Transcription audio (Cloud Temple Whisper uniquement)
 app.post('/api/transcribe', upload.single('file'), async (req, res) => {
-    const { clientId, originalFileName, originalFileType, originalFileSize } = req.body;
+    const { clientId, originalFileName, originalFileType, originalFileSize, language } = req.body;
     const chunkIndex = req.body.chunkIndex ? parseInt(req.body.chunkIndex, 10) : undefined;
     const totalChunks = req.body.totalChunks ? parseInt(req.body.totalChunks, 10) : undefined;
     const file = req.file;
@@ -201,6 +201,9 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
         const formData = new FormData();
         formData.append('file', fileStream, file.originalname);
         formData.append('response_format', 'json');
+        if (language && typeof language === 'string' && language.trim()) {
+            formData.append('language', language.trim());
+        }
 
         const response = await axios.post('https://api.ai.cloud-temple.com/v1/audio/transcriptions', formData, {
             headers: {
@@ -276,7 +279,7 @@ app.post('/api/analyze', async (req, res) => {
 });
 
 // Synthèse de texte (Cloud Temple uniquement)
-const SYNTHESIS_PROMPT = `
+const SYNTHESIS_PROMPT_FR = `
 À partir de l'analyse fournie ci-dessous, rédige une synthèse exécutive claire, concise et professionnelle. La synthèse doit être structurée pour une compréhension rapide et une prise de décision efficace.
 
 **Format attendu :**
@@ -294,10 +297,63 @@ const SYNTHESIS_PROMPT = `
 **Analyse à synthétiser :**
 `;
 
+const SYNTHESIS_PROMPT_EN = `
+From the analysis provided below, write a clear, concise and professional executive summary. The summary must be structured for rapid comprehension and efficient decision-making.
+
+**Expected format:**
+
+**1. Executive Summary:**
+   - A paragraph of 3 to 5 sentences maximum that summarizes the essence of the analysis. What is the most critical piece of information to remember?
+
+**2. Key Points:**
+   - A bullet list (3 to 5 points) that highlights the most important findings, conclusions or themes from the analysis. Each point must be a short and impactful sentence.
+
+**3. Recommended Actions / Next Steps:**
+   - A bullet list (2 to 3 points) of concrete suggestions or questions to explore based on the analysis. What should be done with this information?
+
+---
+**Analysis to summarize:**
+`;
+
+// Mapping ISO 639-1 → nom de langue en anglais (pour instruction LLM "Reply in {lang}").
+const LANGUAGE_NAMES_EN = {
+    fr: 'French',
+    en: 'English',
+    es: 'Spanish',
+    de: 'German',
+    it: 'Italian',
+    pt: 'Portuguese',
+    nl: 'Dutch',
+    pl: 'Polish',
+    ru: 'Russian',
+    ja: 'Japanese',
+    zh: 'Chinese',
+    ko: 'Korean',
+    ar: 'Arabic',
+    hi: 'Hindi',
+    tr: 'Turkish',
+};
+
+function buildSynthesisPrompt(targetLanguage, text) {
+    const code = (targetLanguage || '').trim().toLowerCase();
+    if (!code) {
+        return `${SYNTHESIS_PROMPT_FR}\n\n${text}`;
+    }
+    if (code === 'fr') {
+        return `${SYNTHESIS_PROMPT_FR}\n\n${text}`;
+    }
+    if (code === 'en') {
+        return `${SYNTHESIS_PROMPT_EN}\n\n${text}`;
+    }
+    const langName = LANGUAGE_NAMES_EN[code] || code;
+    const instruction = `IMPORTANT: Reply entirely in ${langName} (ISO code: ${code}). Do not use any other language.\n\n`;
+    return `${instruction}${SYNTHESIS_PROMPT_EN}\n\n${text}`;
+}
+
 const MAX_CUSTOM_PROMPT_LENGTH = 8000;
 
 app.post('/api/synthesize', async (req, res) => {
-    const { model, text, clientId, customPrompt } = req.body;
+    const { model, text, clientId, customPrompt, targetLanguage } = req.body;
     const startTime = Date.now();
 
     if (!model || !text || !clientId) {
@@ -312,17 +368,18 @@ app.post('/api/synthesize', async (req, res) => {
         return res.status(400).json({ error: `Le modèle "${model}" n'est pas autorisé par Transkryptor.` });
     }
 
-    let promptTemplate = SYNTHESIS_PROMPT;
+    // Priorité : customPrompt (AXE 3) > buildSynthesisPrompt(targetLanguage) (AXE 2)
+    let fullPrompt;
     if (typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
         if (customPrompt.trim().length > MAX_CUSTOM_PROMPT_LENGTH) {
             return res.status(400).json({
                 error: `Le prompt personnalisé dépasse la limite de ${MAX_CUSTOM_PROMPT_LENGTH} caractères.`
             });
         }
-        promptTemplate = customPrompt;
+        fullPrompt = `${customPrompt}\n\n${text}`;
+    } else {
+        fullPrompt = buildSynthesisPrompt(targetLanguage, text);
     }
-
-    const fullPrompt = `${promptTemplate}\n\n${text}`;
 
     try {
         Logger.info(clientId, `Synthèse avec Cloud Temple (modèle: ${model})...`);
@@ -336,15 +393,15 @@ app.post('/api/synthesize', async (req, res) => {
 
         const synthesisText = response.data.choices[0].message.content;
         const duration = Date.now() - startTime;
-        Logger.logOperation(clientId, 'SYNTHESE', { model }, 'SUCCESS', duration);
-        Logger.success(clientId, 'Synthèse Cloud Temple réussie');
+        Logger.logOperation(clientId, 'SYNTHESE', { model, targetLanguage: targetLanguage || 'fr' }, 'SUCCESS', duration);
+        Logger.success(clientId, `Synthèse Cloud Temple réussie (langue: ${targetLanguage || 'fr'})`);
         res.json({ synthesis: synthesisText });
 
     } catch (error) {
         const duration = Date.now() - startTime;
-        Logger.logOperation(clientId, 'SYNTHESE', { model }, 'ERROR', duration);
+        Logger.logOperation(clientId, 'SYNTHESE', { model, targetLanguage: targetLanguage || 'fr' }, 'ERROR', duration);
         Logger.error(clientId, `Erreur lors de la synthèse`, error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Erreur interne du serveur lors de la synthèse',
             details: error.response ? error.response.data : error.message
         });

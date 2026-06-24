@@ -4,6 +4,18 @@ All notable changes to Transkryptor are documented in this file.
 
 This changelog was introduced in version 5.1.0 and backfills earlier releases from the Git tag history, project documentation, and the local project memory bank. Older entries are therefore less detailed than entries maintained from 5.1.0 onward.
 
+## [5.4.0] - 2026-06-24
+### Ajouté
+- Sélecteur "Langue audio" dans la sidebar (Auto + 15 langues principales en ISO 639-1)
+- Sélecteur "Langue de synthèse" séparé (par défaut : identique à la transcription)
+- Paramètre 'language' envoyé à l'API Whisper Cloud Temple pour améliorer la transcription
+- Prompt de synthèse disponible en EN (SYNTHESIS_PROMPT_EN) + instruction "Reply in {lang}" pour les autres langues
+- Badge "Langue détectée: XX" affiché si Whisper retourne une langue différente du hint
+- Persistance localStorage des langues choisies (clés transkryptor.transcription.language et transkryptor.synthesis.language)
+### Modifié
+- L'analyse intermédiaire reste systématiquement dans la langue source (préserve la qualité de correction)
+- Si customPrompt fourni (AXE 3), il prime sur le prompt par langue cible (AXE 2)
+
 ## [5.3.0] - 2026-06-24
 ### Ajouté
 - Section "Prompts avancés" repliée dans la sidebar (5 presets + mode personnalisé)

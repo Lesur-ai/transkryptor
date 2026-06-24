@@ -18,7 +18,7 @@
     </div>
     <div class="header-right">
         <span class="badge badge-info">SecNumCloud</span>
-        <span id="header-version" class="header-version">v5.3.0</span>
+        <span id="header-version" class="header-version">v5.4.0</span>
     </div>
 </div>
 
@@ -54,6 +54,46 @@
                     <span class="file-drop-hint">MP3, WAV, M4A</span>
                 </label>
                 <input type="file" id="audio-file" accept=".mp3,.wav,.m4a">
+            </div>
+
+            <!-- Langues -->
+            <div class="config-section">
+                <div class="config-label"><span class="icon">🌍</span><span data-i18n="language.section.label">Langues</span></div>
+                <label class="config-sublabel" for="audio-language-selector" data-i18n="language.audio.label">Langue audio</label>
+                <select id="audio-language-selector">
+                    <option value="" data-i18n="language.audio.auto">Auto-détection</option>
+                    <option value="fr" data-i18n="language.fr.name">Français</option>
+                    <option value="en" data-i18n="language.en.name">Anglais</option>
+                    <option value="es" data-i18n="language.es.name">Espagnol</option>
+                    <option value="de" data-i18n="language.de.name">Allemand</option>
+                    <option value="it" data-i18n="language.it.name">Italien</option>
+                    <option value="pt" data-i18n="language.pt.name">Portugais</option>
+                    <option value="nl" data-i18n="language.nl.name">Néerlandais</option>
+                    <option value="pl" data-i18n="language.pl.name">Polonais</option>
+                    <option value="ru" data-i18n="language.ru.name">Russe</option>
+                    <option value="ja" data-i18n="language.ja.name">Japonais</option>
+                    <option value="zh" data-i18n="language.zh.name">Chinois</option>
+                    <option value="ko" data-i18n="language.ko.name">Coréen</option>
+                    <option value="ar" data-i18n="language.ar.name">Arabe</option>
+                    <option value="hi" data-i18n="language.hi.name">Hindi</option>
+                    <option value="tr" data-i18n="language.tr.name">Turc</option>
+                </select>
+                <label class="config-sublabel" for="synthesis-language-selector" data-i18n="language.synthesis.label">Langue de synthèse</label>
+                <select id="synthesis-language-selector">
+                    <option value="auto" data-i18n="language.synthesis.auto">Identique à la transcription</option>
+                    <option value="fr" data-i18n="language.fr.name">Français</option>
+                    <option value="en" data-i18n="language.en.name">Anglais</option>
+                    <option value="es" data-i18n="language.es.name">Espagnol</option>
+                    <option value="de" data-i18n="language.de.name">Allemand</option>
+                    <option value="it" data-i18n="language.it.name">Italien</option>
+                    <option value="pt" data-i18n="language.pt.name">Portugais</option>
+                    <option value="nl" data-i18n="language.nl.name">Néerlandais</option>
+                    <option value="ja" data-i18n="language.ja.name">Japonais</option>
+                    <option value="zh" data-i18n="language.zh.name">Chinois</option>
+                    <option value="ru" data-i18n="language.ru.name">Russe</option>
+                    <option value="ar" data-i18n="language.ar.name">Arabe</option>
+                </select>
+                <div id="detected-language-badge" class="detected-language-badge" hidden></div>
             </div>
 
             <!-- Actions -->
