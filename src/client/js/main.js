@@ -23,6 +23,7 @@ const fileDropZone = document.getElementById('file-drop-zone');
 const statTime = document.getElementById('stat-time');
 const headerVersion = document.getElementById('header-version');
 const serverLogsContent = document.getElementById('server-logs-content');
+const langSelector = document.getElementById('ui-language-selector');
 
 let timerInterval = null;
 let chunkDurations = [];
@@ -33,9 +34,13 @@ function findPreferredModel(models) {
     return models.length > 0 ? models[0].id : null;
 }
 
+function setButtonContent(button, iconChar, labelKey) {
+    button.innerHTML = `<span class="icon">${iconChar}</span><span data-i18n="${labelKey}">${window.i18n.t(labelKey)}</span>`;
+}
+
 async function updateModelList() {
     try {
-        modelSelect.innerHTML = '<option>Chargement...</option>';
+        modelSelect.innerHTML = `<option data-i18n="config.model.loading">${window.i18n.t('config.model.loading')}</option>`;
         const models = await api.getModels();
         modelSelect.innerHTML = '';
         if (models && models.length > 0) {
@@ -45,17 +50,17 @@ async function updateModelList() {
                 option.textContent = model.name;
                 modelSelect.appendChild(option);
             });
-            
+
             const defaultModel = findPreferredModel(models);
             if (defaultModel) {
                 modelSelect.value = defaultModel;
                 updateState({ selectedModel: defaultModel });
             }
         } else {
-            modelSelect.innerHTML = '<option>Aucun modèle trouvé</option>';
+            modelSelect.innerHTML = `<option data-i18n="ui.models.empty">${window.i18n.t('ui.models.empty')}</option>`;
         }
     } catch (error) {
-        modelSelect.innerHTML = '<option>Erreur de chargement</option>';
+        modelSelect.innerHTML = `<option data-i18n="ui.models.error">${window.i18n.t('ui.models.error')}</option>`;
     }
 }
 
@@ -64,6 +69,7 @@ function handleFileSelect() {
     if (file) {
         updateState({ selectedFile: file });
         fileNameSpan.textContent = file.name;
+        fileNameSpan.removeAttribute('data-i18n');
         fileDropZone.classList.add('has-file');
         const fileSize = (file.size / (1024 * 1024)).toFixed(2);
         statsUI.updateStats({ size: `0.00 / ${fileSize} MB` });
@@ -73,13 +79,13 @@ function handleFileSelect() {
 async function handleProcess() {
     const state = getState();
     if (!state.selectedFile) {
-        alert("Veuillez sélectionner un fichier audio.");
+        alert(window.i18n.t('validation.audio.required'));
         return;
     }
 
     processBtn.disabled = true;
     synthesizeBtn.disabled = true;
-    processBtn.innerHTML = '⏳ Traitement en cours...';
+    setButtonContent(processBtn, '⏳', 'ui.process.inProgress');
 
     chunkDurations = [];
     const startTime = Date.now();
@@ -91,7 +97,7 @@ async function handleProcess() {
         statsUI.showStats();
         progressUI.clearProgress();
         chartUI.resetChart();
-        resultsUI.showPlaceholder('🎙️ Préparation du fichier audio...');
+        resultsUI.showPlaceholderKey('status.transcription.preparing', null, '🎙️');
 
         const onTranscriptionProgress = (progress) => {
             switch (progress.type) {
@@ -112,7 +118,7 @@ async function handleProcess() {
                     const speedRatio = (progress.processedDuration / elapsedTime).toFixed(1);
                     const totalSize = (state.selectedFile.size / (1024*1024)).toFixed(2);
                     const processedSize = ((progress.completed / progress.total) * state.selectedFile.size / (1024*1024)).toFixed(2);
-                    
+
                     if (progress.chunkDuration) chunkDurations.push(progress.chunkDuration);
                     const avgTime = (chunkDurations.reduce((a, b) => a + b, 0) / chunkDurations.length / 1000).toFixed(1);
 
@@ -137,14 +143,14 @@ async function handleProcess() {
         };
 
         await processAndTranscribeInChunks(state.selectedFile, onTranscriptionProgress);
-        
+
         resultsUI.setActiveTab('analysis');
-        resultsUI.showPlaceholder('🔍 Analyse du texte en cours...');
+        resultsUI.showPlaceholderKey('status.analysis.inProgress', null, '🔍');
         progressUI.clearProgress();
         chartUI.resetChart();
-        chartUI.updateChartLabel('Vitesse (tokens/s)');
+        chartUI.updateChartLabel(window.i18n.t('chart.performance.speedLabelTokens'));
         statsUI.updateStatLabel('size', 'Tokens');
-        
+
         const analysisStartTime = Date.now();
         let totalTokens = 0;
 
@@ -193,8 +199,8 @@ async function handleProcess() {
             onProgress: onAnalysisProgress,
             totalFileSize: state.selectedFile.size
         });
-        
-        resultsUI.updateAnalysisView(); 
+
+        resultsUI.updateAnalysisView();
         synthesizeBtn.disabled = false;
         updateState({ processingState: 'done' });
 
@@ -202,14 +208,14 @@ async function handleProcess() {
         updateState({ processingState: 'error' });
         let errorMessage = error.message;
         if (error instanceof DOMException) {
-            errorMessage = "Impossible de décoder le fichier audio. Il est peut-être corrompu ou dans un format non supporté.";
+            errorMessage = window.i18n.t('errors.audio.decodeFailure');
         }
-        resultsUI.showPlaceholder(`❌ Erreur : ${errorMessage}`);
+        resultsUI.showPlaceholderKey('errors.processing.generic', { errorMessage }, '❌');
         statsUI.hideStats();
-        alert(`Erreur: ${errorMessage}`);
+        alert(window.i18n.t('errors.alert', { errorMessage }));
     } finally {
         processBtn.disabled = false;
-        processBtn.innerHTML = '🚀 Lancer le Traitement';
+        setButtonContent(processBtn, '🚀', 'button.process.label');
         clearInterval(timerInterval);
     }
 }
@@ -217,38 +223,56 @@ async function handleProcess() {
 async function handleSynthesize() {
     const state = getState();
     if (!state.results.analysis) {
-        alert("Veuillez d'abord terminer une analyse.");
+        alert(window.i18n.t('validation.analysis.required'));
         return;
     }
 
     synthesizeBtn.disabled = true;
-    synthesizeBtn.innerHTML = '⏳ Synthèse...';
+    setButtonContent(synthesizeBtn, '⏳', 'ui.synthesis.inProgress');
 
     try {
         updateState({ processingState: 'synthesizing' });
         resultsUI.setActiveTab('synthesis');
-        resultsUI.showPlaceholder('📝 Génération de la synthèse en cours...');
+        resultsUI.showPlaceholderKey('status.synthesis.generating', null, '📝');
 
         const synthesisResult = await api.synthesize(state.results.analysis, state.selectedModel);
-        
-        updateState({ 
+
+        updateState({
             results: { ...state.results, synthesis: synthesisResult.synthesis },
-            processingState: 'done' 
+            processingState: 'done'
         });
-        
+
         resultsUI.updateSynthesisView();
 
     } catch (error) {
         updateState({ processingState: 'error' });
-        resultsUI.showPlaceholder(`❌ Erreur lors de la synthèse : ${error.message}`);
-        alert(`Erreur de synthèse: ${error.message}`);
+        resultsUI.showPlaceholderKey('errors.synthesis.failed', { errorMessage: error.message }, '❌');
+        alert(window.i18n.t('errors.synthesis.alert', { errorMessage: error.message }));
     } finally {
         synthesizeBtn.disabled = false;
-        synthesizeBtn.innerHTML = '📝 Synthèse';
+        setButtonContent(synthesizeBtn, '📝', 'button.synthesize.label');
     }
 }
 
 async function initialize() {
+    // Attendre que le module i18n soit prêt avant d'initialiser le reste de l'UI
+    await window.i18n.ready;
+
+    // Synchroniser le sélecteur de langue avec la langue active
+    if (langSelector) {
+        langSelector.value = window.i18n.getLanguage();
+        langSelector.addEventListener('change', (e) => {
+            window.i18n.setLanguage(e.target.value);
+        });
+    }
+
+    // Re-render des composants dynamiques en cas de changement de langue
+    window.addEventListener('i18nchange', () => {
+        statsUI.refreshFileInfo();
+        chartUI.refreshLabels();
+        resultsUI.refreshPlaceholder();
+    });
+
     // ID client unique
     const clientId = `client_${Date.now().toString(36)}_${Math.random().toString(36).substring(2)}`;
     updateState({ clientId });

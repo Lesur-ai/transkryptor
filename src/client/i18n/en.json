@@ -1,0 +1,150 @@
+{
+  "page": {
+    "title": "Cloud Temple — Transkryptor"
+  },
+  "sidebar": {
+    "title": "Configuration"
+  },
+  "config": {
+    "model": {
+      "label": "Analysis model",
+      "loading": "Loading..."
+    },
+    "audio": {
+      "label": "Audio file",
+      "dropzone": {
+        "instruction": "Click or drag and drop"
+      }
+    }
+  },
+  "button": {
+    "process": {
+      "label": "Start processing"
+    },
+    "synthesize": {
+      "label": "Synthesis"
+    },
+    "download": {
+      "label": "Download"
+    }
+  },
+  "dashboard": {
+    "stat": {
+      "progress": {
+        "label": "Progress"
+      },
+      "speed": {
+        "label": "Speed"
+      },
+      "size": {
+        "label": "Processed size"
+      },
+      "elapsed": {
+        "label": "Elapsed time"
+      },
+      "avgtime": {
+        "label": "Avg. time"
+      }
+    }
+  },
+  "tabs": {
+    "transcription": {
+      "label": "Transcription"
+    },
+    "analysis": {
+      "label": "Analysis"
+    },
+    "synthesis": {
+      "label": "Synthesis"
+    }
+  },
+  "logs": {
+    "header": {
+      "label": "Server logs"
+    },
+    "badge": {
+      "live": "Live"
+    }
+  },
+  "ui": {
+    "languageSelector": {
+      "label": "Interface language"
+    },
+    "models": {
+      "empty": "No model found",
+      "error": "Failed to load"
+    },
+    "process": {
+      "inProgress": "Processing..."
+    },
+    "synthesis": {
+      "inProgress": "Synthesizing..."
+    },
+    "download": {
+      "filenamePrefix": "transcript"
+    }
+  },
+  "validation": {
+    "audio": {
+      "required": "Please select an audio file."
+    },
+    "analysis": {
+      "required": "Please complete an analysis first."
+    }
+  },
+  "status": {
+    "transcription": {
+      "preparing": "Preparing audio file..."
+    },
+    "analysis": {
+      "inProgress": "Analyzing text..."
+    },
+    "synthesis": {
+      "generating": "Generating synthesis..."
+    }
+  },
+  "errors": {
+    "audio": {
+      "decodeFailure": "Unable to decode the audio file. It may be corrupted or in an unsupported format."
+    },
+    "processing": {
+      "generic": "Error: {errorMessage}"
+    },
+    "alert": "Error: {errorMessage}",
+    "synthesis": {
+      "failed": "Synthesis error: {errorMessage}",
+      "alert": "Synthesis error: {errorMessage}"
+    },
+    "download": {
+      "noContent": "No content to download for the \"{activeTab}\" tab."
+    }
+  },
+  "results": {
+    "placeholder": {
+      "selectFile": "Select an audio file to get started.",
+      "noContent": "No content for the \"{activeTab}\" tab."
+    }
+  },
+  "stats": {
+    "fileInfo": {
+      "channelsMono": "Mono",
+      "channelsStereo": "Stereo",
+      "duration": "Duration",
+      "sampleRate": "Sample rate",
+      "channels": "Channels"
+    }
+  },
+  "chart": {
+    "performance": {
+      "speedLabel": "Speed (chunks/s)",
+      "speedLabelTokens": "Speed (tokens/s)",
+      "yAxisTitle": "Speed",
+      "xAxisTitle": "Time (s)"
+    }
+  },
+  "analysis": {
+    "error": {
+      "chunkTooSummarized": "Chunk {chunkIndex} was over-summarized."
+    }
+  }
+}

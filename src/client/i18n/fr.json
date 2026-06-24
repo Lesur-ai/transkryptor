@@ -1,0 +1,150 @@
+{
+  "page": {
+    "title": "Cloud Temple — Transkryptor"
+  },
+  "sidebar": {
+    "title": "Configuration"
+  },
+  "config": {
+    "model": {
+      "label": "Modèle d'analyse",
+      "loading": "Chargement..."
+    },
+    "audio": {
+      "label": "Fichier Audio",
+      "dropzone": {
+        "instruction": "Cliquez ou glissez-déposez"
+      }
+    }
+  },
+  "button": {
+    "process": {
+      "label": "Lancer le Traitement"
+    },
+    "synthesize": {
+      "label": "Synthèse"
+    },
+    "download": {
+      "label": "Télécharger"
+    }
+  },
+  "dashboard": {
+    "stat": {
+      "progress": {
+        "label": "Progression"
+      },
+      "speed": {
+        "label": "Vitesse"
+      },
+      "size": {
+        "label": "Taille Traitée"
+      },
+      "elapsed": {
+        "label": "Temps Écoulé"
+      },
+      "avgtime": {
+        "label": "Tps. Moyen"
+      }
+    }
+  },
+  "tabs": {
+    "transcription": {
+      "label": "Transcription"
+    },
+    "analysis": {
+      "label": "Analyse"
+    },
+    "synthesis": {
+      "label": "Synthèse"
+    }
+  },
+  "logs": {
+    "header": {
+      "label": "Logs du Serveur"
+    },
+    "badge": {
+      "live": "Live"
+    }
+  },
+  "ui": {
+    "languageSelector": {
+      "label": "Langue de l'interface"
+    },
+    "models": {
+      "empty": "Aucun modèle trouvé",
+      "error": "Erreur de chargement"
+    },
+    "process": {
+      "inProgress": "Traitement en cours..."
+    },
+    "synthesis": {
+      "inProgress": "Synthèse..."
+    },
+    "download": {
+      "filenamePrefix": "transcription"
+    }
+  },
+  "validation": {
+    "audio": {
+      "required": "Veuillez sélectionner un fichier audio."
+    },
+    "analysis": {
+      "required": "Veuillez d'abord terminer une analyse."
+    }
+  },
+  "status": {
+    "transcription": {
+      "preparing": "Préparation du fichier audio..."
+    },
+    "analysis": {
+      "inProgress": "Analyse du texte en cours..."
+    },
+    "synthesis": {
+      "generating": "Génération de la synthèse en cours..."
+    }
+  },
+  "errors": {
+    "audio": {
+      "decodeFailure": "Impossible de décoder le fichier audio. Il est peut-être corrompu ou dans un format non supporté."
+    },
+    "processing": {
+      "generic": "Erreur : {errorMessage}"
+    },
+    "alert": "Erreur : {errorMessage}",
+    "synthesis": {
+      "failed": "Erreur lors de la synthèse : {errorMessage}",
+      "alert": "Erreur de synthèse : {errorMessage}"
+    },
+    "download": {
+      "noContent": "Aucun contenu à télécharger pour l'onglet \"{activeTab}\"."
+    }
+  },
+  "results": {
+    "placeholder": {
+      "selectFile": "Sélectionnez un fichier audio pour commencer.",
+      "noContent": "Aucun contenu pour l'onglet \"{activeTab}\"."
+    }
+  },
+  "stats": {
+    "fileInfo": {
+      "channelsMono": "Mono",
+      "channelsStereo": "Stéréo",
+      "duration": "Durée",
+      "sampleRate": "Fréquence",
+      "channels": "Canaux"
+    }
+  },
+  "chart": {
+    "performance": {
+      "speedLabel": "Vitesse (chunks/s)",
+      "speedLabelTokens": "Vitesse (tokens/s)",
+      "yAxisTitle": "Vitesse",
+      "xAxisTitle": "Temps (s)"
+    }
+  },
+  "analysis": {
+    "error": {
+      "chunkTooSummarized": "Le morceau {chunkIndex} a été trop résumé."
+    }
+  }
+}

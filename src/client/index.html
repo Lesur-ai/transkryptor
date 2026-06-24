@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Temple — Transkryptor</title>
+    <title data-i18n="page.title">Cloud Temple — Transkryptor</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -17,7 +18,7 @@
     </div>
     <div class="header-right">
         <span class="badge badge-info">SecNumCloud</span>
-        <span id="header-version" class="header-version">v5.1.0</span>
+        <span id="header-version" class="header-version">v5.2.0</span>
     </div>
 </div>
 
@@ -26,23 +27,30 @@
 
     <!-- Sidebar -->
     <aside class="sidebar">
-        <div class="sidebar-title">Configuration</div>
+        <div class="lang-selector">
+            <label for="ui-language-selector" data-i18n-attr-title="ui.languageSelector.label"><span class="icon">🌐</span></label>
+            <select id="ui-language-selector" data-i18n-attr-aria-label="ui.languageSelector.label">
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <div class="sidebar-title" data-i18n="sidebar.title">Configuration</div>
         <div class="sidebar-content">
 
             <!-- Modèle -->
             <div class="config-section">
-                <div class="config-label">🤖 Modèle d'analyse</div>
+                <div class="config-label"><span class="icon">🤖</span><span data-i18n="config.model.label">Modèle d'analyse</span></div>
                 <select id="model-select">
-                    <option>Chargement...</option>
+                    <option data-i18n="config.model.loading">Chargement...</option>
                 </select>
             </div>
 
             <!-- Fichier Audio -->
             <div class="config-section">
-                <div class="config-label">🎙️ Fichier Audio</div>
+                <div class="config-label"><span class="icon">🎙️</span><span data-i18n="config.audio.label">Fichier Audio</span></div>
                 <label for="audio-file" class="file-drop-zone" id="file-drop-zone">
                     <div class="file-drop-icon">📁</div>
-                    <span id="file-name">Cliquez ou glissez-déposez</span>
+                    <span id="file-name" data-i18n="config.audio.dropzone.instruction">Cliquez ou glissez-déposez</span>
                     <span class="file-drop-hint">MP3, WAV, M4A</span>
                 </label>
                 <input type="file" id="audio-file" accept=".mp3,.wav,.m4a">
@@ -50,9 +58,9 @@
 
             <!-- Actions -->
             <div class="sidebar-actions">
-                <button id="process-btn" class="btn btn-primary btn-block">🚀 Lancer le Traitement</button>
-                <button id="synthesize-btn" class="btn btn-accent btn-block" disabled>📝 Synthèse</button>
-                <button id="download-btn" class="btn btn-ghost btn-block" disabled>💾 Télécharger</button>
+                <button id="process-btn" class="btn btn-primary btn-block"><span class="icon">🚀</span><span data-i18n="button.process.label">Lancer le Traitement</span></button>
+                <button id="synthesize-btn" class="btn btn-accent btn-block" disabled><span class="icon">📝</span><span data-i18n="button.synthesize.label">Synthèse</span></button>
+                <button id="download-btn" class="btn btn-ghost btn-block" disabled><span class="icon">💾</span><span data-i18n="button.download.label">Télécharger</span></button>
             </div>
         </div>
 
@@ -73,35 +81,35 @@
                     <div class="stat-card">
                         <div class="stat-icon">📊</div>
                         <div class="stat-info">
-                            <div class="stat-label">Progression</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.progress.label">Progression</div>
                             <div class="stat-value" id="stat-progress">—</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">⚡</div>
                         <div class="stat-info">
-                            <div class="stat-label">Vitesse</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.speed.label">Vitesse</div>
                             <div class="stat-value" id="stat-speed">—</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📦</div>
                         <div class="stat-info">
-                            <div class="stat-label" id="stat-size-label">Taille Traitée</div>
+                            <div class="stat-label" id="stat-size-label" data-i18n="dashboard.stat.size.label">Taille Traitée</div>
                             <div class="stat-value" id="stat-size">—</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">⏱️</div>
                         <div class="stat-info">
-                            <div class="stat-label">Temps Écoulé</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.elapsed.label">Temps Écoulé</div>
                             <div class="stat-value" id="stat-time">0s</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📈</div>
                         <div class="stat-info">
-                            <div class="stat-label">Tps. Moyen</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.avgtime.label">Tps. Moyen</div>
                             <div class="stat-value" id="stat-avg-time">—</div>
                         </div>
                     </div>
@@ -123,13 +131,13 @@
             <div class="card results-card">
                 <div class="results-header">
                     <div class="results-tabs">
-                        <div class="tab active" data-tab="transcription">🎙️ Transcription</div>
-                        <div class="tab" data-tab="analysis">🔍 Analyse</div>
-                        <div class="tab" data-tab="synthesis">📝 Synthèse</div>
+                        <div class="tab active" data-tab="transcription"><span class="icon">🎙️</span><span data-i18n="tabs.transcription.label">Transcription</span></div>
+                        <div class="tab" data-tab="analysis"><span class="icon">🔍</span><span data-i18n="tabs.analysis.label">Analyse</span></div>
+                        <div class="tab" data-tab="synthesis"><span class="icon">📝</span><span data-i18n="tabs.synthesis.label">Synthèse</span></div>
                     </div>
                 </div>
                 <div class="tab-content" id="tab-content-container">
-                    <div class="placeholder">Sélectionnez un fichier audio pour commencer.</div>
+                    <div class="placeholder" data-i18n="results.placeholder.selectFile">Sélectionnez un fichier audio pour commencer.</div>
                 </div>
             </div>
         </div>
@@ -137,8 +145,8 @@
         <!-- Server Logs -->
         <div class="logs-panel">
             <div class="logs-header">
-                <span>📡 Logs du Serveur</span>
-                <span class="badge badge-ok">Live</span>
+                <span><span class="icon">📡</span><span data-i18n="logs.header.label">Logs du Serveur</span></span>
+                <span class="badge badge-ok" data-i18n="logs.badge.live">Live</span>
             </div>
             <div class="logs-content" id="server-logs-content"></div>
         </div>

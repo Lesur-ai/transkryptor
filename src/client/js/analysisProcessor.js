@@ -88,7 +88,10 @@ ${chunk}`;
         const inputTokens = countTokens(chunk);
         const outputTokens = countTokens(analyzedText);
         if (inputTokens > 50 && (outputTokens / inputTokens) < 0.5) {
-            throw new Error(`Le morceau ${chunkIndex + 1} a été trop résumé.`);
+            const message = (typeof window !== 'undefined' && window.i18n)
+                ? window.i18n.t('analysis.error.chunkTooSummarized', { chunkIndex: chunkIndex + 1 })
+                : `Le morceau ${chunkIndex + 1} a été trop résumé.`;
+            throw new Error(message);
         }
         return analyzedText;
     } catch (error) {

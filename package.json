@@ -1,6 +1,6 @@
 {
   "name": "transkryptor",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "description": "Plateforme de transcription et d'analyse audio — Cloud Temple SecNumCloud",
   "main": "src/server/server.js",
   "scripts": {

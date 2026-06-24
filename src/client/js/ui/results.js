@@ -12,6 +12,15 @@ const contentContainer = document.getElementById('tab-content-container');
 const downloadBtn = document.getElementById('download-btn');
 
 let activeTab = 'transcription';
+let lastPlaceholderKey = 'results.placeholder.selectFile';
+let lastPlaceholderVars = null;
+let lastPlaceholderIcon = null;
+let lastPlaceholderRaw = null;
+
+function renderPlaceholder(message, iconChar) {
+    const icon = iconChar ? `<span class="icon">${iconChar}</span>` : '';
+    contentContainer.innerHTML = `<div class="placeholder">${icon}${message}</div>`;
+}
 
 function renderActiveTabContent() {
     const state = getState();
@@ -25,7 +34,7 @@ function renderActiveTabContent() {
         }
         if (downloadBtn) downloadBtn.disabled = false;
     } else {
-        showPlaceholder(`Aucun contenu pour l'onglet "${activeTab}".`);
+        showPlaceholderKey('results.placeholder.noContent', { activeTab });
     }
 }
 
@@ -42,7 +51,26 @@ export function setActiveTab(tabName) {
 }
 
 export function showPlaceholder(message) {
+    lastPlaceholderRaw = message;
+    lastPlaceholderKey = null;
+    lastPlaceholderVars = null;
+    lastPlaceholderIcon = null;
     contentContainer.innerHTML = `<div class="placeholder">${message}</div>`;
+}
+
+export function showPlaceholderKey(key, vars, iconChar) {
+    lastPlaceholderKey = key;
+    lastPlaceholderVars = vars || null;
+    lastPlaceholderIcon = iconChar || null;
+    lastPlaceholderRaw = null;
+    const message = window.i18n ? window.i18n.t(key, vars) : key;
+    renderPlaceholder(message, iconChar);
+}
+
+export function refreshPlaceholder() {
+    if (lastPlaceholderKey) {
+        renderPlaceholder(window.i18n.t(lastPlaceholderKey, lastPlaceholderVars), lastPlaceholderIcon);
+    }
 }
 
 export function updateTranscriptionView() {
@@ -65,6 +93,6 @@ function handleTabClick(event) {
 export function initResults() {
     tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
     if (downloadBtn) downloadBtn.addEventListener('click', downloadActiveResult);
-    showPlaceholder('Sélectionnez un fichier audio pour commencer.');
+    showPlaceholderKey('results.placeholder.selectFile');
     if (downloadBtn) downloadBtn.disabled = true;
 }

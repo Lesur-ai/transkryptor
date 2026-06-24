@@ -19,7 +19,7 @@ export async function getVersion() {
         return data.version;
     } catch (error) {
         console.error('Erreur lors de la récupération de la version.');
-        return '5.1.0';
+        return '5.2.0';
     }
 }
 

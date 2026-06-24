@@ -4,6 +4,17 @@ All notable changes to Transkryptor are documented in this file.
 
 This changelog was introduced in version 5.1.0 and backfills earlier releases from the Git tag history, project documentation, and the local project memory bank. Older entries are therefore less detailed than entries maintained from 5.1.0 onward.
 
+## [5.2.0] - 2026-06-24
+### Ajouté
+- Interface multilingue FR / EN (sélecteur en haut de la sidebar)
+- Module i18n vanilla maison (zéro dépendance)
+- Persistance de la langue choisie en localStorage (clé : transkryptor.ui.language)
+- Détection automatique de la langue du navigateur au premier lancement
+- Support du paramètre URL ?lang=fr|en pour forcer la langue (utile pour démos)
+### Modifié
+- Emojis extraits des chaînes traduisibles (préservés via <span class="icon">) pour garantir la robustesse de la traduction
+- Nom des fichiers exportés adapté à la langue active (transcription_xxx.txt vs transcript_xxx.txt)
+
 ## [5.1.0] - 2026-06-21
 
 ### Added
