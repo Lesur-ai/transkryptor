@@ -146,5 +146,29 @@
     "error": {
       "chunkTooSummarized": "Le morceau {chunkIndex} a été trop résumé."
     }
+  },
+  "prompts": {
+    "section": {
+      "title": "Prompts avancés"
+    },
+    "preset": {
+      "label": "Preset de synthèse",
+      "options": {
+        "executive": "Synthèse exécutive",
+        "meeting": "Compte-rendu de réunion",
+        "actions": "Actions et décisions",
+        "verbatim": "Verbatim corrigé",
+        "thematic": "Analyse thématique",
+        "custom": "Personnalisé"
+      }
+    },
+    "textarea": {
+      "label": "Prompt de synthèse",
+      "placeholder": "Saisissez votre prompt de synthèse personnalisé..."
+    },
+    "reset": {
+      "button": "Réinitialiser",
+      "confirm": "Réinitialiser le prompt de synthèse à la valeur par défaut ?"
+    }
   }
 }

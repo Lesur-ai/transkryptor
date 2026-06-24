@@ -4,6 +4,14 @@ All notable changes to Transkryptor are documented in this file.
 
 This changelog was introduced in version 5.1.0 and backfills earlier releases from the Git tag history, project documentation, and the local project memory bank. Older entries are therefore less detailed than entries maintained from 5.1.0 onward.
 
+## [5.3.0] - 2026-06-24
+### Ajouté
+- Section "Prompts avancés" repliée dans la sidebar (5 presets + mode personnalisé)
+- Persistance localStorage des préférences de prompt (clés transkryptor.synthesis.preset et transkryptor.synthesis.customPrompt)
+- Endpoint /api/synthesize accepte un customPrompt optionnel (validation longueur ≤ 8000 caractères)
+### Modifié
+- SYNTHESIS_PROMPT par défaut conservé (preset "executive") pour compatibilité ascendante
+
 ## [5.2.0] - 2026-06-24
 ### Ajouté
 - Interface multilingue FR / EN (sélecteur en haut de la sidebar)

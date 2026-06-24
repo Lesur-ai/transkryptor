@@ -11,7 +11,7 @@ const Logger = require('./logger');
 const app = express();
 
 // --- Lecture de la version depuis le fichier VERSION ---
-let APP_VERSION = '5.1.0';
+let APP_VERSION = '5.3.0';
 try {
     APP_VERSION = fs.readFileSync(path.join(__dirname, '../../VERSION'), 'utf-8').trim();
 } catch (e) {
@@ -294,8 +294,10 @@ const SYNTHESIS_PROMPT = `
 **Analyse à synthétiser :**
 `;
 
+const MAX_CUSTOM_PROMPT_LENGTH = 8000;
+
 app.post('/api/synthesize', async (req, res) => {
-    const { model, text, clientId } = req.body;
+    const { model, text, clientId, customPrompt } = req.body;
     const startTime = Date.now();
 
     if (!model || !text || !clientId) {
@@ -310,7 +312,17 @@ app.post('/api/synthesize', async (req, res) => {
         return res.status(400).json({ error: `Le modèle "${model}" n'est pas autorisé par Transkryptor.` });
     }
 
-    const fullPrompt = `${SYNTHESIS_PROMPT}\n\n${text}`;
+    let promptTemplate = SYNTHESIS_PROMPT;
+    if (typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
+        if (customPrompt.trim().length > MAX_CUSTOM_PROMPT_LENGTH) {
+            return res.status(400).json({
+                error: `Le prompt personnalisé dépasse la limite de ${MAX_CUSTOM_PROMPT_LENGTH} caractères.`
+            });
+        }
+        promptTemplate = customPrompt;
+    }
+
+    const fullPrompt = `${promptTemplate}\n\n${text}`;
 
     try {
         Logger.info(clientId, `Synthèse avec Cloud Temple (modèle: ${model})...`);

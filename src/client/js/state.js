@@ -15,7 +15,7 @@ const appState = {
     clientId: null,
 
     // Version de l'application (chargée depuis le serveur)
-    appVersion: '5.2.0',
+    appVersion: '5.3.0',
 
     // Résultats du traitement
     results: {
@@ -26,6 +26,12 @@ const appState = {
 
     // État du processus en cours
     processingState: 'idle', // 'idle', 'transcribing', 'analyzing', 'synthesizing', 'done', 'error'
+
+    // Preset de synthèse sélectionné (executive, meeting, actions, verbatim, thematic, custom)
+    synthesisPreset: 'executive',
+
+    // Prompt personnalisé saisi par l'utilisateur (utilisé uniquement quand synthesisPreset === 'custom')
+    customSynthesisPrompt: '',
 };
 
 /**

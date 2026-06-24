@@ -146,5 +146,29 @@
     "error": {
       "chunkTooSummarized": "Chunk {chunkIndex} was over-summarized."
     }
+  },
+  "prompts": {
+    "section": {
+      "title": "Advanced prompts"
+    },
+    "preset": {
+      "label": "Synthesis preset",
+      "options": {
+        "executive": "Executive synthesis",
+        "meeting": "Meeting minutes",
+        "actions": "Action items and decisions",
+        "verbatim": "Cleaned verbatim",
+        "thematic": "Thematic analysis",
+        "custom": "Custom"
+      }
+    },
+    "textarea": {
+      "label": "Synthesis prompt",
+      "placeholder": "Enter your custom synthesis prompt..."
+    },
+    "reset": {
+      "button": "Reset",
+      "confirm": "Reset the synthesis prompt to the default value?"
+    }
   }
 }

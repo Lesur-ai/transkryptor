@@ -19,7 +19,7 @@ export async function getVersion() {
         return data.version;
     } catch (error) {
         console.error('Erreur lors de la récupération de la version.');
-        return '5.2.0';
+        return '5.3.0';
     }
 }
 
@@ -115,11 +115,16 @@ export async function analyze(text, model, metadata = {}) {
  * Envoie le texte de l'analyse au backend pour synthèse via Cloud Temple.
  * @param {string} analysisText - Le texte de l'analyse.
  * @param {string} model - L'identifiant du modèle.
+ * @param {string} [customPrompt] - Prompt système personnalisé (optionnel).
+ *   Si vide ou absent, le serveur applique le prompt de synthèse par défaut.
  * @returns {Promise<object>} Le résultat de la synthèse.
  */
-export async function synthesize(analysisText, model) {
+export async function synthesize(analysisText, model, customPrompt) {
     const { clientId } = getState();
     const body = { text: analysisText, model, clientId };
+    if (typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
+        body.customPrompt = customPrompt;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/synthesize`, {

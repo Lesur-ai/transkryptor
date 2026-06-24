@@ -18,7 +18,7 @@
     </div>
     <div class="header-right">
         <span class="badge badge-info">SecNumCloud</span>
-        <span id="header-version" class="header-version">v5.2.0</span>
+        <span id="header-version" class="header-version">v5.3.0</span>
     </div>
 </div>
 
@@ -62,6 +62,35 @@
                 <button id="synthesize-btn" class="btn btn-accent btn-block" disabled><span class="icon">📝</span><span data-i18n="button.synthesize.label">Synthèse</span></button>
                 <button id="download-btn" class="btn btn-ghost btn-block" disabled><span class="icon">💾</span><span data-i18n="button.download.label">Télécharger</span></button>
             </div>
+
+            <!-- Prompts avancés -->
+            <details class="config-section advanced-prompts" id="advanced-prompts-section">
+                <summary class="advanced-prompts-summary">
+                    <span class="icon">🛠️</span>
+                    <span data-i18n="prompts.section.title">Prompts avancés</span>
+                </summary>
+                <div class="advanced-prompts-body">
+                    <label class="config-label" for="prompt-preset-selector" data-i18n="prompts.preset.label">Preset de synthèse</label>
+                    <select id="prompt-preset-selector">
+                        <option value="executive" data-i18n="prompts.preset.options.executive">Synthèse exécutive</option>
+                        <option value="meeting" data-i18n="prompts.preset.options.meeting">Compte-rendu de réunion</option>
+                        <option value="actions" data-i18n="prompts.preset.options.actions">Actions et décisions</option>
+                        <option value="verbatim" data-i18n="prompts.preset.options.verbatim">Verbatim corrigé</option>
+                        <option value="thematic" data-i18n="prompts.preset.options.thematic">Analyse thématique</option>
+                        <option value="custom" data-i18n="prompts.preset.options.custom">Personnalisé</option>
+                    </select>
+
+                    <label class="config-label" for="custom-prompt-input" data-i18n="prompts.textarea.label">Prompt de synthèse</label>
+                    <textarea
+                        id="custom-prompt-input"
+                        rows="8"
+                        data-i18n-attr-placeholder="prompts.textarea.placeholder"
+                        placeholder="Saisissez votre prompt de synthèse personnalisé..."
+                        readonly></textarea>
+
+                    <button type="button" id="reset-prompt-btn" class="btn btn-ghost btn-block" data-i18n="prompts.reset.button">Réinitialiser</button>
+                </div>
+            </details>
         </div>
 
         <div class="sidebar-footer">

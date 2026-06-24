@@ -12,6 +12,11 @@ import * as resultsUI from './ui/results.js';
 import * as statsUI from './ui/stats.js';
 import * as progressUI from './ui/progress.js';
 import * as chartUI from './ui/chart.js';
+import { SYNTHESIS_PROMPTS, DEFAULT_PRESET, PRESET_IDS, getPresetPrompt } from './prompts.js';
+
+// --- localStorage keys ---
+const LS_PRESET = 'transkryptor.synthesis.preset';
+const LS_CUSTOM_PROMPT = 'transkryptor.synthesis.customPrompt';
 
 // --- DOM Elements ---
 const modelSelect = document.getElementById('model-select');
@@ -235,7 +240,8 @@ async function handleSynthesize() {
         resultsUI.setActiveTab('synthesis');
         resultsUI.showPlaceholderKey('status.synthesis.generating', null, '📝');
 
-        const synthesisResult = await api.synthesize(state.results.analysis, state.selectedModel);
+        const effectivePrompt = getEffectiveSynthesisPrompt();
+        const synthesisResult = await api.synthesize(state.results.analysis, state.selectedModel, effectivePrompt);
 
         updateState({
             results: { ...state.results, synthesis: synthesisResult.synthesis },
@@ -323,8 +329,101 @@ async function initialize() {
         serverLogsContent.scrollTop = serverLogsContent.scrollHeight;
     };
 
+    // Init prompts avancés (presets + custom)
+    initAdvancedPrompts();
+
     // Charger les modèles
     updateModelList();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AXE 3 — Prompts de synthèse configurables
+// ─────────────────────────────────────────────────────────────────────────────
+
+function readPersistedPresetState() {
+    let preset = DEFAULT_PRESET;
+    let customPrompt = '';
+    try {
+        const storedPreset = localStorage.getItem(LS_PRESET);
+        if (storedPreset && PRESET_IDS.includes(storedPreset)) {
+            preset = storedPreset;
+        }
+        const storedCustom = localStorage.getItem(LS_CUSTOM_PROMPT);
+        if (typeof storedCustom === 'string') {
+            customPrompt = storedCustom;
+        }
+    } catch (e) {
+        // localStorage indisponible (mode privé, etc.) : fallback aux valeurs par défaut.
+    }
+    return { preset, customPrompt };
+}
+
+function persistPresetState(preset, customPrompt) {
+    try {
+        localStorage.setItem(LS_PRESET, preset);
+        localStorage.setItem(LS_CUSTOM_PROMPT, customPrompt || '');
+    } catch (e) {
+        // Silencieux : la persistance échoue, l'app reste fonctionnelle.
+    }
+}
+
+function applyPresetToTextarea(textarea, preset, customPrompt) {
+    if (preset === 'custom') {
+        textarea.readOnly = false;
+        textarea.value = customPrompt || '';
+    } else {
+        textarea.readOnly = true;
+        textarea.value = getPresetPrompt(preset).trim();
+    }
+}
+
+function getEffectiveSynthesisPrompt() {
+    const { synthesisPreset, customSynthesisPrompt } = getState();
+    if (synthesisPreset === 'custom') {
+        const trimmed = (customSynthesisPrompt || '').trim();
+        if (trimmed.length > 0) return customSynthesisPrompt;
+        return SYNTHESIS_PROMPTS[DEFAULT_PRESET];
+    }
+    return getPresetPrompt(synthesisPreset);
+}
+
+function initAdvancedPrompts() {
+    const presetSelector = document.getElementById('prompt-preset-selector');
+    const promptTextarea = document.getElementById('custom-prompt-input');
+    const resetBtn = document.getElementById('reset-prompt-btn');
+
+    if (!presetSelector || !promptTextarea || !resetBtn) return;
+
+    const { preset, customPrompt } = readPersistedPresetState();
+    updateState({ synthesisPreset: preset, customSynthesisPrompt: customPrompt });
+    presetSelector.value = preset;
+    applyPresetToTextarea(promptTextarea, preset, customPrompt);
+
+    presetSelector.addEventListener('change', (e) => {
+        const newPreset = e.target.value;
+        const state = getState();
+        updateState({ synthesisPreset: newPreset });
+        applyPresetToTextarea(promptTextarea, newPreset, state.customSynthesisPrompt);
+        persistPresetState(newPreset, state.customSynthesisPrompt);
+    });
+
+    promptTextarea.addEventListener('input', () => {
+        if (getState().synthesisPreset !== 'custom') return;
+        const newCustom = promptTextarea.value;
+        updateState({ customSynthesisPrompt: newCustom });
+        persistPresetState('custom', newCustom);
+    });
+
+    resetBtn.addEventListener('click', () => {
+        const confirmMsg = (window.i18n && typeof window.i18n.t === 'function')
+            ? window.i18n.t('prompts.reset.confirm')
+            : 'Réinitialiser le prompt de synthèse ?';
+        if (!window.confirm(confirmMsg)) return;
+        updateState({ synthesisPreset: DEFAULT_PRESET, customSynthesisPrompt: '' });
+        presetSelector.value = DEFAULT_PRESET;
+        applyPresetToTextarea(promptTextarea, DEFAULT_PRESET, '');
+        persistPresetState(DEFAULT_PRESET, '');
+    });
 }
 
 document.addEventListener('DOMContentLoaded', initialize);
