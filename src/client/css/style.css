@@ -1,4 +1,25 @@
 /* ==========================================================================
+   Newsreader — self-hosted (SIL OFL 1.1, voir src/client/fonts/OFL.txt)
+   Servi par express.static sous /fonts/. Aucune dépendance Google Fonts.
+   ========================================================================== */
+@font-face {
+    font-family: 'Newsreader';
+    font-style: normal;
+    font-weight: 400 600;
+    font-display: swap;
+    src: url('/fonts/Newsreader-Roman.woff2') format('woff2-variations'),
+         url('/fonts/Newsreader-Roman.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Newsreader';
+    font-style: italic;
+    font-weight: 400 500;
+    font-display: swap;
+    src: url('/fonts/Newsreader-Italic.woff2') format('woff2-variations'),
+         url('/fonts/Newsreader-Italic.woff2') format('woff2');
+}
+
+/* ==========================================================================
    Transkryptor — Design System lesur.ai
    Light main canvas + dark navy sidebar/header, cyan + amber accents.
    ========================================================================== */
