@@ -86,8 +86,15 @@
         });
 
         if (document.title !== undefined) {
-            const titleKey = resolveKey(translations[currentLang], 'page.title');
-            if (typeof titleKey === 'string') document.title = titleKey;
+            const brand = document.documentElement.getAttribute('data-brand');
+            const dict = translations[currentLang];
+            const brandTitle = brand === 'cloud-temple'
+                ? resolveKey(dict, 'page.titleCloudTemple')
+                : null;
+            const titleValue = (typeof brandTitle === 'string' && brandTitle)
+                ? brandTitle
+                : resolveKey(dict, 'page.title');
+            if (typeof titleValue === 'string') document.title = titleValue;
         }
 
         document.documentElement.setAttribute('lang', currentLang);

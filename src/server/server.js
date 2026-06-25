@@ -18,6 +18,20 @@ try {
     console.warn('Fichier VERSION non trouvé, utilisation de la version par défaut.');
 }
 
+// --- Branding : "lesur-ai" (défaut) ou "cloud-temple" (legacy) ---
+const SUPPORTED_BRANDS = ['lesur-ai', 'cloud-temple'];
+const BRAND = SUPPORTED_BRANDS.includes((process.env.BRAND || '').toLowerCase())
+    ? process.env.BRAND.toLowerCase()
+    : 'lesur-ai';
+
+const INDEX_TEMPLATE = fs.readFileSync(path.join(__dirname, '../client/index.html'), 'utf-8');
+
+function renderIndex(req, res) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(INDEX_TEMPLATE.replace(/__BRAND__/g, BRAND));
+}
+
 // --- Whitelist exacte des modèles autorisés depuis .env (ordre = priorité d'affichage) ---
 function parseAllowedModels(value) {
     const seen = new Set();
@@ -114,7 +128,8 @@ const upload = multer({ storage: storage });
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, '../client')));
+app.use(express.static(path.join(__dirname, '../client'), { index: false }));
+app.get(['/', '/index.html'], renderIndex);
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // --- API Endpoints ---
@@ -822,11 +837,9 @@ app.post('/api/diarize', async (req, res) => {
 });
 
 // --- Servir l'application Frontend ---
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/index.html'));
-});
+app.get('*', renderIndex);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    Logger.success('server', `Transkryptor v${APP_VERSION} démarré sur le port ${PORT}`);
+    Logger.success('server', `Transkryptor v${APP_VERSION} démarré sur le port ${PORT} (brand: ${BRAND})`);
 });

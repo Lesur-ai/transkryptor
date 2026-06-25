@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-brand="__BRAND__">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="page.title">Cloud Temple — Transkryptor</title>
+    <title>Transkryptor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap">
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/i18n.js"></script>
 </head>
@@ -12,12 +15,25 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <div class="header">
     <div class="header-brand">
-        <img src="/img/logo-cloudtemple.svg" alt="Cloud Temple" class="header-logo">
-        <span class="header-sep">|</span>
-        <h1>Transkryptor</h1>
+        <!-- lesur.ai brand — T-shape network mark from the design source -->
+        <svg class="brand-lesurai brand-mark" viewBox="-4 -4 44 38" aria-hidden="true" focusable="false">
+            <line x1="0" y1="0" x2="36" y2="0" stroke="currentColor" stroke-width="1.2" opacity="0.28"/>
+            <line x1="18" y1="0" x2="18" y2="30" stroke="currentColor" stroke-width="1.2" opacity="0.28"/>
+            <circle cx="0"  cy="0"  r="2.5" fill="#00A7C7"/>
+            <circle cx="36" cy="0"  r="2.5" fill="#00A7C7"/>
+            <circle cx="18" cy="0"  r="3.4" fill="#F59E0B"/>
+            <circle cx="18" cy="15" r="2"   fill="#F59E0B"/>
+            <circle cx="18" cy="30" r="2.5" fill="#FFFFFF"/>
+        </svg>
+        <h1 class="brand-lesurai">Transkryptor</h1>
+
+        <!-- Cloud Temple brand (legacy) -->
+        <img class="brand-cloudtemple header-logo" src="/img/logo-cloudtemple.svg" alt="Cloud Temple">
+        <span class="brand-cloudtemple header-sep">|</span>
+        <h1 class="brand-cloudtemple">Transkryptor</h1>
     </div>
     <div class="header-right">
-        <span class="badge badge-info">SecNumCloud</span>
+        <span class="brand-cloudtemple badge badge-info">SecNumCloud</span>
         <span id="header-version" class="header-version">v6.0.0</span>
     </div>
 </div>
@@ -145,11 +161,10 @@
                     <button type="button" id="reset-prompt-btn" class="btn btn-ghost btn-block" data-i18n="prompts.reset.button">Réinitialiser</button>
                 </div>
             </details>
-        </div>
 
-        <div class="sidebar-footer">
-            <div class="sidebar-footer-text">
-                © Christophe Lesur — Cloud Temple
+            <!-- Built with love — shown in both brands -->
+            <div class="sidebar-credit">
+                Built with <span class="sidebar-credit-heart" aria-hidden="true">❤️</span> by <a href="https://lesur.ai" target="_blank" rel="noopener noreferrer">lesur.ai</a>
             </div>
         </div>
     </aside>
@@ -235,6 +250,11 @@
             <div class="logs-content" id="server-logs-content"></div>
         </div>
     </div>
+</div>
+
+<!-- ═══════════════ PAGE CREDIT (lesur.ai brand only) ═══════════════ -->
+<div class="brand-lesurai page-credit">
+    Brought to you by <a href="https://lesur.ai" target="_blank" rel="noopener noreferrer">lesur.ai</a>
 </div>
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
