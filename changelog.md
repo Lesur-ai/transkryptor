@@ -11,6 +11,33 @@ Older entries are therefore less detailed than entries maintained from 5.1.0 onw
 
 ## [Unreleased]
 
+## [6.1.1] - 2026-06-25
+
+Transkryptor v6.1.1 is a documentation and installer hotfix for the v6.1
+visual refresh.
+
+### Added
+
+- `scripts/install.sh`, a macOS/Linux one-line installer intended for
+  `curl | bash` usage. It installs Transkryptor into the platform-appropriate
+  user directory, copies `.env.example` to `.env` when needed, runs `npm ci`,
+  starts the service on `localhost:3000`, and opens the default browser.
+- README documentation for the one-line installer, including macOS/Linux
+  install locations, override variables, and the current Windows recommendation
+  via WSL.
+- Release notes document at `docs/releases/v6.1.1.md`.
+
+### Changed
+
+- Bumped application metadata and client/server fallback versions to `6.1.1`.
+- Refreshed README content with the v6.1 design identity and corrected clone
+  URL for the `Lesur-ai/transkryptor` repository.
+
+### Fixed
+
+- Replaced the stale README screenshot with a current v6.1 lesur.ai UI capture
+  stored as a real PNG file.
+
 ## [6.1.0] - 2026-06-25
 
 Transkryptor v6.1.0 ships a full visual refresh of the web interface under the
@@ -314,7 +341,8 @@ LLM-based participant detection.
 
 - Released the v2.0.0 final version.
 
-[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...HEAD
+[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.1...HEAD
+[6.1.1]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.1.0...v6.0.0
 [5.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.0.0...v5.1.0

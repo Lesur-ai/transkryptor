@@ -11,6 +11,7 @@ A modern web platform for audio transcription, analysis, and synthesis — built
 - [Highlights](#highlights)
 - [Architecture](#architecture)
 - [Quick start](#quick-start)
+- [One-line installer](#one-line-installer)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Project layout](#project-layout)
@@ -24,6 +25,7 @@ A modern web platform for audio transcription, analysis, and synthesis — built
 - **Five synthesis presets** out of the box — executive summary, meeting minutes, action items, cleaned verbatim, thematic analysis — plus a fully custom prompt mode.
 - **Speaker diarization** (LLM-based). Identifies turns of speech from the transcript with optional speaker-count hinting, streamed live as it runs.
 - **Multilingual interface**: French and English UI; 15+ supported audio languages with auto-detection and an independent synthesis target language.
+- **lesur.ai visual identity**: current v6.1 refresh with the cream/navy/cyan/amber design system, self-hosted Newsreader typography, and local runtime assets.
 - **Real-time observability**: per-chunk progress grid, performance chart, live server logs over SSE.
 - **Cloud Temple LLMaaS backend**: all calls go through the sovereign SecNumCloud-qualified Cloud Temple API. No third-party LLM providers in the data path.
 - **Secure API gateway**: the API key lives server-side in environment variables and is never exposed to the browser.
@@ -41,7 +43,7 @@ browser ──► Node.js/Express gateway ──► Cloud Temple LLMaaS (Whisper
 **Prerequisites**: [Node.js](https://nodejs.org/) 18 or higher, and a Cloud Temple LLMaaS API key.
 
 ```bash
-git clone https://github.com/chrlesur/transkryptor.git
+git clone https://github.com/Lesur-ai/transkryptor.git
 cd transkryptor
 npm install
 cp .env.example .env
@@ -56,6 +58,34 @@ For development with auto-reload:
 ```bash
 npm run dev
 ```
+
+## One-line installer
+
+macOS and Linux can install, configure, start, and open Transkryptor with:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.1/scripts/install.sh | bash
+```
+
+The script installs the app into `~/Applications/Transkryptor` on macOS and `${XDG_DATA_HOME:-~/.local/share}/transkryptor` on Linux. It copies `.env.example` to `.env` when needed, runs `npm ci`, starts the service on <http://localhost:3000>, and opens the default browser.
+
+Useful overrides:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.1/scripts/install.sh -o /tmp/transkryptor-install.sh
+TRANSKRYPTOR_INSTALL_DIR="$HOME/Transkryptor" \
+TRANSKRYPTOR_REF="main" \
+TRANSKRYPTOR_OPEN_BROWSER="0" \
+bash /tmp/transkryptor-install.sh
+```
+
+On Windows, use WSL for now:
+
+```powershell
+wsl bash -lc "curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.1/scripts/install.sh | bash"
+```
+
+A native Windows installer should be a small PowerShell script that installs into `%LOCALAPPDATA%\Transkryptor`, runs `npm ci`, starts the Node service, and opens <http://localhost:3000>.
 
 ### Docker
 
@@ -106,6 +136,8 @@ transkryptor/
 ├── .env.example
 ├── docker-compose.yml
 ├── Dockerfile
+├── scripts/
+│   └── install.sh          # macOS/Linux one-line installer
 ├── package.json
 └── README.md
 ```

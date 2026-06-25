@@ -11,7 +11,7 @@ const Logger = require('./logger');
 const app = express();
 
 // --- Lecture de la version depuis le fichier VERSION ---
-let APP_VERSION = '6.0.0';
+let APP_VERSION = '6.1.1';
 try {
     APP_VERSION = fs.readFileSync(path.join(__dirname, '../../VERSION'), 'utf-8').trim();
 } catch (e) {
