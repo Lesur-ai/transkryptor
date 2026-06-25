@@ -35,6 +35,9 @@ visual refresh.
 
 ### Fixed
 
+- Interface language detection now reads the browser language preference list
+  (`navigator.languages`) before falling back to the default language, so the
+  French/English selector matches the user's browser settings on first load.
 - Replaced the stale README screenshot with a current v6.1 lesur.ai UI capture
   stored as a real PNG file.
 

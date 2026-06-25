@@ -18,20 +18,36 @@
     const translations = { fr: null, en: null };
     let currentLang = DEFAULT_LANG;
 
+    function normalizeSupportedLanguage(value) {
+        if (!value) return null;
+        const lang = String(value).trim().toLowerCase();
+        const primary = lang.split(/[-_]/)[0];
+        return SUPPORTED.includes(primary) ? primary : null;
+    }
+
     function detectLanguage() {
         try {
             const urlParams = new URLSearchParams(window.location.search);
-            const urlLang = urlParams.get('lang');
-            if (urlLang && SUPPORTED.includes(urlLang)) return urlLang;
+            const urlLang = normalizeSupportedLanguage(urlParams.get('lang'));
+            if (urlLang) return urlLang;
         } catch (_) {}
 
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored && SUPPORTED.includes(stored)) return stored;
+            const stored = normalizeSupportedLanguage(localStorage.getItem(STORAGE_KEY));
+            if (stored) return stored;
         } catch (_) {}
 
-        const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
-        return nav.startsWith('en') ? 'en' : DEFAULT_LANG;
+        const browserLanguages = [
+            ...Array.from(navigator.languages || []),
+            navigator.language,
+            navigator.userLanguage,
+        ];
+        for (const browserLang of browserLanguages) {
+            const supportedLang = normalizeSupportedLanguage(browserLang);
+            if (supportedLang) return supportedLang;
+        }
+
+        return DEFAULT_LANG;
     }
 
     function resolveKey(obj, key) {
