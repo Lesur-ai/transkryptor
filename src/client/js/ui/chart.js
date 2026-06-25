@@ -1,14 +1,25 @@
 /**
  * @file chart.js
  * @description Gère l'affichage du graphique de performance.
- * Transkryptor v5 — Couleurs adaptées au dark theme Cloud Temple.
+ * Lit les tokens couleur depuis les CSS variables — suit automatiquement le brand actif
+ * (data-brand="lesur-ai" → cyan, data-brand="cloud-temple" → vert legacy).
  */
 
 let performanceChart = null;
 
+function readToken(name, fallback) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+}
+
 export function initChart(canvasElement) {
     if (!canvasElement) return;
     const t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+    const line   = readToken('--chart-line', '#00A7C7');
+    const fill   = readToken('--chart-fill', 'rgba(0, 167, 199, 0.12)');
+    const axis   = readToken('--chart-axis', '#8B96A2');
+    const gridY  = readToken('--chart-grid-y', 'rgba(14, 20, 31, 0.06)');
+    const gridX  = readToken('--chart-grid-x', 'rgba(14, 20, 31, 0.04)');
     const ctx = canvasElement.getContext('2d');
     performanceChart = new Chart(ctx, {
         type: 'line',
@@ -17,12 +28,12 @@ export function initChart(canvasElement) {
             datasets: [{
                 label: t('chart.performance.speedLabel'),
                 data: [],
-                borderColor: '#41a890',
-                backgroundColor: 'rgba(65, 168, 144, 0.1)',
+                borderColor: line,
+                backgroundColor: fill,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 2,
-                pointBackgroundColor: '#41a890',
+                pointBackgroundColor: line,
                 borderWidth: 2,
             }]
         },
@@ -32,14 +43,14 @@ export function initChart(canvasElement) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: t('chart.performance.yAxisTitle'), color: '#666680', font: { size: 10 } },
-                    ticks: { color: '#666680', font: { size: 10 } },
-                    grid: { color: 'rgba(42,42,72,0.5)' }
+                    title: { display: true, text: t('chart.performance.yAxisTitle'), color: axis, font: { size: 10 } },
+                    ticks: { color: axis, font: { size: 10 } },
+                    grid: { color: gridY }
                 },
                 x: {
-                    title: { display: true, text: t('chart.performance.xAxisTitle'), color: '#666680', font: { size: 10 } },
-                    ticks: { color: '#666680', font: { size: 10 } },
-                    grid: { color: 'rgba(42,42,72,0.3)' }
+                    title: { display: true, text: t('chart.performance.xAxisTitle'), color: axis, font: { size: 10 } },
+                    ticks: { color: axis, font: { size: 10 } },
+                    grid: { color: gridX }
                 }
             },
             plugins: {

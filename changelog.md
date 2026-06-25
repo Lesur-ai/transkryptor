@@ -11,6 +11,71 @@ Older entries are therefore less detailed than entries maintained from 5.1.0 onw
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-06-25
+
+Transkryptor v6.1.0 ships a full visual refresh of the web interface under the
+lesur.ai design language while preserving the existing layout, every JS-bound
+ID and class, and the Cloud Temple LLMaaS backend integration.
+
+### Added
+
+- New lesur.ai design language: light cream main canvas, dark navy
+  sidebar/header/logs panel, cyan (#00A7C7) primary accent and amber
+  (#F59E0B) secondary accent, Newsreader serif for display text.
+- T-shape inline-SVG brand mark in the header (five nodes connected by a T
+  skeleton), faithful to the design source.
+- "Built with ❤️ by lesur.ai" credit beneath the *Advanced prompts* panel
+  with an external link to lesur.ai.
+- Chart color tokens exposed as CSS custom properties (`--chart-line`,
+  `--chart-fill`, `--chart-axis`, `--chart-grid-y`, `--chart-grid-x`) — the
+  performance chart reads them at init, so the chart follows the active
+  design palette automatically.
+- New `README.md` (English, now the default) and `README_FR.md` (French),
+  with language switcher links at the top. Content fully refreshed for the
+  v6 feature set: Cloud Temple-only backend, diarization, multilingual UI,
+  synthesis presets.
+- Chart.js (UMD) et marked sont self-hostés sous `src/client/vendor/`. Plus aucun chargement depuis cdn.jsdelivr.net.
+
+### Changed
+
+- Server renders `index.html` from an in-memory template at request time
+  (read once at startup, lightweight substitution per request). The static
+  middleware is now configured with `{ index: false }` so the renderer
+  always handles the document.
+- `chart.js` no longer hardcodes colors — it reads them from CSS variables
+  on `document.documentElement`.
+- `i18n.js` selects the page title based on the active design context.
+- Header tightened: 52px height, brand mark + serif "Transkryptor" wordmark,
+  version chip in the monospace style.
+- Mobile rule under 768px: the sidebar collapses to icon-only; the
+  diarization checkbox stays visible and the action button icons are
+  preserved (the previous attempt hid both unintentionally).
+
+### Removed
+
+- Stale v4.0.14 documentation files (`readme.md` and `README_EN.md` in
+  their previous form). They are replaced by the refreshed `README.md` /
+  `README_FR.md` pair.
+
+### Fixed
+
+- WCAG AA contrast restored on the diarization hint sentence inside the
+  dark sidebar.
+- Inline `code` spans inside results now use the canvas text color on the
+  cyan-tinted background instead of cyan-on-cyan.
+- `.chunk.pending` reuses `var(--border)` instead of a duplicate hard-coded
+  hex value.
+- Empty `.config-section {}` ruleset removed.
+- Newsreader Google Fonts request now also loads italic axes (the tagline
+  cut used to be a browser-synthesized oblique).
+
+### Notes
+
+- The Cloud Temple LLMaaS integration is unchanged. No new backend
+  dependency, no new external service.
+- Whisper, chat-completion, and diarization endpoints all keep their
+  v6.0.0 contracts. Existing `.env` files continue to work as-is.
+
 ## [6.0.0] - 2026-06-25
 
 Transkryptor v6.0.0 completes the Cloud Temple-only v5 line with a multilingual
@@ -249,7 +314,8 @@ LLM-based participant detection.
 
 - Released the v2.0.0 final version.
 
-[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...HEAD
+[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...HEAD
+[6.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.1.0...v6.0.0
 [5.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.0.0...v5.1.0
 [5.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v4.0.14...v5.0.0
