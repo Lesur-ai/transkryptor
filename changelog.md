@@ -11,6 +11,36 @@ Older entries are therefore less detailed than entries maintained from 5.1.0 onw
 
 ## [Unreleased]
 
+## [6.1.1] - 2026-06-25
+
+Transkryptor v6.1.1 is a documentation and installer hotfix for the v6.1
+visual refresh.
+
+### Added
+
+- `scripts/install.sh`, a macOS/Linux one-line installer intended for
+  `curl | bash` usage. It installs Transkryptor into the platform-appropriate
+  user directory, copies `.env.example` to `.env` when needed, runs `npm ci`,
+  starts the service on `localhost:3000`, and opens the default browser.
+- README documentation for the one-line installer, including macOS/Linux
+  install locations, override variables, and the current Windows recommendation
+  via WSL.
+- Release notes document at `docs/releases/v6.1.1.md`.
+
+### Changed
+
+- Bumped application metadata and client/server fallback versions to `6.1.1`.
+- Refreshed README content with the v6.1 design identity and corrected clone
+  URL for the `Lesur-ai/transkryptor` repository.
+
+### Fixed
+
+- Interface language detection now reads the browser language preference list
+  (`navigator.languages`) before falling back to the default language, so the
+  French/English selector matches the user's browser settings on first load.
+- Replaced the stale README screenshot with a current v6.1 lesur.ai UI capture
+  stored as a real PNG file.
+
 ## [6.1.0] - 2026-06-25
 
 Transkryptor v6.1.0 ships a full visual refresh of the web interface under the
@@ -34,7 +64,8 @@ ID and class, and the Cloud Temple LLMaaS backend integration.
   with language switcher links at the top. Content fully refreshed for the
   v6 feature set: Cloud Temple-only backend, diarization, multilingual UI,
   synthesis presets.
-- Chart.js (UMD) et marked sont self-hostés sous `src/client/vendor/`. Plus aucun chargement depuis cdn.jsdelivr.net.
+- Chart.js (UMD) and marked are self-hosted under `src/client/vendor/`;
+  runtime no longer loads them from cdn.jsdelivr.net.
 
 ### Changed
 
@@ -50,6 +81,10 @@ ID and class, and the Cloud Temple LLMaaS backend integration.
 - Mobile rule under 768px: the sidebar collapses to icon-only; the
   diarization checkbox stays visible and the action button icons are
   preserved (the previous attempt hid both unintentionally).
+- Cloud Temple LLMaaS integration remains unchanged: no new backend
+  dependency and no new external service.
+- Whisper, chat-completion, and diarization endpoints keep their v6.0.0
+  contracts. Existing `.env` files continue to work as-is.
 
 ### Removed
 
@@ -66,15 +101,8 @@ ID and class, and the Cloud Temple LLMaaS backend integration.
 - `.chunk.pending` reuses `var(--border)` instead of a duplicate hard-coded
   hex value.
 - Empty `.config-section {}` ruleset removed.
-- Newsreader Google Fonts request now also loads italic axes (the tagline
+- Self-hosted Newsreader now includes italic axes (the tagline
   cut used to be a browser-synthesized oblique).
-
-### Notes
-
-- The Cloud Temple LLMaaS integration is unchanged. No new backend
-  dependency, no new external service.
-- Whisper, chat-completion, and diarization endpoints all keep their
-  v6.0.0 contracts. Existing `.env` files continue to work as-is.
 
 ## [6.0.0] - 2026-06-25
 
@@ -314,7 +342,8 @@ LLM-based participant detection.
 
 - Released the v2.0.0 final version.
 
-[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...HEAD
+[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.1...HEAD
+[6.1.1]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.1.0...v6.0.0
 [5.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.0.0...v5.1.0

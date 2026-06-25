@@ -323,7 +323,10 @@ async function initialize() {
     }
 
     // Re-render des composants dynamiques en cas de changement de langue
-    window.addEventListener('i18nchange', () => {
+    window.addEventListener('i18nchange', (event) => {
+        if (langSelector && event.detail?.lang && langSelector.value !== event.detail.lang) {
+            langSelector.value = event.detail.lang;
+        }
         statsUI.refreshFileInfo();
         chartUI.refreshLabels();
         resultsUI.refreshPlaceholder();
