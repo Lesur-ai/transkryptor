@@ -37,7 +37,7 @@ function splitTextIntoChunks(text) {
     return chunks;
 }
 
-async function analyzeChunk({ chunk, model, chunkIndex, totalChunks, onProgress }, retries = 5) {
+async function analyzeChunk({ chunk, model, chunkIndex, totalChunks, onProgress, targetLanguage }, retries = 5) {
     try {
         const prompt = `Tu es un expert en correction de transcriptions audio. Tu dois nettoyer et corriger ce texte issu d'une reconnaissance vocale en :
 
@@ -83,12 +83,16 @@ Voici la transcription à corriger :
 
 ${chunk}`;
         const metadata = { chunkIndex, totalChunks, textPreview: chunk };
+        if (targetLanguage) metadata.targetLanguage = targetLanguage;
         const result = await api.analyze(prompt, model, metadata);
         const analyzedText = result.choices[0].message.content;
         const inputTokens = countTokens(chunk);
         const outputTokens = countTokens(analyzedText);
         if (inputTokens > 50 && (outputTokens / inputTokens) < 0.5) {
-            throw new Error(`Le morceau ${chunkIndex + 1} a été trop résumé.`);
+            const message = (typeof window !== 'undefined' && window.i18n)
+                ? window.i18n.t('analysis.error.chunkTooSummarized', { chunkIndex: chunkIndex + 1 })
+                : `Le morceau ${chunkIndex + 1} a été trop résumé.`;
+            throw new Error(message);
         }
         return analyzedText;
     } catch (error) {
@@ -96,13 +100,13 @@ ${chunk}`;
             onProgress({ type: 'chunk_retrying', chunkIndex });
             const waitTime = 2000 * (6 - retries);
             await new Promise(resolve => setTimeout(resolve, waitTime));
-            return analyzeChunk({ chunk, model, chunkIndex, totalChunks, onProgress }, retries - 1);
+            return analyzeChunk({ chunk, model, chunkIndex, totalChunks, onProgress, targetLanguage }, retries - 1);
         }
         throw error;
     }
 }
 
-export async function processAndAnalyzeInBatches({ text, model, onProgress, totalFileSize }) {
+export async function processAndAnalyzeInBatches({ text, model, onProgress, totalFileSize, targetLanguage }) {
     const chunks = splitTextIntoChunks(text);
     const totalChunks = chunks.length;
     const totalTokens = countTokens(text);
@@ -126,7 +130,8 @@ export async function processAndAnalyzeInBatches({ text, model, onProgress, tota
                         model,
                         chunkIndex: i,
                         totalChunks,
-                        onProgress
+                        onProgress,
+                        targetLanguage
                     });
                     allAnalyzedTexts[i] = analyzedText;
                     processedTokens += countTokens(chunkText);

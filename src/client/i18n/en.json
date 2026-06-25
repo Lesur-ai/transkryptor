@@ -1,0 +1,240 @@
+{
+  "page": {
+    "title": "Cloud Temple — Transkryptor"
+  },
+  "sidebar": {
+    "title": "Configuration"
+  },
+  "config": {
+    "model": {
+      "label": "Analysis model",
+      "loading": "Loading..."
+    },
+    "audio": {
+      "label": "Audio file",
+      "dropzone": {
+        "instruction": "Click or drag and drop"
+      }
+    }
+  },
+  "button": {
+    "process": {
+      "label": "Start processing"
+    },
+    "synthesize": {
+      "label": "Synthesis"
+    },
+    "download": {
+      "label": "Download"
+    }
+  },
+  "dashboard": {
+    "stat": {
+      "progress": {
+        "label": "Progress"
+      },
+      "speed": {
+        "label": "Speed"
+      },
+      "size": {
+        "label": "Processed size"
+      },
+      "elapsed": {
+        "label": "Elapsed time"
+      },
+      "avgtime": {
+        "label": "Avg. time"
+      }
+    }
+  },
+  "tabs": {
+    "transcription": {
+      "label": "Transcription"
+    },
+    "analysis": {
+      "label": "Analysis"
+    },
+    "synthesis": {
+      "label": "Synthesis"
+    },
+    "speakers": {
+      "label": "Speakers"
+    }
+  },
+  "logs": {
+    "header": {
+      "label": "Server logs"
+    },
+    "badge": {
+      "live": "Live"
+    }
+  },
+  "ui": {
+    "languageSelector": {
+      "label": "Interface language"
+    },
+    "models": {
+      "empty": "No model found",
+      "error": "Failed to load"
+    },
+    "process": {
+      "inProgress": "Processing..."
+    },
+    "synthesis": {
+      "inProgress": "Synthesizing..."
+    },
+    "download": {
+      "filenamePrefix": "transcript"
+    }
+  },
+  "validation": {
+    "audio": {
+      "required": "Please select an audio file."
+    },
+    "analysis": {
+      "required": "Please complete an analysis first."
+    }
+  },
+  "status": {
+    "transcription": {
+      "preparing": "Preparing audio file..."
+    },
+    "analysis": {
+      "inProgress": "Analyzing text..."
+    },
+    "synthesis": {
+      "generating": "Generating synthesis..."
+    }
+  },
+  "errors": {
+    "audio": {
+      "decodeFailure": "Unable to decode the audio file. It may be corrupted or in an unsupported format."
+    },
+    "processing": {
+      "generic": "Error: {errorMessage}"
+    },
+    "alert": "Error: {errorMessage}",
+    "synthesis": {
+      "failed": "Synthesis error: {errorMessage}",
+      "alert": "Synthesis error: {errorMessage}"
+    },
+    "download": {
+      "noContent": "No content to download for the \"{activeTab}\" tab."
+    }
+  },
+  "results": {
+    "placeholder": {
+      "selectFile": "Select an audio file to get started.",
+      "noContent": "No content for the \"{activeTab}\" tab."
+    }
+  },
+  "stats": {
+    "fileInfo": {
+      "channelsMono": "Mono",
+      "channelsStereo": "Stereo",
+      "duration": "Duration",
+      "sampleRate": "Sample rate",
+      "channels": "Channels"
+    }
+  },
+  "chart": {
+    "performance": {
+      "speedLabel": "Speed (chunks/s)",
+      "speedLabelTokens": "Speed (tokens/s)",
+      "yAxisTitle": "Speed",
+      "xAxisTitle": "Time (s)"
+    }
+  },
+  "analysis": {
+    "error": {
+      "chunkTooSummarized": "Chunk {chunkIndex} was over-summarized."
+    }
+  },
+  "prompts": {
+    "section": {
+      "title": "Advanced prompts"
+    },
+    "preset": {
+      "label": "Synthesis preset",
+      "options": {
+        "executive": "Executive synthesis",
+        "meeting": "Meeting minutes",
+        "actions": "Action items and decisions",
+        "verbatim": "Cleaned verbatim",
+        "thematic": "Thematic analysis",
+        "custom": "Custom"
+      }
+    },
+    "textarea": {
+      "label": "Synthesis prompt",
+      "placeholder": "Enter your custom synthesis prompt..."
+    },
+    "reset": {
+      "button": "Reset",
+      "confirm": "Reset the synthesis prompt to the default value?"
+    }
+  },
+  "language": {
+    "section": {
+      "label": "Languages"
+    },
+    "audio": {
+      "label": "Audio language",
+      "auto": "Auto-detect"
+    },
+    "synthesis": {
+      "label": "Synthesis language",
+      "auto": "Same as transcription"
+    },
+    "fr": { "name": "French" },
+    "en": { "name": "English" },
+    "es": { "name": "Spanish" },
+    "de": { "name": "German" },
+    "it": { "name": "Italian" },
+    "pt": { "name": "Portuguese" },
+    "nl": { "name": "Dutch" },
+    "pl": { "name": "Polish" },
+    "ru": { "name": "Russian" },
+    "ja": { "name": "Japanese" },
+    "zh": { "name": "Chinese" },
+    "ko": { "name": "Korean" },
+    "ar": { "name": "Arabic" },
+    "hi": { "name": "Hindi" },
+    "tr": { "name": "Turkish" }
+  },
+  "transcriptionLang": {
+    "detectedBadge": "Detected language: {lang}"
+  },
+  "synthesisTarget": {
+    "different": {
+      "warning": "The synthesis will be written in {targetLang} (different from the source language)."
+    }
+  },
+  "diarization": {
+    "toggle": {
+      "label": "Detect participants"
+    },
+    "speakerCount": {
+      "label": "Expected number of speakers",
+      "placeholder": "Empty = auto-detect"
+    },
+    "notice": "Detection via text analysis. Quality varies with content.",
+    "processing": "Identifying speakers...",
+    "processingWithTimer": "Identifying speakers ({time})",
+    "streamingProgress": "{count} turn(s) identified — {time} elapsed",
+    "processingHint": "Turns are identified in real time and appear below as they arrive. This can take 30 seconds to 2 minutes depending on transcript length.",
+    "error": "Speaker detection failed: {errorMessage}",
+    "noSegments": "Transcription returned no time segments. Speaker detection requires Whisper timestamps.",
+    "disabled": {
+      "message": "Enable participant detection to display this view."
+    }
+  },
+  "speakers": {
+    "rename": {
+      "placeholder": "Rename this speaker"
+    },
+    "timestamp": "[{start} - {end}]",
+    "coverageWarning": "Partial coverage: {covered} / {total} segments identified ({percentage}%)",
+    "coverageWarningHint": "Some audio segments were not attributed to a speaker — make sure you didn't miss an important passage."
+  }
+}

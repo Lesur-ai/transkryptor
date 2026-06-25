@@ -1,0 +1,240 @@
+{
+  "page": {
+    "title": "Cloud Temple — Transkryptor"
+  },
+  "sidebar": {
+    "title": "Configuration"
+  },
+  "config": {
+    "model": {
+      "label": "Modèle d'analyse",
+      "loading": "Chargement..."
+    },
+    "audio": {
+      "label": "Fichier Audio",
+      "dropzone": {
+        "instruction": "Cliquez ou glissez-déposez"
+      }
+    }
+  },
+  "button": {
+    "process": {
+      "label": "Lancer le Traitement"
+    },
+    "synthesize": {
+      "label": "Synthèse"
+    },
+    "download": {
+      "label": "Télécharger"
+    }
+  },
+  "dashboard": {
+    "stat": {
+      "progress": {
+        "label": "Progression"
+      },
+      "speed": {
+        "label": "Vitesse"
+      },
+      "size": {
+        "label": "Taille Traitée"
+      },
+      "elapsed": {
+        "label": "Temps Écoulé"
+      },
+      "avgtime": {
+        "label": "Tps. Moyen"
+      }
+    }
+  },
+  "tabs": {
+    "transcription": {
+      "label": "Transcription"
+    },
+    "analysis": {
+      "label": "Analyse"
+    },
+    "synthesis": {
+      "label": "Synthèse"
+    },
+    "speakers": {
+      "label": "Locuteurs"
+    }
+  },
+  "logs": {
+    "header": {
+      "label": "Logs du Serveur"
+    },
+    "badge": {
+      "live": "Live"
+    }
+  },
+  "ui": {
+    "languageSelector": {
+      "label": "Langue de l'interface"
+    },
+    "models": {
+      "empty": "Aucun modèle trouvé",
+      "error": "Erreur de chargement"
+    },
+    "process": {
+      "inProgress": "Traitement en cours..."
+    },
+    "synthesis": {
+      "inProgress": "Synthèse..."
+    },
+    "download": {
+      "filenamePrefix": "transcription"
+    }
+  },
+  "validation": {
+    "audio": {
+      "required": "Veuillez sélectionner un fichier audio."
+    },
+    "analysis": {
+      "required": "Veuillez d'abord terminer une analyse."
+    }
+  },
+  "status": {
+    "transcription": {
+      "preparing": "Préparation du fichier audio..."
+    },
+    "analysis": {
+      "inProgress": "Analyse du texte en cours..."
+    },
+    "synthesis": {
+      "generating": "Génération de la synthèse en cours..."
+    }
+  },
+  "errors": {
+    "audio": {
+      "decodeFailure": "Impossible de décoder le fichier audio. Il est peut-être corrompu ou dans un format non supporté."
+    },
+    "processing": {
+      "generic": "Erreur : {errorMessage}"
+    },
+    "alert": "Erreur : {errorMessage}",
+    "synthesis": {
+      "failed": "Erreur lors de la synthèse : {errorMessage}",
+      "alert": "Erreur de synthèse : {errorMessage}"
+    },
+    "download": {
+      "noContent": "Aucun contenu à télécharger pour l'onglet \"{activeTab}\"."
+    }
+  },
+  "results": {
+    "placeholder": {
+      "selectFile": "Sélectionnez un fichier audio pour commencer.",
+      "noContent": "Aucun contenu pour l'onglet \"{activeTab}\"."
+    }
+  },
+  "stats": {
+    "fileInfo": {
+      "channelsMono": "Mono",
+      "channelsStereo": "Stéréo",
+      "duration": "Durée",
+      "sampleRate": "Fréquence",
+      "channels": "Canaux"
+    }
+  },
+  "chart": {
+    "performance": {
+      "speedLabel": "Vitesse (chunks/s)",
+      "speedLabelTokens": "Vitesse (tokens/s)",
+      "yAxisTitle": "Vitesse",
+      "xAxisTitle": "Temps (s)"
+    }
+  },
+  "analysis": {
+    "error": {
+      "chunkTooSummarized": "Le morceau {chunkIndex} a été trop résumé."
+    }
+  },
+  "prompts": {
+    "section": {
+      "title": "Prompts avancés"
+    },
+    "preset": {
+      "label": "Preset de synthèse",
+      "options": {
+        "executive": "Synthèse exécutive",
+        "meeting": "Compte-rendu de réunion",
+        "actions": "Actions et décisions",
+        "verbatim": "Verbatim corrigé",
+        "thematic": "Analyse thématique",
+        "custom": "Personnalisé"
+      }
+    },
+    "textarea": {
+      "label": "Prompt de synthèse",
+      "placeholder": "Saisissez votre prompt de synthèse personnalisé..."
+    },
+    "reset": {
+      "button": "Réinitialiser",
+      "confirm": "Réinitialiser le prompt de synthèse à la valeur par défaut ?"
+    }
+  },
+  "language": {
+    "section": {
+      "label": "Langues"
+    },
+    "audio": {
+      "label": "Langue audio",
+      "auto": "Auto-détection"
+    },
+    "synthesis": {
+      "label": "Langue de synthèse",
+      "auto": "Identique à la transcription"
+    },
+    "fr": { "name": "Français" },
+    "en": { "name": "Anglais" },
+    "es": { "name": "Espagnol" },
+    "de": { "name": "Allemand" },
+    "it": { "name": "Italien" },
+    "pt": { "name": "Portugais" },
+    "nl": { "name": "Néerlandais" },
+    "pl": { "name": "Polonais" },
+    "ru": { "name": "Russe" },
+    "ja": { "name": "Japonais" },
+    "zh": { "name": "Chinois" },
+    "ko": { "name": "Coréen" },
+    "ar": { "name": "Arabe" },
+    "hi": { "name": "Hindi" },
+    "tr": { "name": "Turc" }
+  },
+  "transcriptionLang": {
+    "detectedBadge": "Langue détectée : {lang}"
+  },
+  "synthesisTarget": {
+    "different": {
+      "warning": "La synthèse sera rédigée en {targetLang} (différente de la langue source)."
+    }
+  },
+  "diarization": {
+    "toggle": {
+      "label": "Détecter les participants"
+    },
+    "speakerCount": {
+      "label": "Nombre attendu de locuteurs",
+      "placeholder": "Vide = détection automatique"
+    },
+    "notice": "Détection par analyse textuelle. Qualité variable selon le contenu.",
+    "processing": "Identification des locuteurs en cours...",
+    "processingWithTimer": "Identification des locuteurs en cours ({time})",
+    "streamingProgress": "{count} tour(s) de parole identifié(s) — {time} écoulées",
+    "processingHint": "Les tours sont identifiés en temps réel et apparaissent ci-dessous au fur et à mesure. Cela peut prendre 30 secondes à 2 minutes selon la longueur.",
+    "error": "Échec de la détection des locuteurs : {errorMessage}",
+    "noSegments": "Aucun segment temporel n'a été retourné par la transcription. La détection des locuteurs nécessite des timestamps Whisper.",
+    "disabled": {
+      "message": "Activez la détection des participants pour voir cette vue."
+    }
+  },
+  "speakers": {
+    "rename": {
+      "placeholder": "Renommer ce locuteur"
+    },
+    "timestamp": "[{start} - {end}]",
+    "coverageWarning": "Couverture partielle : {covered} / {total} segments identifiés ({percentage}%)",
+    "coverageWarningHint": "Certains segments audio n'ont pas été attribués à un locuteur — vérifiez que vous n'avez pas manqué un passage important."
+  }
+}

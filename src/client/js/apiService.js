@@ -19,7 +19,7 @@ export async function getVersion() {
         return data.version;
     } catch (error) {
         console.error('Erreur lors de la récupération de la version.');
-        return '5.1.0';
+        return '6.0.0';
     }
 }
 
@@ -59,6 +59,7 @@ export async function transcribe(file, metadata = {}) {
     if (metadata.originalFileName) formData.append('originalFileName', metadata.originalFileName);
     if (metadata.originalFileType) formData.append('originalFileType', metadata.originalFileType);
     if (metadata.originalFileSize) formData.append('originalFileSize', metadata.originalFileSize);
+    if (metadata.language) formData.append('language', metadata.language);
 
     try {
         const controller = new AbortController();
@@ -88,10 +89,15 @@ export async function transcribe(file, metadata = {}) {
  * @param {string} text - Le texte à analyser.
  * @param {string} model - L'identifiant du modèle.
  * @param {object} [metadata={}] - Métadonnées additionnelles.
+ *   Peut contenir `targetLanguage` (ISO 639-1) pour que la sortie soit dans
+ *   cette langue. Sans, l'analyse reste dans la langue source.
  * @returns {Promise<object>} Le résultat de l'analyse.
  */
 export async function analyze(text, model, metadata = {}) {
     const { clientId } = getState();
+    // `metadata` est spread dans le body : si elle contient `targetLanguage`,
+    // il est automatiquement transmis au backend qui préfixera une instruction
+    // de langue dans le prompt.
     const body = { text, model, ...metadata, clientId };
 
     try {
@@ -115,11 +121,19 @@ export async function analyze(text, model, metadata = {}) {
  * Envoie le texte de l'analyse au backend pour synthèse via Cloud Temple.
  * @param {string} analysisText - Le texte de l'analyse.
  * @param {string} model - L'identifiant du modèle.
+ * @param {string} [customPrompt] - Prompt système personnalisé (optionnel).
+ *   Si vide ou absent, le serveur applique le prompt de synthèse par défaut.
+ * @param {string} [targetLanguage] - Code ISO 639-1 de la langue de synthèse souhaitée.
+ *   Ignoré côté serveur si customPrompt est fourni.
  * @returns {Promise<object>} Le résultat de la synthèse.
  */
-export async function synthesize(analysisText, model) {
+export async function synthesize(analysisText, model, customPrompt, targetLanguage) {
     const { clientId } = getState();
     const body = { text: analysisText, model, clientId };
+    if (typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
+        body.customPrompt = customPrompt;
+    }
+    if (targetLanguage) body.targetLanguage = targetLanguage;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/synthesize`, {
@@ -136,4 +150,92 @@ export async function synthesize(analysisText, model) {
         console.error('Erreur lors de la synthèse.');
         throw error;
     }
+}
+
+/**
+ * Diarization LLM-based en STREAMING (AXE 4 — v6.0).
+ *
+ * Le backend renvoie un flux Server-Sent Events ; chaque événement "turn"
+ * porte un tour de parole parsé en temps réel pendant que le LLM le génère.
+ * Les callbacks permettent de mettre à jour l'UI à mesure que les tours
+ * arrivent — pas d'attente de la réponse complète.
+ *
+ * @param {string} transcriptionText
+ * @param {Array<object>} segments
+ * @param {string} model
+ * @param {number|null} speakerCount
+ * @param {object} callbacks - {onStart, onTurn, onComplete, onError}
+ * @returns {Promise<object>} payload de l'event "complete" si réussi, sinon throw.
+ */
+export async function diarizeStream(transcriptionText, segments, model, speakerCount, callbacks) {
+    const cb = callbacks || {};
+    const { clientId } = getState();
+    const body = {
+        text: transcriptionText,
+        segments: segments || [],
+        model,
+        clientId,
+    };
+    if (speakerCount !== null && speakerCount !== undefined && speakerCount > 0) {
+        body.speakerCount = speakerCount;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/diarize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok || !response.body) {
+        let errMsg = `Erreur HTTP: ${response.status}`;
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) errMsg = errorData.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let lastComplete = null;
+    let lastErrorMessage = null;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let nlIdx;
+        while ((nlIdx = buffer.indexOf('\n\n')) !== -1) {
+            const rawEvent = buffer.slice(0, nlIdx);
+            buffer = buffer.slice(nlIdx + 2);
+
+            const lines = rawEvent.split('\n');
+            let eventName = 'message';
+            let dataStr = '';
+            for (const line of lines) {
+                if (line.startsWith('event: ')) eventName = line.slice(7).trim();
+                else if (line.startsWith('data: ')) dataStr += line.slice(6);
+            }
+            if (!dataStr) continue;
+
+            let data;
+            try { data = JSON.parse(dataStr); } catch (_) { continue; }
+
+            if (eventName === 'start' && cb.onStart) cb.onStart(data);
+            else if (eventName === 'turn' && cb.onTurn) cb.onTurn(data);
+            else if (eventName === 'complete') {
+                lastComplete = data;
+                if (cb.onComplete) cb.onComplete(data);
+            } else if (eventName === 'error') {
+                lastErrorMessage = (data && data.message) || 'Erreur diarization';
+                if (cb.onError) cb.onError(data);
+            }
+        }
+    }
+
+    if (lastErrorMessage) throw new Error(lastErrorMessage);
+    if (!lastComplete) throw new Error('Diarization terminée sans événement complete.');
+    return lastComplete;
 }

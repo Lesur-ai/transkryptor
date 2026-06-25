@@ -5,6 +5,7 @@
  */
 
 const dashboard = document.getElementById('dashboard');
+let lastFileInfo = {};
 
 export function showStats() {
     if (dashboard) dashboard.style.display = 'flex';
@@ -34,36 +35,44 @@ export function updateStatLabel(statKey, newLabel) {
 }
 
 export function renderFileInfo(info) {
+    lastFileInfo = info || {};
     const fileInfoRow = document.getElementById('file-info-row');
     if (!fileInfoRow) return;
 
+    const t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
     const duration = info.duration ? `${info.duration.toFixed(1)}s` : '—';
     const sampleRate = info.sampleRate ? `${info.sampleRate / 1000}kHz` : '—';
-    const channels = info.channels ? (info.channels === 1 ? 'Mono' : 'Stéréo') : '—';
+    const channels = info.channels
+        ? (info.channels === 1 ? t('stats.fileInfo.channelsMono') : t('stats.fileInfo.channelsStereo'))
+        : '—';
 
     fileInfoRow.innerHTML = `
         <div class="file-info-card">
             <div class="stat-icon">🕐</div>
             <div class="stat-info">
-                <div class="stat-label">Durée</div>
+                <div class="stat-label">${t('stats.fileInfo.duration')}</div>
                 <div class="stat-value">${duration}</div>
             </div>
         </div>
         <div class="file-info-card">
             <div class="stat-icon">🔊</div>
             <div class="stat-info">
-                <div class="stat-label">Fréquence</div>
+                <div class="stat-label">${t('stats.fileInfo.sampleRate')}</div>
                 <div class="stat-value">${sampleRate}</div>
             </div>
         </div>
         <div class="file-info-card">
             <div class="stat-icon">🎧</div>
             <div class="stat-info">
-                <div class="stat-label">Canaux</div>
+                <div class="stat-label">${t('stats.fileInfo.channels')}</div>
                 <div class="stat-value">${channels}</div>
             </div>
         </div>
     `;
+}
+
+export function refreshFileInfo() {
+    renderFileInfo(lastFileInfo);
 }
 
 export function initStats() {

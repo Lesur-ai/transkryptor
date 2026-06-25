@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Temple — Transkryptor</title>
+    <title data-i18n="page.title">Cloud Temple — Transkryptor</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -17,7 +18,7 @@
     </div>
     <div class="header-right">
         <span class="badge badge-info">SecNumCloud</span>
-        <span id="header-version" class="header-version">v5.1.0</span>
+        <span id="header-version" class="header-version">v6.0.0</span>
     </div>
 </div>
 
@@ -26,34 +27,124 @@
 
     <!-- Sidebar -->
     <aside class="sidebar">
-        <div class="sidebar-title">Configuration</div>
+        <div class="lang-selector">
+            <label for="ui-language-selector" data-i18n-attr-title="ui.languageSelector.label"><span class="icon">🌐</span></label>
+            <select id="ui-language-selector" data-i18n-attr-aria-label="ui.languageSelector.label">
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <div class="sidebar-title" data-i18n="sidebar.title">Configuration</div>
         <div class="sidebar-content">
 
             <!-- Modèle -->
             <div class="config-section">
-                <div class="config-label">🤖 Modèle d'analyse</div>
+                <div class="config-label"><span class="icon">🤖</span><span data-i18n="config.model.label">Modèle d'analyse</span></div>
                 <select id="model-select">
-                    <option>Chargement...</option>
+                    <option data-i18n="config.model.loading">Chargement...</option>
                 </select>
             </div>
 
             <!-- Fichier Audio -->
             <div class="config-section">
-                <div class="config-label">🎙️ Fichier Audio</div>
+                <div class="config-label"><span class="icon">🎙️</span><span data-i18n="config.audio.label">Fichier Audio</span></div>
                 <label for="audio-file" class="file-drop-zone" id="file-drop-zone">
                     <div class="file-drop-icon">📁</div>
-                    <span id="file-name">Cliquez ou glissez-déposez</span>
+                    <span id="file-name" data-i18n="config.audio.dropzone.instruction">Cliquez ou glissez-déposez</span>
                     <span class="file-drop-hint">MP3, WAV, M4A</span>
                 </label>
                 <input type="file" id="audio-file" accept=".mp3,.wav,.m4a">
             </div>
 
+            <!-- Langues -->
+            <div class="config-section">
+                <div class="config-label"><span class="icon">🌍</span><span data-i18n="language.section.label">Langues</span></div>
+                <label class="config-sublabel" for="audio-language-selector" data-i18n="language.audio.label">Langue audio</label>
+                <select id="audio-language-selector">
+                    <option value="" data-i18n="language.audio.auto">Auto-détection</option>
+                    <option value="fr" data-i18n="language.fr.name">Français</option>
+                    <option value="en" data-i18n="language.en.name">Anglais</option>
+                    <option value="es" data-i18n="language.es.name">Espagnol</option>
+                    <option value="de" data-i18n="language.de.name">Allemand</option>
+                    <option value="it" data-i18n="language.it.name">Italien</option>
+                    <option value="pt" data-i18n="language.pt.name">Portugais</option>
+                    <option value="nl" data-i18n="language.nl.name">Néerlandais</option>
+                    <option value="pl" data-i18n="language.pl.name">Polonais</option>
+                    <option value="ru" data-i18n="language.ru.name">Russe</option>
+                    <option value="ja" data-i18n="language.ja.name">Japonais</option>
+                    <option value="zh" data-i18n="language.zh.name">Chinois</option>
+                    <option value="ko" data-i18n="language.ko.name">Coréen</option>
+                    <option value="ar" data-i18n="language.ar.name">Arabe</option>
+                    <option value="hi" data-i18n="language.hi.name">Hindi</option>
+                    <option value="tr" data-i18n="language.tr.name">Turc</option>
+                </select>
+                <label class="config-sublabel" for="synthesis-language-selector" data-i18n="language.synthesis.label">Langue de synthèse</label>
+                <select id="synthesis-language-selector">
+                    <option value="auto" data-i18n="language.synthesis.auto">Identique à la transcription</option>
+                    <option value="fr" data-i18n="language.fr.name">Français</option>
+                    <option value="en" data-i18n="language.en.name">Anglais</option>
+                    <option value="es" data-i18n="language.es.name">Espagnol</option>
+                    <option value="de" data-i18n="language.de.name">Allemand</option>
+                    <option value="it" data-i18n="language.it.name">Italien</option>
+                    <option value="pt" data-i18n="language.pt.name">Portugais</option>
+                    <option value="nl" data-i18n="language.nl.name">Néerlandais</option>
+                    <option value="ja" data-i18n="language.ja.name">Japonais</option>
+                    <option value="zh" data-i18n="language.zh.name">Chinois</option>
+                    <option value="ru" data-i18n="language.ru.name">Russe</option>
+                    <option value="ar" data-i18n="language.ar.name">Arabe</option>
+                </select>
+                <div id="detected-language-badge" class="detected-language-badge" hidden></div>
+            </div>
+
+            <!-- Détection des participants (diarization LLM-based, AXE 4) -->
+            <div class="config-section">
+                <div class="config-label">
+                    <input type="checkbox" id="diarization-toggle">
+                    <label for="diarization-toggle" data-i18n="diarization.toggle.label">Détecter les participants</label>
+                </div>
+                <input type="number" id="diarization-speaker-count" min="0" max="20"
+                       data-i18n-attr-placeholder="diarization.speakerCount.placeholder"
+                       placeholder="Vide = détection automatique" disabled>
+                <div class="config-hint" data-i18n="diarization.notice">
+                    Détection par analyse textuelle. Qualité variable selon le contenu.
+                </div>
+            </div>
+
             <!-- Actions -->
             <div class="sidebar-actions">
-                <button id="process-btn" class="btn btn-primary btn-block">🚀 Lancer le Traitement</button>
-                <button id="synthesize-btn" class="btn btn-accent btn-block" disabled>📝 Synthèse</button>
-                <button id="download-btn" class="btn btn-ghost btn-block" disabled>💾 Télécharger</button>
+                <button id="process-btn" class="btn btn-primary btn-block"><span class="icon">🚀</span><span data-i18n="button.process.label">Lancer le Traitement</span></button>
+                <button id="synthesize-btn" class="btn btn-accent btn-block" disabled><span class="icon">📝</span><span data-i18n="button.synthesize.label">Synthèse</span></button>
+                <button id="download-btn" class="btn btn-ghost btn-block" disabled><span class="icon">💾</span><span data-i18n="button.download.label">Télécharger</span></button>
             </div>
+
+            <!-- Prompts avancés -->
+            <details class="config-section advanced-prompts" id="advanced-prompts-section">
+                <summary class="advanced-prompts-summary">
+                    <span class="icon">🛠️</span>
+                    <span data-i18n="prompts.section.title">Prompts avancés</span>
+                </summary>
+                <div class="advanced-prompts-body">
+                    <label class="config-label" for="prompt-preset-selector" data-i18n="prompts.preset.label">Preset de synthèse</label>
+                    <select id="prompt-preset-selector">
+                        <option value="executive" data-i18n="prompts.preset.options.executive">Synthèse exécutive</option>
+                        <option value="meeting" data-i18n="prompts.preset.options.meeting">Compte-rendu de réunion</option>
+                        <option value="actions" data-i18n="prompts.preset.options.actions">Actions et décisions</option>
+                        <option value="verbatim" data-i18n="prompts.preset.options.verbatim">Verbatim corrigé</option>
+                        <option value="thematic" data-i18n="prompts.preset.options.thematic">Analyse thématique</option>
+                        <option value="custom" data-i18n="prompts.preset.options.custom">Personnalisé</option>
+                    </select>
+
+                    <label class="config-label" for="custom-prompt-input" data-i18n="prompts.textarea.label">Prompt de synthèse</label>
+                    <textarea
+                        id="custom-prompt-input"
+                        rows="8"
+                        data-i18n-attr-placeholder="prompts.textarea.placeholder"
+                        placeholder="Saisissez votre prompt de synthèse personnalisé..."
+                        readonly></textarea>
+
+                    <button type="button" id="reset-prompt-btn" class="btn btn-ghost btn-block" data-i18n="prompts.reset.button">Réinitialiser</button>
+                </div>
+            </details>
         </div>
 
         <div class="sidebar-footer">
@@ -73,35 +164,35 @@
                     <div class="stat-card">
                         <div class="stat-icon">📊</div>
                         <div class="stat-info">
-                            <div class="stat-label">Progression</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.progress.label">Progression</div>
                             <div class="stat-value" id="stat-progress">—</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">⚡</div>
                         <div class="stat-info">
-                            <div class="stat-label">Vitesse</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.speed.label">Vitesse</div>
                             <div class="stat-value" id="stat-speed">—</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📦</div>
                         <div class="stat-info">
-                            <div class="stat-label" id="stat-size-label">Taille Traitée</div>
+                            <div class="stat-label" id="stat-size-label" data-i18n="dashboard.stat.size.label">Taille Traitée</div>
                             <div class="stat-value" id="stat-size">—</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">⏱️</div>
                         <div class="stat-info">
-                            <div class="stat-label">Temps Écoulé</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.elapsed.label">Temps Écoulé</div>
                             <div class="stat-value" id="stat-time">0s</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📈</div>
                         <div class="stat-info">
-                            <div class="stat-label">Tps. Moyen</div>
+                            <div class="stat-label" data-i18n="dashboard.stat.avgtime.label">Tps. Moyen</div>
                             <div class="stat-value" id="stat-avg-time">—</div>
                         </div>
                     </div>
@@ -123,13 +214,14 @@
             <div class="card results-card">
                 <div class="results-header">
                     <div class="results-tabs">
-                        <div class="tab active" data-tab="transcription">🎙️ Transcription</div>
-                        <div class="tab" data-tab="analysis">🔍 Analyse</div>
-                        <div class="tab" data-tab="synthesis">📝 Synthèse</div>
+                        <div class="tab active" data-tab="transcription"><span class="icon">🎙️</span><span data-i18n="tabs.transcription.label">Transcription</span></div>
+                        <div class="tab" data-tab="analysis"><span class="icon">🔍</span><span data-i18n="tabs.analysis.label">Analyse</span></div>
+                        <div class="tab" data-tab="synthesis"><span class="icon">📝</span><span data-i18n="tabs.synthesis.label">Synthèse</span></div>
+                        <div class="tab" data-tab="speakers"><span class="icon">🗣️</span><span data-i18n="tabs.speakers.label">Locuteurs</span></div>
                     </div>
                 </div>
                 <div class="tab-content" id="tab-content-container">
-                    <div class="placeholder">Sélectionnez un fichier audio pour commencer.</div>
+                    <div class="placeholder" data-i18n="results.placeholder.selectFile">Sélectionnez un fichier audio pour commencer.</div>
                 </div>
             </div>
         </div>
@@ -137,8 +229,8 @@
         <!-- Server Logs -->
         <div class="logs-panel">
             <div class="logs-header">
-                <span>📡 Logs du Serveur</span>
-                <span class="badge badge-ok">Live</span>
+                <span><span class="icon">📡</span><span data-i18n="logs.header.label">Logs du Serveur</span></span>
+                <span class="badge badge-ok" data-i18n="logs.badge.live">Live</span>
             </div>
             <div class="logs-content" id="server-logs-content"></div>
         </div>

@@ -23,6 +23,40 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ═══ i18n LANGUAGE SELECTOR ═══ */
+.lang-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+}
+.lang-selector label {
+    color: var(--text2);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: help;
+}
+.lang-selector select {
+    flex: 1;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.lang-selector select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+.icon {
+    display: inline-block;
+    margin-right: 4px;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
@@ -124,6 +158,34 @@ body {
     font-weight: 600;
     color: var(--text2);
     margin-bottom: 0.5rem;
+}
+
+.config-sublabel {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text2);
+    margin: 0.6rem 0 0.3rem;
+    opacity: 0.85;
+}
+
+.config-sublabel:first-of-type {
+    margin-top: 0;
+}
+
+.detected-language-badge {
+    display: inline-block;
+    margin-top: 0.6rem;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(65, 168, 144, 0.18);
+    color: var(--accent);
+    border: 1px solid rgba(65, 168, 144, 0.35);
+    border-radius: var(--radius);
+}
+
+.detected-language-badge[hidden] {
+    display: none;
 }
 
 /* ═══ FORMS ═══ */
@@ -552,3 +614,187 @@ input[type="file"] { display: none; }
 
 /* ═══ UTILS ═══ */
 .hidden { display: none !important; }
+
+/* ═══ DIARIZATION / SPEAKERS (AXE 4 — v6.0) ═══ */
+.config-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    margin-top: 0.4rem;
+    line-height: 1.35;
+}
+#diarization-speaker-count {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255,255,255,0.04);
+    color: inherit;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+#diarization-speaker-count:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.speakers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+.speaker-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+}
+.speaker-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.speaker-name-input {
+    flex: 1;
+    background: transparent;
+    color: inherit;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 0.25rem 0.4rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    min-width: 0;
+}
+.speaker-name-input:hover,
+.speaker-name-input:focus {
+    border-color: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.05);
+    outline: none;
+}
+.speaker-card-time {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+}
+.speaker-card-body {
+    line-height: 1.55;
+}
+
+/* Diarization — feedback de progression animé pendant l'appel LLM (peut durer 30s-2min) */
+.diarization-progress {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    text-align: left;
+    max-width: 640px;
+    margin: 0 auto;
+}
+.diarization-spinner {
+    display: inline-block;
+    font-size: 2.4em;
+    line-height: 1;
+    animation: diar-pulse 1.4s ease-in-out infinite;
+}
+@keyframes diar-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.55; }
+    50%      { transform: scale(1.18); opacity: 1; }
+}
+.diarization-progress-text strong {
+    display: block;
+    margin-bottom: 6px;
+}
+.diarization-progress-text strong::after {
+    content: '';
+    display: inline-block;
+    width: 1.4em;
+    text-align: left;
+    animation: diar-dots 1.5s steps(4, end) infinite;
+}
+@keyframes diar-dots {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+    100% { content: ''; }
+}
+.diarization-progress-hint {
+    font-size: 0.9em;
+    opacity: 0.7;
+    margin: 0;
+}
+.diarization-streaming {
+    margin-bottom: 16px;
+    border-bottom: 1px dashed var(--border, #444);
+    padding-bottom: 16px;
+}
+.speakers-list-streaming {
+    opacity: 0.95;
+}
+.speaker-card-streaming {
+    animation: speaker-fade-in 0.4s ease-out both;
+}
+@keyframes speaker-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.speaker-card-name {
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+/* Bandeau warning quand la diarization LLM n'a couvert qu'une partie des
+ * segments Whisper (50% ≤ couverture < 100% côté serveur). Teinte orangée
+ * cohérente avec un avertissement, bordure gauche épaisse pour attirer
+ * l'œil sur fond dark theme sans agresser. */
+.diarization-coverage-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: rgba(255, 168, 76, 0.18);
+    border: 1px solid rgba(255, 168, 76, 0.45);
+    border-left: 4px solid #ffa84c;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    color: inherit;
+    box-shadow: 0 2px 12px rgba(255, 168, 76, 0.12);
+}
+.diarization-coverage-warning .icon {
+    font-size: 1.4em;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+.diarization-coverage-warning-text {
+    flex: 1;
+    min-width: 0;
+}
+.diarization-coverage-warning-text strong {
+    display: block;
+    color: #ffb86c;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.diarization-coverage-warning-hint {
+    font-size: 0.85em;
+    opacity: 0.85;
+    margin: 0;
+    line-height: 1.4;
+}
+/* Pastille de warning sur l'onglet "Locuteurs" quand couverture partielle.
+   Visible même si l'utilisateur est sur un autre onglet. */
+.tab .coverage-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    background: #ffa84c;
+    color: #1a1a1a;
+    font-size: 0.7em;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    line-height: 1.5;
+    box-shadow: 0 0 6px rgba(255, 168, 76, 0.55);
+    cursor: help;
+}

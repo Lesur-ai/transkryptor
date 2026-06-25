@@ -4,6 +4,56 @@ All notable changes to Transkryptor are documented in this file.
 
 This changelog was introduced in version 5.1.0 and backfills earlier releases from the Git tag history, project documentation, and the local project memory bank. Older entries are therefore less detailed than entries maintained from 5.1.0 onward.
 
+## [6.0.0] - 2026-06-24
+### Ajouté
+- Détection de participants OPTIONNELLE basée sur analyse textuelle LLM via Cloud Temple (100% SecNumCloud, sans Docker ni Python)
+- Nouveau toggle "Détecter les participants" + champ optionnel "Nombre attendu" dans la sidebar
+- Nouvel onglet "Locuteurs" avec affichage par tour de parole, timestamps approximatifs (mappés sur segments Whisper), et renommage inline persisté par fichier (localStorage)
+- Vue diarisée inline dans l'onglet Transcription quand la détection est activée
+- Nouvel endpoint POST /api/diarize (retry 1x sur parse JSON échoué)
+- Nouveaux namespaces i18n `diarization` et `speakers` + clé `tabs.speakers.label` (FR + EN)
+- Capture des segments Whisper par chunk avec offset sur la timeline globale (envoyés au LLM de diarization)
+- Persistance localStorage du toggle (`transkryptor.diarization.enabled`) et des noms renommés par fichier (`transkryptor.speakers.<fileHash>`)
+### Modifié
+- audioProcessor.processAndTranscribeInChunks retourne désormais {text, segments} au lieu d'un string brut
+- main.handleProcess stocke state.results.whisperSegments puis appelle la diarization si activée
+- ui/results.js : nouveau case 'speakers' dans renderActiveTabContent + vue diarisée inline pour transcription + helper renameSpeaker
+### Notes
+- La détection de participants utilise une analyse TEXTUELLE par LLM (pas vraie diarization audio). Qualité variable selon le contenu — excellente sur Q&A et interviews, moyenne sur discussions fluides.
+- Backward-compatible : quand le toggle est OFF le pipeline est byte-identique à v5.4.0.
+- Aucune nouvelle dépendance npm ; vanilla JS + axios/express existants.
+
+## [5.4.0] - 2026-06-24
+### Ajouté
+- Sélecteur "Langue audio" dans la sidebar (Auto + 15 langues principales en ISO 639-1)
+- Sélecteur "Langue de synthèse" séparé (par défaut : identique à la transcription)
+- Paramètre 'language' envoyé à l'API Whisper Cloud Temple pour améliorer la transcription
+- Prompt de synthèse disponible en EN (SYNTHESIS_PROMPT_EN) + instruction "Reply in {lang}" pour les autres langues
+- Badge "Langue détectée: XX" affiché si Whisper retourne une langue différente du hint
+- Persistance localStorage des langues choisies (clés transkryptor.transcription.language et transkryptor.synthesis.language)
+### Modifié
+- L'analyse intermédiaire reste systématiquement dans la langue source (préserve la qualité de correction)
+- Si customPrompt fourni (AXE 3), il prime sur le prompt par langue cible (AXE 2)
+
+## [5.3.0] - 2026-06-24
+### Ajouté
+- Section "Prompts avancés" repliée dans la sidebar (5 presets + mode personnalisé)
+- Persistance localStorage des préférences de prompt (clés transkryptor.synthesis.preset et transkryptor.synthesis.customPrompt)
+- Endpoint /api/synthesize accepte un customPrompt optionnel (validation longueur ≤ 8000 caractères)
+### Modifié
+- SYNTHESIS_PROMPT par défaut conservé (preset "executive") pour compatibilité ascendante
+
+## [5.2.0] - 2026-06-24
+### Ajouté
+- Interface multilingue FR / EN (sélecteur en haut de la sidebar)
+- Module i18n vanilla maison (zéro dépendance)
+- Persistance de la langue choisie en localStorage (clé : transkryptor.ui.language)
+- Détection automatique de la langue du navigateur au premier lancement
+- Support du paramètre URL ?lang=fr|en pour forcer la langue (utile pour démos)
+### Modifié
+- Emojis extraits des chaînes traduisibles (préservés via <span class="icon">) pour garantir la robustesse de la traduction
+- Nom des fichiers exportés adapté à la langue active (transcription_xxx.txt vs transcript_xxx.txt)
+
 ## [5.1.0] - 2026-06-21
 
 ### Added
