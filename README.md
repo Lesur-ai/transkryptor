@@ -44,7 +44,7 @@ browser ──► Node.js/Express gateway ──► Cloud Temple LLMaaS (Whisper
 Recommended macOS/Linux install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.1/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.2/scripts/install.sh | bash
 ```
 
 The script installs the app into `~/Applications/Transkryptor` on macOS and `${XDG_DATA_HOME:-~/.local/share}/transkryptor` on Linux. It copies `.env.example` to `.env` when needed, runs `npm ci`, starts the service on <http://localhost:3000>, and opens the default browser.
@@ -52,7 +52,7 @@ The script installs the app into `~/Applications/Transkryptor` on macOS and `${X
 Useful overrides:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.1/scripts/install.sh -o /tmp/transkryptor-install.sh
+curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.2/scripts/install.sh -o /tmp/transkryptor-install.sh
 TRANSKRYPTOR_INSTALL_DIR="$HOME/Transkryptor" \
 TRANSKRYPTOR_REF="main" \
 TRANSKRYPTOR_OPEN_BROWSER="0" \
@@ -62,7 +62,7 @@ bash /tmp/transkryptor-install.sh
 On Windows, use WSL for now:
 
 ```powershell
-wsl bash -lc "curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.1/scripts/install.sh | bash"
+wsl bash -lc "curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.2/scripts/install.sh | bash"
 ```
 
 A native Windows installer should be a small PowerShell script that installs into `%LOCALAPPDATA%\Transkryptor`, runs `npm ci`, starts the Node service, and opens <http://localhost:3000>.

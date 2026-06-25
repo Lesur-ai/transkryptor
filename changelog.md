@@ -11,6 +11,23 @@ Older entries are therefore less detailed than entries maintained from 5.1.0 onw
 
 ## [Unreleased]
 
+## [6.1.2] - 2026-06-25
+
+Transkryptor v6.1.2 is a configuration hotfix that refreshes the sample Cloud
+Temple LLM allowlist shipped in `.env.example`.
+
+### Added
+
+- Release notes document at `docs/releases/v6.1.2.md`.
+
+### Changed
+
+- Updated `.env.example` so new installations expose only the current Cloud
+  Temple model order: `qwen3.6:27b`, `mistral-small4:119b`,
+  `qwen3.6:35b-a3b`, and `gemma4:31b`.
+- Bumped application metadata and client/server fallback versions to `6.1.2`.
+- Updated README installer URLs to target the `v6.1.2` tag.
+
 ## [6.1.1] - 2026-06-25
 
 Transkryptor v6.1.1 is a documentation and installer hotfix for the v6.1
@@ -342,7 +359,8 @@ LLM-based participant detection.
 
 - Released the v2.0.0 final version.
 
-[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.1...HEAD
+[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.2...HEAD
+[6.1.2]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.1...v6.1.2
 [6.1.1]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.1.0...v6.0.0
