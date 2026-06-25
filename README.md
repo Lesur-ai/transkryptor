@@ -11,7 +11,6 @@ A modern web platform for audio transcription, analysis, and synthesis — built
 - [Highlights](#highlights)
 - [Architecture](#architecture)
 - [Quick start](#quick-start)
-- [One-line installer](#one-line-installer)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Project layout](#project-layout)
@@ -42,26 +41,7 @@ browser ──► Node.js/Express gateway ──► Cloud Temple LLMaaS (Whisper
 
 **Prerequisites**: [Node.js](https://nodejs.org/) 18 or higher, and a Cloud Temple LLMaaS API key.
 
-```bash
-git clone https://github.com/Lesur-ai/transkryptor.git
-cd transkryptor
-npm install
-cp .env.example .env
-# Edit .env — set CLOUD_TEMPLE_API_KEY and CLOUD_TEMPLE_ALLOWED_MODELS
-npm start
-```
-
-Then open <http://localhost:3000>.
-
-For development with auto-reload:
-
-```bash
-npm run dev
-```
-
-## One-line installer
-
-macOS and Linux can install, configure, start, and open Transkryptor with:
+Recommended macOS/Linux install:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor/v6.1.1/scripts/install.sh | bash
@@ -86,6 +66,25 @@ wsl bash -lc "curl -fsSL https://raw.githubusercontent.com/Lesur-ai/transkryptor
 ```
 
 A native Windows installer should be a small PowerShell script that installs into `%LOCALAPPDATA%\Transkryptor`, runs `npm ci`, starts the Node service, and opens <http://localhost:3000>.
+
+Manual setup:
+
+```bash
+git clone https://github.com/Lesur-ai/transkryptor.git
+cd transkryptor
+npm install
+cp .env.example .env
+# Edit .env — set CLOUD_TEMPLE_API_KEY and CLOUD_TEMPLE_ALLOWED_MODELS
+npm start
+```
+
+Then open <http://localhost:3000>.
+
+For development with auto-reload:
+
+```bash
+npm run dev
+```
 
 ### Docker
 
