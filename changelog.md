@@ -313,7 +313,8 @@ LLM-based participant detection.
 
 - Released the v2.0.0 final version.
 
-[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...HEAD
+[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...HEAD
+[6.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.1.0...v6.0.0
 [5.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.0.0...v5.1.0
 [5.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v4.0.14...v5.0.0

@@ -26,10 +26,27 @@ const BRAND = SUPPORTED_BRANDS.includes((process.env.BRAND || '').toLowerCase())
 
 const INDEX_TEMPLATE = fs.readFileSync(path.join(__dirname, '../client/index.html'), 'utf-8');
 
+// Google Fonts (Newsreader) is only loaded for the lesur-ai design — the
+// cloud-temple variant resets --font-display to the system sans stack, so
+// pulling fonts.googleapis.com / fonts.gstatic.com there would add an
+// external dependency for no visual benefit.
+const BRAND_FONTS = {
+    'lesur-ai': [
+        '<link rel="preconnect" href="https://fonts.googleapis.com">',
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap">'
+    ].join('\n    '),
+    'cloud-temple': '<!-- system font stack -->'
+};
+
 function renderIndex(req, res) {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
-    res.send(INDEX_TEMPLATE.replace(/__BRAND__/g, BRAND));
+    res.send(
+        INDEX_TEMPLATE
+            .replace(/__BRAND__/g, BRAND)
+            .replace(/__BRAND_FONTS__/g, BRAND_FONTS[BRAND] || BRAND_FONTS['lesur-ai'])
+    );
 }
 
 // --- Whitelist exacte des modèles autorisés depuis .env (ordre = priorité d'affichage) ---
@@ -128,8 +145,10 @@ const upload = multer({ storage: storage });
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, '../client'), { index: false }));
+// Brand-aware renderer MUST run before express.static so that an explicit
+// GET /index.html doesn't bypass the substitution and ship a raw template.
 app.get(['/', '/index.html'], renderIndex);
+app.use(express.static(path.join(__dirname, '../client'), { index: false }));
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // --- API Endpoints ---
