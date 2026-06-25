@@ -34,6 +34,7 @@ ID and class, and the Cloud Temple LLMaaS backend integration.
   with language switcher links at the top. Content fully refreshed for the
   v6 feature set: Cloud Temple-only backend, diarization, multilingual UI,
   synthesis presets.
+- Chart.js (UMD) et marked sont self-hostés sous `src/client/vendor/`. Plus aucun chargement depuis cdn.jsdelivr.net.
 
 ### Changed
 
