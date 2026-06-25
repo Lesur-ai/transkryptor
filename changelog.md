@@ -2,103 +2,158 @@
 
 All notable changes to Transkryptor are documented in this file.
 
-This changelog was introduced in version 5.1.0 and backfills earlier releases from the Git tag history, project documentation, and the local project memory bank. Older entries are therefore less detailed than entries maintained from 5.1.0 onward.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [6.0.0] - 2026-06-24
-### Ajouté
-- Détection de participants OPTIONNELLE basée sur analyse textuelle LLM via Cloud Temple (100% SecNumCloud, sans Docker ni Python)
-- Nouveau toggle "Détecter les participants" + champ optionnel "Nombre attendu" dans la sidebar
-- Nouvel onglet "Locuteurs" avec affichage par tour de parole, timestamps approximatifs (mappés sur segments Whisper), et renommage inline persisté par fichier (localStorage)
-- Vue diarisée inline dans l'onglet Transcription quand la détection est activée
-- Nouvel endpoint POST /api/diarize (retry 1x sur parse JSON échoué)
-- Nouveaux namespaces i18n `diarization` et `speakers` + clé `tabs.speakers.label` (FR + EN)
-- Capture des segments Whisper par chunk avec offset sur la timeline globale (envoyés au LLM de diarization)
-- Persistance localStorage du toggle (`transkryptor.diarization.enabled`) et des noms renommés par fichier (`transkryptor.speakers.<fileHash>`)
-### Modifié
-- audioProcessor.processAndTranscribeInChunks retourne désormais {text, segments} au lieu d'un string brut
-- main.handleProcess stocke state.results.whisperSegments puis appelle la diarization si activée
-- ui/results.js : nouveau case 'speakers' dans renderActiveTabContent + vue diarisée inline pour transcription + helper renameSpeaker
-### Notes
-- La détection de participants utilise une analyse TEXTUELLE par LLM (pas vraie diarization audio). Qualité variable selon le contenu — excellente sur Q&A et interviews, moyenne sur discussions fluides.
-- Backward-compatible : quand le toggle est OFF le pipeline est byte-identique à v5.4.0.
-- Aucune nouvelle dépendance npm ; vanilla JS + axios/express existants.
+This changelog was introduced in version 5.1.0 and backfills earlier releases from
+the Git tag history, project documentation, and the local project memory bank.
+Older entries are therefore less detailed than entries maintained from 5.1.0 onward.
+
+## [Unreleased]
+
+## [6.0.0] - 2026-06-25
+
+Transkryptor v6.0.0 completes the Cloud Temple-only v5 line with a multilingual
+interface, configurable synthesis prompts, multilingual output, and optional
+LLM-based participant detection.
+
+### Added
+
+- French and English user interface with persisted language selection.
+- Audio language selector with auto-detection and ISO 639-1 language hints sent to Cloud Temple Whisper.
+- Separate synthesis language selector, defaulting to the transcription language.
+- Detected-language badge when Whisper returns useful language metadata.
+- Advanced synthesis prompts panel with five presets:
+  - executive summary;
+  - meeting minutes;
+  - actions and decisions;
+  - corrected verbatim;
+  - thematic analysis.
+- Custom synthesis prompt mode, persisted in `localStorage`.
+- Server-side `customPrompt` support on `POST /api/synthesize`, limited to 8000 characters.
+- Optional participant detection based on text analysis through Cloud Temple LLMaaS.
+- "Detect participants" toggle and optional expected speaker count field.
+- New `POST /api/diarize` Server-Sent Events endpoint.
+- Streaming speaker-turn display while diarization is running.
+- New Speakers tab with approximate timestamps mapped to Whisper segments.
+- Inline diarized view in the Transcription tab when participant detection is enabled.
+- Local speaker renaming persisted per file in `localStorage`.
+- Download support for the Speakers tab.
+- New i18n namespaces and strings for `language`, `prompts`, `diarization`, and `speakers`.
+- Release notes document at `docs/releases/v6.0.0.md`.
+
+### Changed
+
+- `audioProcessor.processAndTranscribeInChunks` now returns `{ text, segments }` instead of a raw string.
+- Transcription now requests `verbose_json` first to collect Whisper segments, with a graceful fallback to `json`.
+- Whisper segment timestamps are offset per chunk and normalized into a global timeline.
+- Application state now stores `whisperSegments`, `diarization`, `speakerNames`, language preferences, prompt preferences, and diarization state.
+- Analysis output now follows the selected synthesis language for a coherent end-user result.
+- Synthesis prompt building now combines custom prompts with explicit target-language instructions.
+- Diarization LLM output was reduced to speaker IDs and segment IDs; text is reconstructed server-side from Whisper segments.
+- Cloud Temple reasoning models are called with `enable_thinking:false` for analysis, synthesis, and diarization.
+- Diarization now filters invalid or hallucinated segment IDs before computing coverage.
+- Diarization retries global parsing when streamed coverage is below 90%.
+- Diarization returns a partial-result warning when coverage is between 50% and 99%.
+- README files were fully rewritten for the Cloud Temple-only v6.0 architecture.
+- The README screenshot was replaced with a current v6.0 interface capture.
+- npm package metadata now declares `GPL-3.0-only`, matching `LICENSE.txt`.
+
+### Fixed
+
+- Fixed multilingual synthesis being bypassed when a preset or custom prompt was selected.
+- Fixed transcription result handling so Whisper segments are preserved for diarization.
+- Fixed segment ID alignment between Whisper output and LLM diarization responses.
+- Fixed Speakers tab download serialization.
+- Fixed periodic diarization streaming repainting over another active tab after the user navigates away.
+- Fixed the client-side gap where partial diarization coverage could complete without a visible warning.
+
+### Security
+
+- Kept Cloud Temple as the only external AI provider used by the application.
+- Kept the Cloud Temple API key server-side only.
+- Preserved strict server-side model allowlist enforcement for analysis, synthesis, and diarization.
+- Continued to avoid adding external diarization services, Docker images, Python runtimes, or non-Cloud Temple AI dependencies.
 
 ## [5.4.0] - 2026-06-24
-### Ajouté
-- Sélecteur "Langue audio" dans la sidebar (Auto + 15 langues principales en ISO 639-1)
-- Sélecteur "Langue de synthèse" séparé (par défaut : identique à la transcription)
-- Paramètre 'language' envoyé à l'API Whisper Cloud Temple pour améliorer la transcription
-- Prompt de synthèse disponible en EN (SYNTHESIS_PROMPT_EN) + instruction "Reply in {lang}" pour les autres langues
-- Badge "Langue détectée: XX" affiché si Whisper retourne une langue différente du hint
-- Persistance localStorage des langues choisies (clés transkryptor.transcription.language et transkryptor.synthesis.language)
-### Modifié
-- L'analyse intermédiaire reste systématiquement dans la langue source (préserve la qualité de correction)
-- Si customPrompt fourni (AXE 3), il prime sur le prompt par langue cible (AXE 2)
+
+### Added
+
+- Audio language selector in the sidebar with auto-detection and 15 main ISO 639-1 language options.
+- Separate synthesis language selector, defaulting to the transcription language.
+- `language` parameter forwarding to Cloud Temple Whisper.
+- English synthesis prompt and generic target-language instruction for other supported languages.
+- Detected-language badge when Whisper returns a language different from the selected hint.
+- `localStorage` persistence for transcription and synthesis language preferences.
+
+### Changed
+
+- Intermediate analysis remains in the source language to preserve correction quality.
+- Custom prompts take precedence over the default target-language synthesis prompt when provided.
 
 ## [5.3.0] - 2026-06-24
-### Ajouté
-- Section "Prompts avancés" repliée dans la sidebar (5 presets + mode personnalisé)
-- Persistance localStorage des préférences de prompt (clés transkryptor.synthesis.preset et transkryptor.synthesis.customPrompt)
-- Endpoint /api/synthesize accepte un customPrompt optionnel (validation longueur ≤ 8000 caractères)
-### Modifié
-- SYNTHESIS_PROMPT par défaut conservé (preset "executive") pour compatibilité ascendante
+
+### Added
+
+- Collapsible advanced prompts section in the sidebar.
+- Five synthesis presets plus custom prompt mode.
+- `localStorage` persistence for selected synthesis preset and custom prompt.
+- Optional `customPrompt` support on `/api/synthesize`.
+
+### Changed
+
+- Preserved the default executive synthesis prompt as the compatibility fallback.
 
 ## [5.2.0] - 2026-06-24
-### Ajouté
-- Interface multilingue FR / EN (sélecteur en haut de la sidebar)
-- Module i18n vanilla maison (zéro dépendance)
-- Persistance de la langue choisie en localStorage (clé : transkryptor.ui.language)
-- Détection automatique de la langue du navigateur au premier lancement
-- Support du paramètre URL ?lang=fr|en pour forcer la langue (utile pour démos)
-### Modifié
-- Emojis extraits des chaînes traduisibles (préservés via <span class="icon">) pour garantir la robustesse de la traduction
-- Nom des fichiers exportés adapté à la langue active (transcription_xxx.txt vs transcript_xxx.txt)
+
+### Added
+
+- French and English interface support.
+- Zero-dependency vanilla JavaScript i18n module.
+- UI language persistence in `localStorage`.
+- Browser-language detection on first launch.
+- `?lang=fr|en` URL parameter support for demos and explicit language forcing.
+
+### Changed
+
+- Extracted emoji markers from translatable strings to make translation updates more robust.
+- Adapted exported transcription filenames to the active UI language.
 
 ## [5.1.0] - 2026-06-21
 
 ### Added
 
-- Added this project changelog.
-- Added a server-side model allowlist driven by `CLOUD_TEMPLE_ALLOWED_MODELS` in `.env`.
-- Added `gemma4:31b` and `mistral-small4:119b` to the configured model list.
-- Added model alias resolution for `/api/models`, allowing the UI to expose a configured alias such as `mistral-small4:119b` even when Cloud Temple publishes it under another primary model ID.
+- Project changelog.
+- Server-side model allowlist driven by `CLOUD_TEMPLE_ALLOWED_MODELS` in `.env`.
+- `gemma4:31b` and `mistral-small4:119b` to the configured model list.
+- Model alias resolution for `/api/models`, allowing the UI to expose configured aliases even when Cloud Temple publishes a different primary model ID.
 
 ### Changed
 
 - Made `.env` the single source of truth for analysis and synthesis models exposed by the UI.
 - Removed the hardcoded fallback model allowlist from the backend.
 - Simplified frontend model selection so the first backend-approved model is selected by default.
-- Updated the application version from `5.0.0` to `5.1.0` across `VERSION`, npm metadata, UI fallbacks, and memory-bank headings.
+- Updated the application version from `5.0.0` to `5.1.0`.
 - Updated configuration documentation to describe `CLOUD_TEMPLE_ALLOWED_MODELS` as required configuration.
 
 ### Security
 
-- Enforced the backend allowlist on `/api/analyze` and `/api/synthesize`, preventing clients from bypassing the UI and calling unauthorized models directly.
+- Enforced the backend allowlist on `/api/analyze` and `/api/synthesize`.
 - Kept the Cloud Temple API key server-side only.
-
-### Validation
-
-- Verified JavaScript syntax with `node --check` on touched client and server modules.
-- Verified `/api/models` against the live Cloud Temple model endpoint on a temporary local server instance.
-- Verified that a non-allowlisted model is rejected by `/api/analyze`.
-
-### Known Limitations
-
-- Full end-to-end validation with a real audio file remains to be performed.
 
 ## [5.0.0] - 2026-04-21
 
 ### Added
 
-- Introduced the Transkryptor v5 architecture focused exclusively on Cloud Temple LLMaaS SecNumCloud.
-- Added `/api/version`, backed by the root `VERSION` file and displayed in the application header.
-- Added server-sent event logging scoped by client session.
-- Added a Cloud Temple dark theme aligned with the mcp-vault design language.
-- Added a redesigned header with Cloud Temple branding, SecNumCloud badge, and application version.
-- Added a dashboard-oriented UI with stats, processing progress, chunk visualization, charts, and live server logs.
-- Added increased generation budgets for LLM tasks:
-  - `16384` max tokens for analysis.
-  - `8192` max tokens for synthesis.
+- Transkryptor v5 architecture focused exclusively on Cloud Temple LLMaaS SecNumCloud.
+- `/api/version`, backed by the root `VERSION` file and displayed in the application header.
+- Server-Sent Events logging scoped by client session.
+- Cloud Temple dark theme aligned with the mcp-vault design language.
+- Redesigned header with Cloud Temple branding, SecNumCloud badge, and application version.
+- Dashboard-oriented UI with stats, processing progress, chunk visualization, charts, and live server logs.
+- Increased LLM generation budgets:
+  - 16384 max tokens for analysis;
+  - 8192 max tokens for synthesis.
 
 ### Changed
 
@@ -106,24 +161,20 @@ This changelog was introduced in version 5.1.0 and backfills earlier releases fr
 - Centralized API credentials on the server through `.env`.
 - Reworked the frontend around Cloud Temple-only configuration and model selection.
 - Updated transcription, analysis, and synthesis flows to use Cloud Temple endpoints only.
-- Updated dependency usage and removed packages no longer needed after the provider simplification.
+- Updated dependency usage after the provider simplification.
 
 ### Removed
 
-- Removed OpenAI and Anthropic provider branches from backend workflows.
-- Removed user-supplied API key handling from the frontend.
-- Removed provider selection from the UI.
-- Removed `/api/validate-key` and `/api/providers`.
-- Removed browser-side persistence of third-party API keys.
+- OpenAI and Anthropic provider branches from backend workflows.
+- User-supplied API key handling from the frontend.
+- Provider selection from the UI.
+- `/api/validate-key` and `/api/providers`.
+- Browser-side persistence of third-party API keys.
 
 ### Security
 
 - Eliminated client-side handling of user API keys.
-- Reduced the external provider surface to Cloud Temple LLMaaS SecNumCloud only.
-
-### Known Limitations
-
-- The v5 refactor was marked complete in project memory, but full validation with a real audio file was still listed as pending.
+- Reduced the external AI provider surface to Cloud Temple LLMaaS SecNumCloud only.
 
 ## [4.0.14] - 2025-08-28
 
@@ -133,7 +184,7 @@ This changelog was introduced in version 5.1.0 and backfills earlier releases fr
 
 ### Fixed
 
-- Included the production and transcription stability fixes delivered between `v4.0.12` and `v4.0.14`.
+- Included production and transcription stability fixes delivered between `v4.0.12` and `v4.0.14`.
 
 ## [4.0.12] - 2025-08-26
 
@@ -150,18 +201,18 @@ This changelog was introduced in version 5.1.0 and backfills earlier releases fr
 
 ### Added
 
-- Introduced the v4 client-server architecture.
-- Added a Node.js/Express API gateway backend.
-- Added a vanilla JavaScript single-page frontend organized into modules.
-- Added multi-provider support:
-  - Cloud Temple SecNumCloud for transcription and analysis.
-  - OpenAI for transcription.
+- v4 client-server architecture.
+- Node.js/Express API gateway backend.
+- Vanilla JavaScript single-page frontend organized into modules.
+- Multi-provider support:
+  - Cloud Temple SecNumCloud for transcription and analysis;
+  - OpenAI for transcription;
   - Anthropic for analysis.
-- Added parallel audio transcription by chunks.
-- Added semantic batch processing for text analysis.
-- Added executive synthesis from analysis output.
-- Added live server logs and processing visibility in the UI.
-- Added progressive display of results.
+- Parallel audio transcription by chunks.
+- Semantic batch processing for text analysis.
+- Executive synthesis from analysis output.
+- Live server logs and processing visibility in the UI.
+- Progressive display of results.
 
 ### Changed
 
@@ -178,21 +229,13 @@ This changelog was introduced in version 5.1.0 and backfills earlier releases fr
 
 ### Changed
 
-- Finalized the v3.1.0 release line.
-
-### Notes
-
-- Detailed v3 release notes were not available when this changelog was backfilled.
+- Finalized the v3.1.0 "Fact Checking" release line.
 
 ## [2.1.0] - 2025-01-30
 
 ### Changed
 
 - Released the v2.1.0 line.
-
-### Notes
-
-- Detailed v2.1.0 release notes were not available when this changelog was backfilled.
 
 ## [2.0.1] - 2025-01-22
 
@@ -206,6 +249,14 @@ This changelog was introduced in version 5.1.0 and backfills earlier releases fr
 
 - Released the v2.0.0 final version.
 
-### Notes
-
-- Detailed v2.0.0 release notes were not available when this changelog was backfilled.
+[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.0.0...HEAD
+[6.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.1.0...v6.0.0
+[5.1.0]: https://github.com/Lesur-ai/transkryptor/compare/v5.0.0...v5.1.0
+[5.0.0]: https://github.com/Lesur-ai/transkryptor/compare/v4.0.14...v5.0.0
+[4.0.14]: https://github.com/Lesur-ai/transkryptor/compare/v4.0.12...v4.0.14
+[4.0.12]: https://github.com/Lesur-ai/transkryptor/compare/v4.0.0...v4.0.12
+[4.0.0]: https://github.com/Lesur-ai/transkryptor/releases/tag/v4.0.0
+[3.1.0]: https://github.com/Lesur-ai/transkryptor/releases/tag/v3.1.0
+[2.1.0]: https://github.com/Lesur-ai/transkryptor/releases/tag/v2.1.0
+[2.0.1]: https://github.com/Lesur-ai/transkryptor/releases/tag/v2.0.1
+[2.0.0]: https://github.com/Lesur-ai/transkryptor/releases/tag/v2.0.0
