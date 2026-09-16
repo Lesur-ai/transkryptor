@@ -13,9 +13,10 @@ Older entries are therefore less detailed than entries maintained from 5.1.0 onw
 
 ## [6.2.1] - 2026-09-16
 
-Transkryptor v6.2.1 is a configuration and installer hotfix. It replaces the
-deprecated `qwen3.6:27b` default model with `qwen3.8:27b` and makes the
-one-line installer install the release it is downloaded from again.
+Transkryptor v6.2.1 is a configuration, installer, and security hotfix. It
+replaces the deprecated `qwen3.6:27b` default model with `qwen3.8:27b`, makes
+the one-line installer install the release it is downloaded from again, and
+updates dependencies with known vulnerabilities.
 
 ### Added
 
@@ -41,6 +42,15 @@ one-line installer install the release it is downloaded from again.
   had stayed on `v6.1.1`, so the `v6.1.2` and `v6.2.0` installer URLs still
   installed `v6.1.1`, with its older model allowlist and the `enable_thinking`
   incompatibility with Mistral models fixed in `v6.2.0`.
+
+### Security
+
+- Updated `multer` from 2.2.0 to 2.4.0, fixing denial-of-service issues on
+  multipart uploads (GHSA-wc9g-mqfw-jrwm, GHSA-qfvm-cv95-jqjf,
+  GHSA-535w-7cp7-47q4) and a file size limit bypass (GHSA-qvfw-j98x-7q72).
+- Updated `qs` to 6.16.0 (GHSA-x5fp-wj9c-mxmx, GHSA-4mjr-xmp4-gh2g),
+  `body-parser` to 1.20.8 (GHSA-v422-hmwv-36x6), and `express` to 4.22.3.
+  `npm audit` now reports no known vulnerabilities.
 
 ## [6.2.0] - 2026-07-06
 
