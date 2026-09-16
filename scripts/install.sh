@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP_NAME="Transkryptor"
 REPO_URL="${TRANSKRYPTOR_REPO_URL:-https://github.com/Lesur-ai/transkryptor.git}"
-REF="${TRANSKRYPTOR_REF:-v6.1.1}"
+REF="${TRANSKRYPTOR_REF:-v6.2.1}"
 PORT="${TRANSKRYPTOR_PORT:-3000}"
 APP_URL="http://localhost:${PORT}"
 OPEN_BROWSER="${TRANSKRYPTOR_OPEN_BROWSER:-1}"

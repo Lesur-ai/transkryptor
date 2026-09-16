@@ -15,7 +15,7 @@ const appState = {
     clientId: null,
 
     // Version de l'application (chargée depuis le serveur)
-    appVersion: '6.2.0',
+    appVersion: '6.2.1',
 
     // Résultats du traitement
     results: {
