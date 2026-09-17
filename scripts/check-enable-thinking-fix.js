@@ -34,6 +34,11 @@ const qwenPayload = buildPayload('qwen3.6:35b-a3b');
 assert.equal(isThinkingModel('qwen3.6:35b-a3b'), true);
 assert.equal(qwenPayload.enable_thinking, false);
 
+// qwen3.8:27b pense par défaut : sans ce flag, la sortie utile peut n'arriver que dans message.reasoning.
+const qwen38Payload = buildPayload('qwen3.8:27b');
+assert.equal(isThinkingModel('qwen3.8:27b'), true);
+assert.equal(qwen38Payload.enable_thinking, false);
+
 const qwenUppercasePayload = buildPayload('QWEN3:235B');
 assert.equal(isThinkingModel('QWEN3:235B'), true);
 assert.equal(qwenUppercasePayload.enable_thinking, false);

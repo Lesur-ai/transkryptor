@@ -11,6 +11,47 @@ Older entries are therefore less detailed than entries maintained from 5.1.0 onw
 
 ## [Unreleased]
 
+## [6.2.1] - 2026-09-16
+
+Transkryptor v6.2.1 is a configuration, installer, and security hotfix. It
+replaces the deprecated `qwen3.6:27b` default model with `qwen3.8:27b`, makes
+the one-line installer install the release it is downloaded from again, and
+updates dependencies with known vulnerabilities.
+
+### Added
+
+- Release notes document at `docs/releases/v6.2.1.md`.
+- `scripts/check-release-consistency.js`, a dependency-free check that fails
+  when `VERSION`, package metadata, client/server fallback versions, installer
+  URLs, the installer default `REF`, or the changelog drift apart.
+- `qwen3.8:27b` coverage in the `enable_thinking` payload regression check.
+
+### Changed
+
+- Replaced `qwen3.6:27b` with `qwen3.8:27b` as the default model in
+  `.env.example`. Cloud Temple deprecated `qwen3.6:27b` and redirects it to
+  `qwen3.8:27b` on 2026-09-30. New installations now expose `qwen3.8:27b`,
+  `mistral-small4:119b`, `qwen3.6:35b-a3b`, and `gemma4:31b`.
+- Added a link to the Cloud Temple model lifecycle page in `.env.example`.
+- Bumped application metadata and client/server fallback versions to `6.2.1`.
+- Updated README installer URLs to target the `v6.2.1` tag.
+
+### Fixed
+
+- The one-line installer now checks out `v6.2.1` by default. Its default `REF`
+  had stayed on `v6.1.1`, so the `v6.1.2` and `v6.2.0` installer URLs still
+  installed `v6.1.1`, with its older model allowlist and the `enable_thinking`
+  incompatibility with Mistral models fixed in `v6.2.0`.
+
+### Security
+
+- Updated `multer` from 2.2.0 to 2.4.0, fixing denial-of-service issues on
+  multipart uploads (GHSA-wc9g-mqfw-jrwm, GHSA-qfvm-cv95-jqjf,
+  GHSA-535w-7cp7-47q4) and a file size limit bypass (GHSA-qvfw-j98x-7q72).
+- Updated `qs` to 6.16.0 (GHSA-x5fp-wj9c-mxmx, GHSA-4mjr-xmp4-gh2g),
+  `body-parser` to 1.20.8 (GHSA-v422-hmwv-36x6), and `express` to 4.22.3.
+  `npm audit` now reports no known vulnerabilities.
+
 ## [6.2.0] - 2026-07-06
 
 Transkryptor v6.2.0 fixes a production regression where Mistral chat-completion
@@ -389,7 +430,8 @@ LLM-based participant detection.
 
 - Released the v2.0.0 final version.
 
-[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.2.0...HEAD
+[Unreleased]: https://github.com/Lesur-ai/transkryptor/compare/v6.2.1...HEAD
+[6.2.1]: https://github.com/Lesur-ai/transkryptor/compare/v6.2.0...v6.2.1
 [6.2.0]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.2...v6.2.0
 [6.1.2]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.1...v6.1.2
 [6.1.1]: https://github.com/Lesur-ai/transkryptor/compare/v6.1.0...v6.1.1
